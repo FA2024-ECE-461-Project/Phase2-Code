@@ -1,3 +1,4 @@
+name: auto-Unit-Tests
 on:
   push:
     branches:

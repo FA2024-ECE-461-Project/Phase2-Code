@@ -7,10 +7,13 @@
     "test": "tests"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
   },
   "scripts": {
-    "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles"
+    "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles",
+    "install": "npm install",
+    "start": "ts-node src/index.ts"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- adjusts the webpage to device's width and set initial zoom level to 1.0. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECE-461 Package Registry</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>ECE-461: Package Registry</h1>
+        <div class="user-profile">
+            <span>User (Admin/User)</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+            <ul>
+                <li><button onclick="showContent('upload')">Upload</button></li>
+                <li><button onclick="showContent('download')">Download</button></li>
+                <li><button onclick="showContent('update')">Update</button></li>
+                <li><button onclick="showContent('rating')">Rating</button></li>
+            </ul>
+        </nav>
+
+        <main class="content-area" id="content-area">
+            <p>Select an option from the sidebar.</p>
+        </main>
+    </div>
+    <script src="dist/script.js"></script>
+</body>
+
+</html>

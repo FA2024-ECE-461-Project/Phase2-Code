@@ -24,10 +24,16 @@ jobs:
         with:
           node-version: '18'
 
-      # Install dependencies, including ESLint and Airbnb config
       - name: Install dependencies
+        # only install dependencies if package.json is found
+        # stops the workflow if package.json is not found
         run: |
-          npm install
+          if [-f package.json]; then
+            npm install
+          else
+            echo "package.json not found in main branch"
+            exit 1
+          fi
 
       # Run ESLint to check for style and linting issues
       - name: Run ESLint

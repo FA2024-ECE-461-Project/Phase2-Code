@@ -1,3 +1,4 @@
+name: "Auto Unit Test"
 on:
   push:
     branches:

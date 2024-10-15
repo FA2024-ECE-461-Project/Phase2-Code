@@ -1,0 +1,35 @@
+{
+  "name": "461-phase2-code",
+  "description": "All Code required for phase 2 to work",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "directories": {
+    "test": "tests",
+    "src": "src"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.13",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  },
+  "scripts": {
+    "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles",
+    "install": "npm install",
+    "start": "ts-node src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FA2024-ECE-461-Project/Phase2-Code.git"
+  },
+  "keywords": [
+    "Phase2"
+  ],
+  "author": "Nick-Ko, Jimmy-Ho, Gurauv-Vermani, Ryan-Lin",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/FA2024-ECE-461-Project/Phase2-Code/issues"
+  },
+  "homepage": "https://github.com/FA2024-ECE-461-Project/Phase2-Code#readme"
+}

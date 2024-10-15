@@ -31,7 +31,7 @@ jobs:
           if [-f package.json]; then
             npm install
           else
-            echo "package.json not found in main branch"
+            echo "package.json not found in branch to be merged in"
             exit 1
           fi
 

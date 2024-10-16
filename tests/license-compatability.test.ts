@@ -1,9 +1,9 @@
-import { get_license_compatibility, checkLicenseCompatibility, getLicense} from "../metrics/license-compatibility";
+import { get_license_compatibility, checkLicenseCompatibility, getLicense} from "../src/backend/metrics/license-compatibility";
 import * as fs from "fs";
 import * as path from "path";
 
 
-jest.mock("../logger");
+jest.mock("../src/backend/logger");
 jest.mock("fs");
 jest.mock('path');
 

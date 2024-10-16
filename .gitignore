@@ -8,3 +8,6 @@ coverage/
 
 # ignore .env
 .env
+
+#ignore logs/
+logs/

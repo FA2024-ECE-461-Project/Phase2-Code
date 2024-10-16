@@ -26,7 +26,7 @@ jobs:   # run tests specified in test/
           if [-f package.json]; then
             npm install
           else
-            echo "package.json not found"
+            echo "package.json not found in this branch to be merged in"
             exit 1
           fi
         

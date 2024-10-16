@@ -7,17 +7,25 @@
     "test": "tests",
     "src": "src"
   },
+  "scripts": {
+    "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles",
+    "start": "ts-node src/index.ts"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.13",
+    "@types/semver": "^7.5.8",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
   },
-  "scripts": {
-    "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles",
-    "install": "npm install",
-    "start": "ts-node src/index.ts"
+  "dependencies": {
+    "axios": "^1.7.7",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "isomorphic-git": "^1.27.1",
+    "semver": "^7.6.3",
+    "winston": "^3.14.2"
   },
   "repository": {
     "type": "git",

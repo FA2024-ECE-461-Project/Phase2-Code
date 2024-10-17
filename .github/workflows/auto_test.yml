@@ -23,7 +23,7 @@ jobs:   # run tests specified in test/
         # only install dependencies if package.json is found
         # stops the workflow if package.json is not found
         run: |
-          if [${{hashFiles(package.json)}}]; then
+          if [${{hashFiles("package.json")}}]; then
             npm install
           else
             echo "package.json not found in this branch to be merged in"

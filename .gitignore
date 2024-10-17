@@ -11,3 +11,6 @@ coverage/
 
 #ignore logs/
 logs/
+
+# ignore .eslint-report.json
+eslint-report.json

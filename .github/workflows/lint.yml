@@ -37,9 +37,10 @@ jobs:
 
       # Run ESLint to check for style and linting issues:
       # run the lint script (fix all auto-fixable issues)
+      # have it always exit true and compute lint score at the end: this is configured in script section of package.json
       - name: Run ESLint
         run: |
-          npm run lint   
+          npm run lint
           echo "ESLint completed successfully"
 
       # Output lint score based on the number of errors/warnings by running evaliLintScore.ts

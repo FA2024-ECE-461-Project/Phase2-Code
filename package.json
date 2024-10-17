@@ -10,7 +10,7 @@
   "scripts": {
     "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles",
     "start": "ts-node src/index.ts",
-    "lint": "eslint 'src/**/*.{ts,tsx}' --fix && eslint 'src/**/*.{ts,tsx}' --format json --output-file eslint-report.json || true"
+    "lint": "eslint 'src/**/*.{ts,tsx}' --fix && eslint 'src/**/*.{ts,tsx}' --format json --output-file eslint-report.json"
   },
   "devDependencies": {
     "@types/jest": "^29.5.13",

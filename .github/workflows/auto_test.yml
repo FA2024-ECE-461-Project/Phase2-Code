@@ -20,10 +20,10 @@ jobs:   # run tests specified in test/
           node-version: '18.17.1' # specify the Node.js version: same version as eceprog
 
       - name: Install dependencies
-        # only install dependencies if package.json is found
+        # only install dependencies if package.json is found (has a non-empty hash)
         # stops the workflow if package.json is not found
         run: |
-          if [${{hashFiles("package.json")}}]; then
+          if [ -n ${{ hashFiles("package.json") }}]; then
             npm install
           else
             echo "package.json not found in this branch to be merged in"

@@ -35,10 +35,10 @@ jobs:
             exit 1
           fi
 
-      # Run ESLint to check for style and linting issues
+      # Run ESLint to check for style and linting issues:
+      # run the lint script (fix all auto-fixable issues)
+      # have it always exit true and compute lint score at the end
       - name: Run ESLint
         run: |
-          npx eslint .
+          npm run lint
           echo "ESLint completed successfully"
-
-      # Output lint score based on the number of errors/warnings

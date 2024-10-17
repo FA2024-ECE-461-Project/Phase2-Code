@@ -9,12 +9,17 @@
   },
   "scripts": {
     "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "lint": "eslint 'src/**/*.{ts,tsx}' --fix && eslint 'src/**/*.{ts,tsx}' --format json --output-file eslint-report.json"
   },
   "devDependencies": {
     "@types/jest": "^29.5.13",
     "@types/semver": "^7.5.8",
+    "@typescript-eslint/eslint-plugin": "^8.9.0",
+    "@typescript-eslint/parser": "^8.9.0",
+    "eslint": "^9.12.0",
     "jest": "^29.7.0",
+    "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"

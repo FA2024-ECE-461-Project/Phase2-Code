@@ -9,39 +9,39 @@ interface BusFactorResult {
 }
 
 function calculateBusFactor(commits: any[], contributors: any[]): Omit<BusFactorResult, 'latency'> {
-    logger.debug('Calculating bus factor', { commitCount: commits.length, contributorCount: contributors.length });
+  logger.debug('Calculating bus factor', { commitCount: commits.length, contributorCount: contributors.length });
     
-    const commitCounts: { [key: string]: number } = {};
+  const commitCounts: { [key: string]: number } = {};
     
-    commits.forEach(commit => {
-      const author = commit.commit.author.name;
-      commitCounts[author] = (commitCounts[author] || 0) + 1;
-    });
+  commits.forEach(commit => {
+    const author = commit.commit.author.name;
+    commitCounts[author] = (commitCounts[author] || 0) + 1;
+  });
   
-    const totalCommits = commits.length;
-    const totalContributors = contributors.length;
+  const totalCommits = commits.length;
+  const totalContributors = contributors.length;
   
-    if (totalCommits === 0 || totalContributors === 0) {
-      logger.warn('Repository has no commits or contributors', { totalCommits, totalContributors });
-      return { busFactor: 1, normalizedScore: 0 };
-    }
-  
-    const sortedContributions = Object.values(commitCounts).sort((a, b) => b - a);
-    
-    let accumulatedCommits = 0;
-    let busFactor = 0;
-  
-    for (const count of sortedContributions) {
-      accumulatedCommits += count;
-      busFactor++;
-      if (accumulatedCommits > totalCommits * 0.8) break; // Increased from 0.5 to 0.8
-    }
-  
-    const normalizedScore = normalizeScore(busFactor, totalContributors, totalCommits);
-  
-    logger.debug('Bus factor calculation complete', { busFactor, normalizedScore });
-    return { busFactor, normalizedScore };
+  if (totalCommits === 0 || totalContributors === 0) {
+    logger.warn('Repository has no commits or contributors', { totalCommits, totalContributors });
+    return { busFactor: 1, normalizedScore: 0 };
   }
+  
+  const sortedContributions = Object.values(commitCounts).sort((a, b) => b - a);
+    
+  let accumulatedCommits = 0;
+  let busFactor = 0;
+  
+  for (const count of sortedContributions) {
+    accumulatedCommits += count;
+    busFactor++;
+    if (accumulatedCommits > totalCommits * 0.8) break; // Increased from 0.5 to 0.8
+  }
+  
+  const normalizedScore = normalizeScore(busFactor, totalContributors, totalCommits);
+  
+  logger.debug('Bus factor calculation complete', { busFactor, normalizedScore });
+  return { busFactor, normalizedScore };
+}
 
 function normalizeScore(busFactor: number, totalContributors: number, totalCommits: number): number {
   logger.debug('Normalizing bus factor score', { busFactor, totalContributors, totalCommits });
@@ -68,21 +68,21 @@ function normalizeScore(busFactor: number, totalContributors: number, totalCommi
 }
 
 export async function get_bus_factor(url: string): Promise<BusFactorResult> {
-    const startTime = Date.now();
-    logger.info('Starting bus factor calculation', { url });
+  const startTime = Date.now();
+  logger.info('Starting bus factor calculation', { url });
   
-    try {
-      const { owner, repo, headers } = get_axios_params(url, getToken());
-      logger.debug('Fetching commits and contributors', { owner, repo });
-      const { commits, contributors } = await getCommitsAndContributors(owner, repo, headers);
-      const result = calculateBusFactor(commits, contributors);
+  try {
+    const { owner, repo, headers } = get_axios_params(url, getToken());
+    logger.debug('Fetching commits and contributors', { owner, repo });
+    const { commits, contributors } = await getCommitsAndContributors(owner, repo, headers);
+    const result = calculateBusFactor(commits, contributors);
   
-      const latency = Date.now() - startTime;
-      logger.info('Bus factor calculation complete', { url, latency, ...result });
+    const latency = Date.now() - startTime;
+    logger.info('Bus factor calculation complete', { url, latency, ...result });
   
-      return { ...result, latency };
-    } catch (error) {
-      logger.error('Error calculating bus factor', { url, error: (error as Error).message });
-      return { busFactor: 1, normalizedScore: 0, latency: 0 };
-    }
+    return { ...result, latency };
+  } catch (error) {
+    logger.error('Error calculating bus factor', { url, error: (error as Error).message });
+    return { busFactor: 1, normalizedScore: 0, latency: 0 };
   }
+}

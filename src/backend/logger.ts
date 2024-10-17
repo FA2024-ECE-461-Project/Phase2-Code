@@ -31,7 +31,7 @@ const logFile = process.env.LOG_FILE || 'logs/package-evaluator.log';
 import fs from 'fs';
 const dir = path.dirname(logFile);
 if (!fs.existsSync(dir)){
-    fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(dir, { recursive: true });
 }
 
 // Create logger

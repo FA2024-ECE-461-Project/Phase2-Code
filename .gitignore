@@ -1,13 +1,6 @@
-# ignore node_modules
+#ignore node_modules
 node_modules/
-
-# ignore coverage
-coverage/
-
-# ignore logs
-
-# ignore .env
-.env
-
-#ignore logs/
+#ignore logs
 logs/
+#ignore coverage
+coverage/

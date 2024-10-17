@@ -40,7 +40,7 @@ jobs:
       # have it always exit true and compute lint score at the end
       - name: Run ESLint
         run: |
-          npm run lint || true
+          npm run lint
           echo "ESLint completed successfully"
 
       # Output lint score based on the number of errors/warnings by running evaliLintScore.ts

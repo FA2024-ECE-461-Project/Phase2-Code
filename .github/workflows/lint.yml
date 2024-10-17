@@ -42,4 +42,7 @@ jobs:
           npm run lint   
           echo "ESLint completed successfully"
 
-      # Output lint score based on the number of errors/warnings
+      # Output lint score based on the number of errors/warnings by running evaliLintScore.ts
+      - name: Output lint score
+        run: |
+          npx ts-node evalLintScore.ts

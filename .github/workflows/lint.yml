@@ -28,7 +28,7 @@ jobs:
         # only install dependencies if package.json is found
         # stops the workflow if package.json is not found
         run: |
-          if [-f package.json]; then
+          if [ -f package.json ]; then
             npm install
           else
             echo "package.json not found in branch to be merged in"

@@ -21,7 +21,7 @@ jobs:
         if: env.ISSUE_NUMBER != ''
         uses: alex-page/github-project-automation-plus@v0.3.0
         with:
-          project: 'Project Board Name'  # Replace with the name of your project board
+          project: '461 Phase2'  # Replace with the name of your project board
           column: 'In Progress'
           issue: ${{ env.ISSUE_NUMBER }}
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -4,3 +4,5 @@ node_modules/
 logs/
 #ignore coverage
 coverage/
+#.env file
+.env

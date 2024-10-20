@@ -11,6 +11,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
 
+      # dynamically set ISSUE_NUMBER env variable with echo
       - name: Get linked issue number
         id: get_issue_number
         run: |
@@ -19,7 +20,7 @@ jobs:
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
       
       - name: Move issue to 'In Progress'
-        if: env.ISSUE_NUMBER != '' 
+        if: github.env.ISSUE_NUMBER != '' 
         uses: alex-page/github-project-automation-plus@v0.3.0
         with:
           project: '461 Phase2'  # Replace with the name of your project board

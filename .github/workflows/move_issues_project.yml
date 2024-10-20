@@ -2,7 +2,10 @@ name: Move issue to 'In Progress' on pull request
 
 on:
   pull_request:
+    branches: [main]
     types: [opened]
+  # create a workflow_dispatch event to manually trigger the workflow: better for future debugging
+  workflow_dispatch:
 
 jobs:
   move_issue_to_in_progress:
@@ -23,6 +26,6 @@ jobs:
         if: github.env.ISSUE_NUMBER != '' 
         uses: alex-page/github-project-automation-plus@v0.3.0
         with:
-          project: '461 Phase2'  # Replace with the name of your project board
+          project: '461 Phase2'  
           column: 'In Progress'
           repo-token: ${{ secrets.GITHUB_TOKEN }}

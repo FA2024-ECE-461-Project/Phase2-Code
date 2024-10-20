@@ -39,7 +39,9 @@ jobs:   # run tests specified in test/
             touch coverage.txt  
             echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV 
 
-
+            mkdir logs/
+            touch logs/error.log logs/package-evaluator.log
+            
 
       - name: Run tests # display test results in the Actions tab
         run: npm test 

@@ -1,5 +1,5 @@
 import winston from 'winston';
-import { existsSync, truncateSync, PathLike } from "fs";
+import { existsSync, truncateSync, PathLike, mkdirSync, writeFileSync} from "fs";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,9 +12,17 @@ const LOG_LEVELS = {
 //clear log file
 
 const logFilePath = process.env.LOG_FILE as PathLike;
-// clear out the log files (if they exist)
-checkLogFilePath();
-truncateSync(logFilePath, 0);
+if(checkLogFilePath() === true) {
+  // clear out the log file indicated by LOG_FILE
+  truncateSync(logFilePath, 0);
+}
+else {
+  // create logs directory and log files if they don't exist
+  const logsDir = 'logs';
+  mkdirSync(logsDir, { recursive: true });
+  writeFileSync("logs/package-evaluator.log", "", "utf8");
+  writeFileSync("logs/error.log", "", "utf8");
+}
 truncateSync('logs/error.log', 0);
 
 // set log level
@@ -56,11 +64,8 @@ const logger = winston.createLogger({
   ],
 });
 
-function checkLogFilePath() {
-  if (!logFilePath || !existsSync(logFilePath)) {
-    console.error("LOG_FILE does not exist or is not set");
-    process.exit(1);
-  }
+function checkLogFilePath(): boolean {
+  return !logFilePath || !existsSync(logFilePath);
 }
 
 export default logger;

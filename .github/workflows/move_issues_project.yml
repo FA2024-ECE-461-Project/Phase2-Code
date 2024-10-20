@@ -4,15 +4,13 @@ on:
   pull_request:
     branches: [main]
     types: [opened]
-  # create a workflow_dispatch event to manually trigger the workflow: better for future debugging
-  workflow_dispatch:
 
 jobs:
   move_issue_to_in_progress:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # dynamically set ISSUE_NUMBER env variable with echo
       - name: Get linked issue number

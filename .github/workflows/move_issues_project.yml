@@ -17,8 +17,8 @@ jobs:
         id: get_issue_number
         run: |
           ISSUE_NUMBER=$(echo "${{ github.event.pull_request.body }}" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
-          echo "ISSUE_NUMBER=$ISSUE_NUMBER"
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=${{ github.env.ISSUE_NUMBER}}"
       
       - name: Move issue to 'In Progress'
         if: github.env.ISSUE_NUMBER != '' 

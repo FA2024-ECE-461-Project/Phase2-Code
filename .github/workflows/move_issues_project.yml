@@ -2,6 +2,7 @@ name: Move issue to 'In Progress' on pull request
 
 on:
   pull_request:
+    branches: [main]
     types: [opened]
 
 jobs:
@@ -9,20 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # dynamically set ISSUE_NUMBER env variable with echo
       - name: Get linked issue number
         id: get_issue_number
         run: |
           ISSUE_NUMBER=$(echo "${{ github.event.pull_request.body }}" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
-          echo "ISSUE_NUMBER=$ISSUE_NUMBER"
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=${{ github.env.ISSUE_NUMBER}}"
       
       - name: Move issue to 'In Progress'
         if: github.env.ISSUE_NUMBER != '' 
         uses: alex-page/github-project-automation-plus@v0.3.0
         with:
-          project: '461 Phase2'  # Replace with the name of your project board
+          project: '461 Phase2'  
           column: 'In Progress'
           repo-token: ${{ secrets.GITHUB_TOKEN }}

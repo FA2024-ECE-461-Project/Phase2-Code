@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { getToken, parseGitHubUrl, get_axios_params, getCommitsAndContributors} from '../url';
+import { getToken, get_axios_params, getCommitsAndContributors} from '../url';
 import logger from '../logger';
 
 interface BusFactorResult {

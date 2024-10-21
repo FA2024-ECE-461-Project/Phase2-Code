@@ -17,7 +17,12 @@ jobs:
         id: get_issue_number
         run: |
           ISSUE_NUMBER=$(echo "${{ github.event.pull_request.body }}" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
-          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "No issue number found in the pull request body."
+          else
+            echo "Issue number found: $ISSUE_NUMBER"
+            echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          fi
           echo "ISSUE_NUMBER=${{ github.env.ISSUE_NUMBER}}"
       
 

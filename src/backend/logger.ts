@@ -1,5 +1,5 @@
 import winston from 'winston';
-import { appendFileSync, existsSync, truncateSync, PathLike } from "fs";
+import { existsSync, truncateSync, PathLike, mkdirSync, writeFileSync} from "fs";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,15 +12,18 @@ const LOG_LEVELS = {
 //clear log file
 
 const logFilePath = process.env.LOG_FILE as PathLike;
-truncateSync(logFilePath, 0);
-truncateSync('logs/error.log', 0);
-
-function checkLogFilePath() {
-  if (!logFilePath || !existsSync(logFilePath)) {
-    console.error("LOG_FILE does not exist or is not set");
-    process.exit(1);
-  }
+if(checkLogFilePath() === true) {
+  // clear out the log file indicated by LOG_FILE
+  truncateSync(logFilePath, 0);
 }
+else {
+  // create logs directory and log files if they don't exist
+  const logsDir = 'logs';
+  mkdirSync(logsDir, { recursive: true });
+  writeFileSync("logs/package-evaluator.log", "", "utf8");
+  writeFileSync("logs/error.log", "", "utf8");
+}
+truncateSync('logs/error.log', 0);
 
 // set log level
 // if LOG_LEVEL is not set, default to SILENT
@@ -53,12 +56,16 @@ const logger = winston.createLogger({
   defaultMeta: { service: 'package-evaluator' },
   transports: [
     //silent console transport
-    new winston.transports.Console({ silent: (logLevel === 'silent' || logLevel === 'info' || logLevel === 'debug') }),
+    new winston.transports.Console({ silent: true }),
     // Write to all logs with level `info` and below to `package-evaluator.log`
     new winston.transports.File({ silent: logLevel === 'silent', filename: logFile , level: 'info' }),
-    // Write all logs error (and below) to `error.log`
+    // Write all error (and below) to `error.log`
     new winston.transports.File({ silent: logLevel === 'silent', filename: 'logs/error.log', level: 'debug' }),
   ],
 });
+
+function checkLogFilePath(): boolean {
+  return !logFilePath || !existsSync(logFilePath);
+}
 
 export default logger;

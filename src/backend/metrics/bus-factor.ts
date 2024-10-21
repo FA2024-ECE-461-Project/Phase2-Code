@@ -7,11 +7,20 @@ interface BusFactorResult {
   latency: number;
 }
 
-function calculateBusFactor(commits: any[], contributors: any[]): Omit<BusFactorResult, 'latency'> {
+interface CommitResponse {
+  commit: {
+    author: {
+      name: string;
+    }
+  }
+}
+
+// the returned type is BusFactorResult without the latency field
+function calculateBusFactor(commits: CommitResponse[], contributors: any[]): Omit<BusFactorResult, 'latency'> {
   logger.debug('Calculating bus factor', { commitCount: commits.length, contributorCount: contributors.length });
     
   const commitCounts: { [key: string]: number } = {};
-    
+
   commits.forEach(commit => {
     const author = commit.commit.author.name;
     commitCounts[author] = (commitCounts[author] || 0) + 1;

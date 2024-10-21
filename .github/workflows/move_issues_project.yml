@@ -3,7 +3,6 @@ name: Move issue to 'In Progress' on pull request
 
 on:
   pull_request:
-    branches: [main]
     types: [opened]
 
 jobs:

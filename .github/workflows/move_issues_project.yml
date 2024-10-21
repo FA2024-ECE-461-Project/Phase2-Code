@@ -1,3 +1,4 @@
+# goal: if an issue on the project board (with a linked branch) raised a pull request, move it to the "In Progress" column 
 name: Move issue to 'In Progress' on pull request
 
 on:

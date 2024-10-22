@@ -28,20 +28,20 @@ truncateSync('logs/error.log', 0);
 // set log level
 // if LOG_LEVEL is not set, default to SILENT
 let logLevel = process.env.LOG_LEVEL;
-console.log("LOG_LEVEL: ", logLevel);
+// console.log("LOG_LEVEL: ", logLevel);
 
 switch (logLevel) {
-  case String(LOG_LEVELS.INFO):
-    logLevel = 'info';
-    break;
-  case String(LOG_LEVELS.DEBUG):
-    logLevel = 'debug';
-    break;
-  default:
-    logLevel = 'silent';
+case String(LOG_LEVELS.INFO):
+  logLevel = 'info';
+  break;
+case String(LOG_LEVELS.DEBUG):
+  logLevel = 'debug';
+  break;
+default:
+  logLevel = 'silent';
 }
 
-console.log("LOG_LEVEL: string", logLevel);
+// console.log("LOG_LEVEL: string", logLevel);
 
 const logFile = process.env.LOG_FILE || 'logs/package-evaluator.log';
 // Create logger

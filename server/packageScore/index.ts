@@ -6,15 +6,15 @@ import path from 'path';
 import { spawn, exec } from 'child_process';
 import git from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
-import { getReadmeContent, parseGitHubUrl, classifyURL, UrlType, extractNpmPackageName, getNpmPackageGitHubUrl } from './backend/url';
-import {get_bus_factor} from './backend/metrics/bus-factor';
-import {getCorrectnessMetric} from './backend/metrics/correctness';
-import { get_license_compatibility } from './backend/metrics/license-compatibility';
-import { get_ramp_up_time_metric } from './backend/metrics/ramp-up-time';
-import { calculateResponsiveness } from './backend/metrics/responsiveness';
-import { calculatePRCodeReviews } from './backend/metrics/PRCodeReviews';
-import { getDependencyPinningFraction } from './backend/metrics/dependency'; // Adjust the path accordingly
-import logger from './backend/logger';
+import { getReadmeContent, parseGitHubUrl, classifyURL, UrlType, extractNpmPackageName, getNpmPackageGitHubUrl } from './url';
+import {get_bus_factor} from './metrics/bus-factor';
+import {getCorrectnessMetric} from './metrics/correctness';
+import { get_license_compatibility } from './metrics/license-compatibility';
+import { get_ramp_up_time_metric } from './metrics/ramp-up-time';
+import { calculateResponsiveness } from './metrics/responsiveness';
+import { calculatePRCodeReviews } from './metrics/PRCodeReviews';
+import { getDependencyPinningFraction } from './metrics/dependency'; // Adjust the path accordingly
+import logger from './logger';
 import { promisify } from 'util';
 
 
@@ -66,28 +66,28 @@ async function processUrl(url: string): Promise<MetricsResult> {
   let githubUrl = '';
 
   switch (urlType) {
-    case UrlType.GitHub:
-      githubUrl = url;
-      break;
-    case UrlType.NPM:
-      const packageName = extractNpmPackageName(url);
-      if (packageName) {
-        const extractedGithubUrl = await getNpmPackageGitHubUrl(packageName);
-        if (extractedGithubUrl) {
-          githubUrl = extractedGithubUrl;
-          logger.info(`NPM package ${url} converted to GitHub URL: ${githubUrl}`);
-        } else {
-          logger.error(`Unable to extract GitHub URL for NPM package: ${url}`);
-          return createEmptyMetricsResult(url);
-        }
+  case UrlType.GitHub:
+    githubUrl = url;
+    break;
+  case UrlType.NPM:
+    const packageName = extractNpmPackageName(url);
+    if (packageName) {
+      const extractedGithubUrl = await getNpmPackageGitHubUrl(packageName);
+      if (extractedGithubUrl) {
+        githubUrl = extractedGithubUrl;
+        logger.info(`NPM package ${url} converted to GitHub URL: ${githubUrl}`);
       } else {
-        logger.error(`Invalid NPM package URL: ${url}`);
+        logger.error(`Unable to extract GitHub URL for NPM package: ${url}`);
         return createEmptyMetricsResult(url);
       }
-      break;
-    case UrlType.Other:
-      logger.error(`Unsupported URL type: ${url}`);
+    } else {
+      logger.error(`Invalid NPM package URL: ${url}`);
       return createEmptyMetricsResult(url);
+    }
+    break;
+  case UrlType.Other:
+    logger.error(`Unsupported URL type: ${url}`);
+    return createEmptyMetricsResult(url);
   }
 
   const repoInfo = parseGitHubUrl(githubUrl);
@@ -229,7 +229,7 @@ const program = new Command();
 program
   .version('1.0.0')
   .description('ACME Module Trustworthiness CLI');
-  program
+program
 program
   .argument('<file>', 'Process URLs from a file')
   .action(async (file: string) => {
@@ -302,7 +302,7 @@ program
     }
   });
 
-  program
+program
   .command('test')
   .description('Run test suite')
   .action(() => {

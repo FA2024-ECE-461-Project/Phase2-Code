@@ -9,7 +9,9 @@
   },
   "scripts": {
     "test": "echo \\\"Running tests...\\\" && jest --verbose --coverage --detectOpenHandles",
-    "start": "ts-node src/index.ts",
+    "get-score": "ts-node server/packageScore/index.ts",
+    "start": "bun server/index.ts",
+    "dev": "bun --watch server/index.ts",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix && eslint 'src/**/*.{ts,tsx}' --format json --output-file eslint-report.json"
   },
   "devDependencies": {
@@ -22,15 +24,19 @@
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "@types/bun": "latest"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.4.1",
     "axios": "^1.7.7",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
+    "hono": "^4.6.5",
     "isomorphic-git": "^1.27.1",
     "semver": "^7.6.3",
-    "winston": "^3.14.2"
+    "winston": "^3.14.2",
+    "zod": "^3.23.8"
   },
   "repository": {
     "type": "git",

@@ -20,5 +20,12 @@ if (process.argv[2] === 'install') {
     }
 } else {
     // For all other commands, use the existing setup
+    // exit program if no correct command is given
+    if (process.argv.length < 3) {
+        console.error('No command given.');
+        process.exit(1);
+    }
     require('./dist/index.js');
 }
+
+//need to handle if ./run (somthing spelled wrong or does not exist), then it should print out the error message

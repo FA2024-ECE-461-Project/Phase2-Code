@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AxiosError } from 'axios';
 import logger from '../logger'; // Adjust the import path accordingly
 import { get_axios_params, getToken } from '../url'; // Adjust the import path accordingly
 import semver from 'semver';
@@ -109,9 +110,10 @@ export async function getDependencyPinningFraction(url: string): Promise<Depende
 
     logger.info('Dependency Pinning calculation complete', { url, score, latency });
     return { score, latency };
-  } catch (error: any) {
+  } catch (error) { // eliminating any type: try casting error to AxiosError to access error.response
+    const err = error as AxiosError;
     const latency = Date.now() - startTime;
-    logger.error(`Error calculating Dependency Pinning for ${url}:`, error.message);
+    logger.error(`Error calculating Dependency Pinning for ${url}:`, err.message);
     return { score: 0, latency };
   }
 }

@@ -1,8 +1,7 @@
 import * as dotenv from 'dotenv';
 import axios from 'axios';
 import * as responsive from './metrics/responsiveness';
-import logger from './logger';  // Import the logger
-import { get } from 'http';
+import logger from './logger';
 
 dotenv.config();
 
@@ -25,6 +24,8 @@ interface Comment {
     created_at: string;
 }
 
+
+ 
 export enum UrlType {
     GitHub,
     NPM,

@@ -84,8 +84,10 @@ async function _getDependencyPinningFractionFromPackageJson(
 
     logger.error(`package.json content not found for ${owner}/${repo}.`);
     return null;
-  } catch (error: any) {
-    logger.error(`Failed to fetch package.json for ${owner}/${repo}:`, error.message);
+  } catch (error) { 
+    //try eliminating any type by casting error to AxiosError to access error.response
+    const err = error as AxiosError;
+    logger.error(`Failed to fetch package.json for ${owner}/${repo}:`, err.message);
     return null;
   }
 }

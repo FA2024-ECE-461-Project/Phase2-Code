@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { getToken, parseGitHubUrl, get_axios_params, getCommitsAndContributors} from '../url';
+import { getToken, get_axios_params, getCommitsAndContributors} from '../url';
 import logger from '../logger';
 
 interface BusFactorResult {
@@ -8,11 +7,26 @@ interface BusFactorResult {
   latency: number;
 }
 
-function calculateBusFactor(commits: any[], contributors: any[]): Omit<BusFactorResult, 'latency'> {
+interface Commit{
+  commit: {
+    author: {
+      name: string;
+    }
+  }
+}
+
+interface Contributor{
+  login: string;
+  id: number;
+  contributions: number;
+}
+
+// the returned type is BusFactorResult without the latency field
+function calculateBusFactor(commits: Commit[], contributors: Contributor[]): Omit<BusFactorResult, 'latency'> {
   logger.debug('Calculating bus factor', { commitCount: commits.length, contributorCount: contributors.length });
     
   const commitCounts: { [key: string]: number } = {};
-    
+
   commits.forEach(commit => {
     const author = commit.commit.author.name;
     commitCounts[author] = (commitCounts[author] || 0) + 1;

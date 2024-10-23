@@ -33,7 +33,7 @@ export default [
 
         rules: { // add rules and properties here to override the recommended rules for our project
             indent: ["warn", 2],    // expect our indentation to be 2 space, not 4 (the other team uses 4)
-            "no-unused-vars": "warn",
+            "@typescript-eslint/no-unused-vars": "warn"
         },
         
         ignores: [

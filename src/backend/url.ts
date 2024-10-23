@@ -1,8 +1,7 @@
 import * as dotenv from 'dotenv';
 import axios from 'axios';
 import * as responsive from './metrics/responsiveness';
-import logger from './logger';  // Import the logger
-import { get } from 'http';
+import logger from './logger';
 
 dotenv.config();
 
@@ -25,6 +24,12 @@ interface Comment {
     created_at: string;
 }
 
+export type Headers = {
+    Authorization: string;
+    Accept: string;
+}
+
+ 
 export enum UrlType {
     GitHub,
     NPM,
@@ -120,7 +125,7 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } {
   return match ? { owner: match[1], repo: match[2] } : { owner: '', repo: '' };
 }
 
-export function get_axios_params(url: string, token: string): {owner: string, repo: string, headers: any} {
+export function get_axios_params(url: string, token: string): {owner: string, repo: string, headers: Headers} {
   const {owner, repo} = parseGitHubUrl(url);
   const headers = {
     Authorization: `token ${token}`,

@@ -1,8 +1,0 @@
-#ignore node_modules
-node_modules/
-#ignore logs
-logs/
-#ignore coverage
-coverage/
-#.env file
-.env

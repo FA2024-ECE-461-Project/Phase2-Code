@@ -6,8 +6,8 @@ import { exec } from "child_process";
 const fakePackages: Package[] = [
   {
     metadata: {
-      Name: "Ergonomic Wooden Chair",
-      Version: "1.0.0",
+      Name: "Package 1 - jimmy",
+      Version: "1.0.1",
       ID: "1",
     },
     data: {
@@ -19,8 +19,8 @@ const fakePackages: Package[] = [
   },
   {
     metadata: {
-      Name: "Ergonomic Wooden Chair",
-      Version: "1.0.0",
+      Name: "Package 2",
+      Version: "1.0.2",
       ID: "2",
     },
     data: {
@@ -30,7 +30,21 @@ const fakePackages: Package[] = [
       JSProgram: "alert('Hello, world!');",
     },
   },
+  {
+    metadata: {
+      Name: "Package 3",
+      Version: "1.0.3",
+      ID: "3",
+    },
+    data: {
+      Content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      URL: "https://github.com/cloudinary/cloudinary_npm",
+      debloat: false,
+      JSProgram: "alert('Hello, world!');",
+    },
+  },
 ];
+
 const packageSchema = z.object({
   metadata: z.object({
     Name: z.string(),
@@ -42,7 +56,7 @@ const packageSchema = z.object({
     URL: z.string().optional(),
     debloat: z.boolean().optional(),
     JSProgram: z.string().optional(),
-  }),
+  }).optional(),
 });
 
 //get the type of the package schema from zod
@@ -95,8 +109,7 @@ export const packagesRoutes = new Hono()
       return c.notFound();
     }
     const deletePackages = fakePackages.splice(
-      fakePackages.indexOf(foundPackage),
-      1
+      fakePackages.indexOf(foundPackage),1
     );
 
     return c.json({ Package: deletePackages[0] });
@@ -132,7 +145,7 @@ export const packagesRoutes = new Hono()
             delete jsonResponse.URL;
             resolve(c.json(jsonResponse));
           } catch (parseError) {
-            console.error(`Error parsing JSON: ${parseError.message}`);
+            console.error(`Error parsing JSON: ${parseError}`);
             c.status(500);
             resolve(c.json({ error: "Internal Server Error" }));
           }

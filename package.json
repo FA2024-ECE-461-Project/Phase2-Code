@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
+    "bun": "^1.1.32",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "isomorphic-git": "^1.27.1",

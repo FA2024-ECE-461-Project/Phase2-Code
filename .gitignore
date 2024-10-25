@@ -39,3 +39,6 @@ Thumbs.db
 .env
 
 cloned_repos/
+
+.github/workflows/with_docker.yml
+*.pem

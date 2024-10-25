@@ -36,7 +36,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
+          key: ec2-key.pem
           script: |
             cd /home/ec2-user/Phase2-Code
             sudo cp -r src/frontend/* /var/www/html/src/frontend/

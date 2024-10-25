@@ -26,8 +26,9 @@ jobs:
       - name: SSH into EC2 and clone our Phase-2 Repository
         run: |
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
-          cd /home/ec2-user
-          git clone https://github.com/FA2024-ECE-461-Project/Phase2-Code.git
+          cd /home/ec2-user/Phase2-Code/
+          git pull
+          
 
 
       - name: Execute deployment script on EC2

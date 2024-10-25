@@ -29,15 +29,7 @@ jobs:
           cd /home/ec2-user/Phase2-Code/
           git pull
           
-
-
       - name: Execute deployment script on EC2
-        uses: appleboy/ssh-action@v0.1.4
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ec2-key.pem
-          script: |
-            cd /home/ec2-user/Phase2-Code
+         run:|
             sudo cp -r src/frontend/* /var/www/html/src/frontend/
             sudo systemctl restart nginx

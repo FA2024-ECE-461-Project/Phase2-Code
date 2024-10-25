@@ -31,5 +31,5 @@ jobs:
           
       - name: Execute deployment script on EC2
         run: |
-          sudo cp -r src/frontend/* /var/www/html/src/frontend/
+          sudo cp -r ./src/frontend/ /var/www/html/src/frontend/
           sudo systemctl restart nginx

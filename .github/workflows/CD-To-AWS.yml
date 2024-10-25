@@ -28,8 +28,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
           git pull
-          
-      - name: Execute deployment script on EC2
-        run: |
+
+          # Execute deployment script on EC2
           sudo cp -r ./src/frontend/ ../../../var/www/html/src/frontend/
           sudo systemctl restart nginx

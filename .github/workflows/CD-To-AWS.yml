@@ -31,4 +31,4 @@ jobs:
 
           # Execute deployment script on EC2
           sudo cp -r ./src/frontend/ ../../../var/www/html/src/frontend/
-          sudo systemctl restart nginx
+          sudo systemctl restart httpd

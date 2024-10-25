@@ -7,12 +7,19 @@ on:
       - completed  # This triggers when the referenced workflow finishes
   workflow_dispatch:
 
-jobs:
+jobs: 
  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      
+      - name: Start SSH agent and add EC2 private key
+        run: |
+          echo "${{ secrets.EC2_KEY}}" > ec2-key.pem
+          chmod 600 ec2-key.pem     # Set the permissions of the key file
+          eval "$(ssh-agent -s)"
+          ssh-add ec2-key.pem
 
       - name: Copy files via SSH
         uses: appleboy/scp-action@v0.1.1

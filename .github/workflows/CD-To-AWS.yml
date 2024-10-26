@@ -21,9 +21,10 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add ec2-key.pem
 
-      # build first then deploy
+      # Later goal: build first then deploy
 
-      - name: SSH into EC2 and clone our Phase-2 Repository
+      # we have already cloned "Phase-2 code" to AWS EC2 already
+      - name: SSH into EC2 and git-pull our Phase-2 Repository
         run: |
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/

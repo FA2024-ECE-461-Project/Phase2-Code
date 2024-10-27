@@ -12,7 +12,7 @@ const LOG_LEVELS = {
 //clear log file
 
 const logFilePath = process.env.LOG_FILE as PathLike;
-if(existsValidLogFilePath()) {
+if(checkLogFilePath()) {
   // clear out the log file indicated by LOG_FILE
   truncateSync(logFilePath, 0);
 }

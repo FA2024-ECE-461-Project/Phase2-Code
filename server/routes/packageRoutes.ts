@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { exec } from "child_process";
 
-const fakePackages: Package[] = [
+export const fakePackages: Package[] = [
   {
     metadata: {
       Name: "Package 1 - jimmy",
@@ -67,7 +67,7 @@ const packagePostSchema = packageSchema.extend({
   metadata: packageSchema.shape.metadata.omit({ ID: true }),
 });
 
-export const packagesRoutes = new Hono()
+export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
     return c.json({ packages: fakePackages });

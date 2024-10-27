@@ -14,7 +14,7 @@ function NavBar() {
       <Link to="/about" className="[&.active]:font-bold">
         About
       </Link>
-      <Link to="/packages" className="[&.active]:font-bold">
+      <Link to="/package" className="[&.active]:font-bold">
         Packages
       </Link>
       <Link to="/upload" className="[&.active]:font-bold">

@@ -12,7 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as UploadImport } from './routes/upload'
-import { Route as PackagesImport } from './routes/packages'
+import { Route as PackageImport } from './routes/package'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 
@@ -24,9 +24,9 @@ const UploadRoute = UploadImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const PackagesRoute = PackagesImport.update({
-  id: '/packages',
-  path: '/packages',
+const PackageRoute = PackageImport.update({
+  id: '/package',
+  path: '/package',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -60,11 +60,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutImport
       parentRoute: typeof rootRoute
     }
-    '/packages': {
-      id: '/packages'
-      path: '/packages'
-      fullPath: '/packages'
-      preLoaderRoute: typeof PackagesImport
+    '/package': {
+      id: '/package'
+      path: '/package'
+      fullPath: '/package'
+      preLoaderRoute: typeof PackageImport
       parentRoute: typeof rootRoute
     }
     '/upload': {
@@ -82,14 +82,14 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/packages': typeof PackagesRoute
+  '/package': typeof PackageRoute
   '/upload': typeof UploadRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/packages': typeof PackagesRoute
+  '/package': typeof PackageRoute
   '/upload': typeof UploadRoute
 }
 
@@ -97,30 +97,30 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/packages': typeof PackagesRoute
+  '/package': typeof PackageRoute
   '/upload': typeof UploadRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/packages' | '/upload'
+  fullPaths: '/' | '/about' | '/package' | '/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/packages' | '/upload'
-  id: '__root__' | '/' | '/about' | '/packages' | '/upload'
+  to: '/' | '/about' | '/package' | '/upload'
+  id: '__root__' | '/' | '/about' | '/package' | '/upload'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  PackagesRoute: typeof PackagesRoute
+  PackageRoute: typeof PackageRoute
   UploadRoute: typeof UploadRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  PackagesRoute: PackagesRoute,
+  PackageRoute: PackageRoute,
   UploadRoute: UploadRoute,
 }
 
@@ -138,7 +138,7 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/about",
-        "/packages",
+        "/package",
         "/upload"
       ]
     },
@@ -148,8 +148,8 @@ export const routeTree = rootRoute
     "/about": {
       "filePath": "about.tsx"
     },
-    "/packages": {
-      "filePath": "packages.tsx"
+    "/package": {
+      "filePath": "package.tsx"
     },
     "/upload": {
       "filePath": "upload.tsx"

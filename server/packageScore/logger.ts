@@ -65,7 +65,7 @@ const logger = winston.createLogger({
 });
 
 function checkLogFilePath(): boolean {
-  return !logFilePath || !existsSync(logFilePath);
+  return (logFilePath !== null && logFilePath !== undefined) && existsSync(logFilePath);
 }
 
 export default logger;

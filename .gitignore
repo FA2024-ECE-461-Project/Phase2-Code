@@ -8,6 +8,7 @@ dist/
 logs
 *.log
 npm-debug.log*
+log_file/
 
 # Runtime data
 pids

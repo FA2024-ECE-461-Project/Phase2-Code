@@ -1,11 +1,11 @@
-import axios from 'axios';
-import { getToken, get_axios_params, getCommitsAndContributors } from "../src/backend/url";
-import logger from "../src/backend/logger";
-import { get_bus_factor } from '../src/backend/metrics/bus-factor';
+import axios from 'axios'
+import { getToken, get_axios_params, getCommitsAndContributors } from "../server/packageScore/url";
+import logger from "../server/packageScore/logger";
+import { get_bus_factor } from "../server/packageScore/metrics/bus-factor";
 
 jest.mock('axios');
-jest.mock('../src/backend/url');
-jest.mock('../src/backend/logger');
+jest.mock("../server/packageScore/url");
+jest.mock("../server/packageScore/logger");
 
 describe('Bus Factor Tests', () => {
     beforeEach(() => {

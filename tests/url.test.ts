@@ -1,7 +1,16 @@
-import { getToken, parseGitHubUrl, getOpenPRs, getClosedPRs, classifyURL, UrlType, test_API, extractNpmPackageName, getNpmPackageGitHubUrl, getReadmeContent, get_avg_ClosureTime, getCommitsAndContributors, getIssues, get_axios_params } from '../src/backend/url';
+import { 
+    getToken, 
+    parseGitHubUrl, 
+    getOpenPRs, 
+    getClosedPRs, 
+    classifyURL, 
+    UrlType, 
+    test_API, 
+    extractNpmPackageName, getNpmPackageGitHubUrl, getReadmeContent, get_avg_ClosureTime, getCommitsAndContributors
+} from '../server/packageScore/url';
 import axios from 'axios';
-import logger from '../src/backend/logger';
-import * as url from '../src/backend/url';
+import logger from '../server/packageScore/logger';
+import * as url from '../server/packageScore/url';
 // import * as responsive from '../metrics/responsiveness'; 
 
 // Mocking dotenv.config to prevent loading actual environment variables
@@ -14,7 +23,7 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // Mocking logger to capture logs
-jest.mock('../src/backend/logger');
+jest.mock('../server/packageScore/logger');
 const mockedLogger = logger as jest.Mocked<typeof logger>;
 
 
@@ -214,8 +223,8 @@ describe('getNpmPackageGitHubUrl', () => {
 
 // Use this to explicitly mock getToken:
 const mockedGetToken = jest.fn();
-jest.mock('../src/backend/url', () => ({
-  ...jest.requireActual('../src/backend/url'),  // Preserves other exports from the module
+jest.mock('../server/packageScore/url', () => ({
+  ...jest.requireActual('../server/packageScore/url'),  // Preserves other exports from the module
   getToken: mockedGetToken,  // Mock getToken explicitly
 }));
 

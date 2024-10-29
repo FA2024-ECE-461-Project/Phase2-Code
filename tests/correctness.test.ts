@@ -1,9 +1,9 @@
-import logger from '../src/backend/logger';
-import { getCorrectnessMetric } from '../src/backend/metrics/correctness';
-import * as url from '../src/backend/url';
+import logger from '../server/packageScore/logger';
+import { getCorrectnessMetric } from '../server/packageScore/metrics/correctness';
+import * as url from '../server/packageScore/url';
 
 // Mock the functions that make API calls
-jest.mock('../src/backend/url', () => ({
+jest.mock('../server/packageScore/url', () => ({
     getToken: jest.fn(),
     get_axios_params: jest.fn(),
     getOpenIssues: jest.fn(),
@@ -13,7 +13,7 @@ jest.mock('../src/backend/url', () => ({
 }));
 
 // Mock the logger
-jest.mock('../src/backend/logger', () => ({
+jest.mock('../server/packageScore/logger', () => ({
     info: jest.fn(),
     debug: jest.fn(),
     warn: jest.fn(),

@@ -10,15 +10,15 @@ const path_1 = __importDefault(require("path"));
 const child_process_1 = require("child_process");
 const isomorphic_git_1 = __importDefault(require("isomorphic-git"));
 const node_1 = __importDefault(require("isomorphic-git/http/node"));
-const url_1 = require("./backend/url");
-const bus_factor_1 = require("./backend/metrics/bus-factor");
-const correctness_1 = require("./backend/metrics/correctness");
-const license_compatibility_1 = require("./backend/metrics/license-compatibility");
-const ramp_up_time_1 = require("./backend/metrics/ramp-up-time");
-const responsiveness_1 = require("./backend/metrics/responsiveness");
-const PRCodeReviews_1 = require("./backend/metrics/PRCodeReviews");
-const dependency_1 = require("./backend/metrics/dependency"); // Adjust the path accordingly
-const logger_1 = __importDefault(require("./backend/logger"));
+const url_1 = require("./url");
+const bus_factor_1 = require("./metrics/bus-factor");
+const correctness_1 = require("./metrics/correctness");
+const license_compatibility_1 = require("./metrics/license-compatibility");
+const ramp_up_time_1 = require("./metrics/ramp-up-time");
+const responsiveness_1 = require("./metrics/responsiveness");
+const PRCodeReviews_1 = require("./metrics/PRCodeReviews");
+const dependency_1 = require("./metrics/dependency"); // Adjust the path accordingly
+const logger_1 = __importDefault(require("./logger"));
 async function cloneRepository(url, dir) {
     if (fs_1.default.existsSync(path_1.default.join(dir, '.git'))) {
         logger_1.default.debug(`Repository already exists, skipping clone: ${url}`);

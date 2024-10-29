@@ -1,11 +1,15 @@
-import logger from '../src/backend/logger';
-import * as url from '../src/backend/url';
-import { calculateResponsiveness, getTimeDifferenceInHours, calculateResponsivenessScore } from '../src/backend/metrics/responsiveness';
+import logger from '../server/packageScore/logger';
+import * as url from '../server/packageScore/url';
+import { 
+  calculateResponsiveness, 
+  getTimeDifferenceInHours, 
+  calculateResponsivenessScore 
+} from '../server/packageScore/metrics/responsiveness';
 
 
 //mocking the logger and url module
-jest.mock('../src/backend/logger');
-jest.mock('..//src/backend/url');
+jest.mock('../server/packageScore/logger');
+jest.mock('../server/packageScore/url');
 
 describe('Responsiveness Tests', () => {
     beforeEach(() => {

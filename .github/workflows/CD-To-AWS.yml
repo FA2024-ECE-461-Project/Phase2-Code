@@ -29,7 +29,21 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
           git pull
+          
+          # Install dependencies for project
+          sudo npm install
+          
+          # Install dependencies for frontend
+          cd frontend/
+          sudo npm run build
+
+          # Install backend dependencies
+          cd ../server/
+          sudo bun install
 
           # Execute deployment script on EC2
           sudo cp -r . ../../../var/www/html/
+          cd server/
+          nohup bun index.ts &
+          
           sudo systemctl restart httpd

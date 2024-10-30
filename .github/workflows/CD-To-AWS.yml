@@ -31,15 +31,15 @@ jobs:
           git pull
           
           # Install dependencies for project
-          sudo npm install
+          npm install
           
           # Install dependencies for frontend
           cd frontend/
-          sudo npm run build
+          npm run build
 
           # Install backend dependencies
           cd ../server/
-          sudo bun install
+          bun install
 
           # Execute deployment script on EC2
           cd ../

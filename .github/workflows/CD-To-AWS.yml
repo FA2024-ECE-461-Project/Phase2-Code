@@ -30,6 +30,14 @@ jobs:
           cd /home/ec2-user/Phase2-Code/
           git pull
 
+          # install dependencies on EC2 machine
+          npm install
+
+          # go to frontend/ and export JS files to dist folder
+          cd frontend/
+          npm run build
+
+          cd ../
           # Execute deployment script on EC2
           sudo cp -r . ../../../var/www/html/
           sudo systemctl restart httpd

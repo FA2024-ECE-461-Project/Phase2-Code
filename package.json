@@ -15,6 +15,7 @@
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix && eslint 'src/**/*.{ts,tsx}' --format json --output-file eslint-report.json"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/jest": "^29.5.13",
     "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^8.9.0",
@@ -24,12 +25,12 @@
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3",
-    "@types/bun": "latest"
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.4.1",
     "axios": "^1.7.7",
+    "bun": "^1.1.33",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "hono": "^4.6.5",

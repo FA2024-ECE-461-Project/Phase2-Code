@@ -42,6 +42,7 @@ jobs:
           sudo bun install
 
           # Execute deployment script on EC2
+          cd ../
           sudo cp -r . ../../../var/www/html/
           cd server/
           nohup bun index.ts &

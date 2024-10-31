@@ -42,9 +42,6 @@ jobs:
           bun install
 
           # Execute deployment script on EC2
-          cd ../
-          sudo cp -r . ../../../var/www/html/
-          cd server/
-          nohup bun index.ts &
-          
-          sudo systemctl restart httpd
+          cd ../          
+          sudo systemctl restart myapp.service
+          sudo systemctl restart caddy

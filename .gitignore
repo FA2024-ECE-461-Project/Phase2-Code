@@ -43,3 +43,4 @@ cloned_repos/
 
 .github/workflows/with_docker.yml
 *.pem
+ece461-project-phase2-fall2024-updated.yaml

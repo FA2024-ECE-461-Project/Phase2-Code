@@ -28,7 +28,7 @@ function uploadPackage() {
         throw new Error(`Error uploading package: ${res.statusText}`);
       }
       // Redirect the user to the packages page
-      navigate({to: "/package"});
+      navigate({ to: "/package" });
     },
   });
 

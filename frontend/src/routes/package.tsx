@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 import {
   Table,
   TableBody,
@@ -8,41 +8,41 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../components/ui/table'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '../lib/api'
+} from "../components/ui/table";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../lib/api";
 
 interface PackageMetadata {
-  Name: string
-  Version: string
-  ID: string
+  Name: string;
+  Version: string;
+  ID: string;
 }
 
-export const Route = createFileRoute('/package')({
+export const Route = createFileRoute("/package")({
   component: Index,
-})
+});
 
 // Fetch packages from the API server
 async function getPackages() {
-  const response = await api.packages.$get()
+  const response = await api.packages.$get();
   if (!response.ok) {
-    throw new Error(`Error fetching packages: ${response.statusText}`)
+    throw new Error(`Error fetching packages: ${response.statusText}`);
   }
-  const data = await response.json()
+  const data = await response.json();
 
-  return { data }
+  return { data };
 }
 
 function Index() {
   // Fetch packages using query
   const { isPending, error, data } = useQuery({
-    queryKey: ['get-all-packages'],
+    queryKey: ["get-all-packages"],
     queryFn: getPackages,
-  })
+  });
 
   // Handle loading and error states
-  if (isPending) return <p>Loading...</p>
-  if (error) return <p>Error: {error.message}</p>
+  if (isPending) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
 
   return (
     <div className="p-2 m-auto max-w-4xl">
@@ -67,10 +67,12 @@ function Index() {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={2}>Total Packages</TableCell>
-            <TableCell className="text-right">{data.data.packages.length}</TableCell>
+            <TableCell className="text-right">
+              {data.data.packages.length}
+            </TableCell>
           </TableRow>
         </TableFooter>
       </Table>
     </div>
-  )
+  );
 }

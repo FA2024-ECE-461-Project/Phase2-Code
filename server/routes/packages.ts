@@ -5,7 +5,7 @@ import { fakePackages } from "./packageRoutes";
 
 const app = new Hono();
 
-const fakeMetadata = fakePackages.map(pkg => pkg.metadata);
+const fakeMetadata = fakePackages.map((pkg) => pkg.metadata);
 
 const metadataSchema = z.object({
   Version: z.string(),

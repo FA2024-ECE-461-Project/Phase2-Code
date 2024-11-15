@@ -1,5 +1,6 @@
 {
-  "include": ["server/", "frontend/"],
+  "include": ["server/", "frontend/", "eslint.config.mjs"],
+  "exclude": ["node_modules/", "tests/"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 

@@ -51,15 +51,17 @@ const packageSchema = z.object({
     Version: z.string(),
     ID: z.string(),
   }),
-  data: z.object({
-    Content: z.string().optional(),
-    URL: z.string().optional(),
-    debloat: z.boolean().optional(),
-    JSProgram: z.string().optional(),
-  }).optional(),
+  data: z
+    .object({
+      Content: z.string().optional(),
+      URL: z.string().optional(),
+      debloat: z.boolean().optional(),
+      JSProgram: z.string().optional(),
+    })
+    .optional(),
 });
 
-//get the type of the package schema from zod: this Package type will be used 
+//get the type of the package schema from zod: this Package type will be used
 type Package = z.infer<typeof packageSchema>;
 
 //Omit the ID field from the metadata object
@@ -109,7 +111,8 @@ export const packageRoutes = new Hono()
       return c.notFound();
     }
     const deletePackages = fakePackages.splice(
-      fakePackages.indexOf(foundPackage),1
+      fakePackages.indexOf(foundPackage),
+      1,
     );
 
     return c.json({ Package: deletePackages[0] });

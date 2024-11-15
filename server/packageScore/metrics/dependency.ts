@@ -1,8 +1,8 @@
-import axios from 'axios';
-import { AxiosError } from 'axios';
-import logger from '../logger'; // Adjust the import path accordingly
-import { get_axios_params, getToken } from '../url'; // Adjust the import path accordingly
-import semver from 'semver';
+import axios from "axios";
+import { AxiosError } from "axios";
+import logger from "../logger"; // Adjust the import path accordingly
+import { get_axios_params, getToken } from "../url"; // Adjust the import path accordingly
+import semver from "semver";
 
 interface DependencyResult {
   score: number;
@@ -22,13 +22,15 @@ function isVersionPinned(version: string): boolean {
     // Check if the range is pinned to at least major and minor
     return semverSet.every((comparator) => {
       return (
-        comparator.operator === '' &&
+        comparator.operator === "" &&
         comparator.semver.major !== null &&
         comparator.semver.minor !== null
       );
     });
   } catch (error) {
-    logger.warn(`Invalid semver version: ${version}`, { error: (error as Error).message });
+    logger.warn(`Invalid semver version: ${version}`, {
+      error: (error as Error).message,
+    });
     return false;
   }
 }
@@ -38,13 +40,16 @@ function isVersionPinned(version: string): boolean {
  * @param dependencies An object containing dependency versions.
  * @returns The fraction of dependencies that are pinned. Returns 1.0 if there are no dependencies.
  */
-function calculatePinningScore(dependencies: { [key: string]: string }): number {
+function calculatePinningScore(dependencies: {
+  [key: string]: string;
+}): number {
   const totalDependencies = Object.keys(dependencies).length;
   if (totalDependencies === 0) {
     return 1.0;
   }
 
-  const pinnedDependencies = Object.values(dependencies).filter(isVersionPinned).length;
+  const pinnedDependencies =
+    Object.values(dependencies).filter(isVersionPinned).length;
   return pinnedDependencies / totalDependencies;
 }
 
@@ -58,7 +63,7 @@ function calculatePinningScore(dependencies: { [key: string]: string }): number 
 async function _getDependencyPinningFractionFromPackageJson(
   owner: string,
   repo: string,
-  headers: any
+  headers: any,
 ): Promise<number | null> {
   try {
     const packageJsonUrl = `https://api.github.com/repos/${owner}/${repo}/contents/package.json`;
@@ -66,7 +71,10 @@ async function _getDependencyPinningFractionFromPackageJson(
 
     // Decode package.json content from base64
     if (packageResponse.data.content) {
-      const packageContent = Buffer.from(packageResponse.data.content, 'base64').toString('utf-8');
+      const packageContent = Buffer.from(
+        packageResponse.data.content,
+        "base64",
+      ).toString("utf-8");
       const packageJson = JSON.parse(packageContent);
 
       // Combine all dependencies
@@ -84,10 +92,13 @@ async function _getDependencyPinningFractionFromPackageJson(
 
     logger.error(`package.json content not found for ${owner}/${repo}.`);
     return null;
-  } catch (error) { 
+  } catch (error) {
     //try eliminating any type by casting error to AxiosError to access error.response
     const err = error as AxiosError;
-    logger.error(`Failed to fetch package.json for ${owner}/${repo}:`, err.message);
+    logger.error(
+      `Failed to fetch package.json for ${owner}/${repo}:`,
+      err.message,
+    );
     return null;
   }
 }
@@ -97,25 +108,39 @@ async function _getDependencyPinningFractionFromPackageJson(
  * @param url GitHub repository URL.
  * @returns The dependency pinning score as a MetricResult object containing score and latency.
  */
-export async function getDependencyPinningFraction(url: string): Promise<DependencyResult> {
+export async function getDependencyPinningFraction(
+  url: string,
+): Promise<DependencyResult> {
   const startTime = Date.now();
-  logger.info('Starting Dependency Pinning calculation', { url });
+  logger.info("Starting Dependency Pinning calculation", { url });
 
   try {
     const token = getToken(); // Fetch token internally
     const { owner, repo, headers } = get_axios_params(url, token);
-    const pinningScore = await _getDependencyPinningFractionFromPackageJson(owner, repo, headers);
+    const pinningScore = await _getDependencyPinningFractionFromPackageJson(
+      owner,
+      repo,
+      headers,
+    );
     const latency = Date.now() - startTime;
 
     // Ensure pinningScore is a number
     const score = pinningScore ?? 0;
 
-    logger.info('Dependency Pinning calculation complete', { url, score, latency });
+    logger.info("Dependency Pinning calculation complete", {
+      url,
+      score,
+      latency,
+    });
     return { score, latency };
-  } catch (error) { // eliminating any type: try casting error to AxiosError to access error.response
+  } catch (error) {
+    // eliminating any type: try casting error to AxiosError to access error.response
     const err = error as AxiosError;
     const latency = Date.now() - startTime;
-    logger.error(`Error calculating Dependency Pinning for ${url}:`, err.message);
+    logger.error(
+      `Error calculating Dependency Pinning for ${url}:`,
+      err.message,
+    );
     return { score: 0, latency };
   }
 }

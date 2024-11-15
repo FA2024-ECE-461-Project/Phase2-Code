@@ -1,31 +1,31 @@
 #!/usr/bin/env node
-if (process.argv[2] === 'install') {
-    const { spawnSync } = require('child_process');
-    console.log('Installing dependencies...');
-    let result = spawnSync('npm', ['install'], { stdio: 'inherit' });
+if (process.argv[2] === "install") {
+  const { spawnSync } = require("child_process");
+  console.log("Installing dependencies...");
+  let result = spawnSync("npm", ["install"], { stdio: "inherit" });
+  if (result.status === 0) {
+    console.log("Dependencies installed successfully.");
+    console.log("Compiling TypeScript...");
+    result = spawnSync("npx", ["tsc"], { stdio: "inherit" });
     if (result.status === 0) {
-        console.log('Dependencies installed successfully.');
-        console.log('Compiling TypeScript...');
-        result = spawnSync('npx', ['tsc'], { stdio: 'inherit' });
-        if (result.status === 0) {
-            console.log('TypeScript compilation successful.');
-            process.exit(0);
-        } else {
-            console.error('Error compiling TypeScript.');
-            process.exit(1);
-        }
+      console.log("TypeScript compilation successful.");
+      process.exit(0);
     } else {
-        console.error('Error installing dependencies.');
-        process.exit(1);
+      console.error("Error compiling TypeScript.");
+      process.exit(1);
     }
+  } else {
+    console.error("Error installing dependencies.");
+    process.exit(1);
+  }
 } else {
-    // For all other commands, use the existing setup
-    // exit program if no correct command is given
-    if (process.argv.length < 3) {
-        console.error('No command given.');
-        process.exit(1);
-    }
-    require('./dist/index.js');
+  // For all other commands, use the existing setup
+  // exit program if no correct command is given
+  if (process.argv.length < 3) {
+    console.error("No command given.");
+    process.exit(1);
+  }
+  require("./dist/index.js");
 }
 
 //need to handle if ./run (somthing spelled wrong or does not exist), then it should print out the error message

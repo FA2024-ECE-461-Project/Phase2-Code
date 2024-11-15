@@ -6,14 +6,14 @@ on:
   pull_request:
     branches:
       - main
-  
-jobs:   # run tests specified in test/
+
+jobs: # run tests specified in test/
   test:
-    runs-on: ubuntu-latest  # specify running on the ubuntu OS provided by GitHub on their server
-    container: node:18.17.1  # specify the container to run the tests in (this may save some time)
-    steps:  
-      # checkout@v3: checkout our repo for tests and src, v3 for latest version 
-      - uses: actions/checkout@v3 
+    runs-on: ubuntu-latest # specify running on the ubuntu OS provided by GitHub on their server
+    container: node:18.17.1 # specify the container to run the tests in (this may save some time)
+    steps:
+      # checkout@v3: checkout our repo for tests and src, v3 for latest version
+      - uses: actions/checkout@v3
 
       - name: Install dependencies
         # only install dependencies if package.json is found (has a non-empty hash)
@@ -25,21 +25,20 @@ jobs:   # run tests specified in test/
             echo "package.json not found in this branch to be merged in"
             exit 1
           fi
-        
+
       - name: Setup environment
         # $GITHUB_ENV: .env file for github actions, this step configures LOG_FILE env variable
-        # second step sets up GITHUB_TOKEN env variable, 
+        # second step sets up GITHUB_TOKEN env variable,
         # secrets.GITHUB_TOKEN accesses the automatically generated GitHub token.
         run: |
-            echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV 
-            echo "LOG_FILE=coverage.txt" >> $GITHUB_ENV
-            touch coverage.txt  
+          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV 
+          echo "LOG_FILE=coverage.txt" >> $GITHUB_ENV
+          touch coverage.txt
 
       - name: Run tests # display test results in the Actions tab
-        run: npm test 
+        run: npm test
 
       # shows coverage in Actions tab: make use of run script and printTestResults.ts
       # TODO: work this out a little later
-      # - name: display coverage 
-      #   run: ./run test 
-        
+      # - name: display coverage
+      #   run: ./run test

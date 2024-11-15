@@ -2,18 +2,18 @@ name: CD - Deploy to AWS
 
 on:
   workflow_run:
-    workflows: ["Auto Unit Test"]  # Reference the name of your test workflow
+    workflows: ["Auto Unit Test"] # Reference the name of your test workflow
     types:
-      - completed  # This triggers when the referenced workflow finishes
+      - completed # This triggers when the referenced workflow finishes
   workflow_dispatch:
 
-jobs: 
- deploy:
+jobs:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - name: Start SSH agent and add EC2 private key
         run: |
           echo "${{ secrets.EC2_KEY}}" > ec2-key.pem
@@ -29,10 +29,10 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
           git pull
-          
+
           # Install dependencies for project
           npm install
-          
+
           # Install dependencies for frontend
           cd frontend/
           npm run build

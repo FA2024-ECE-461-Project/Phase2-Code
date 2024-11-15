@@ -1,5 +1,8 @@
 {
-  "include": ["server/packageScore/**/*"],
+  "include": [
+    "server/",
+    "frontend/",
+  ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 

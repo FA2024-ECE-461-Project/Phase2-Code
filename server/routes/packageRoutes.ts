@@ -59,7 +59,7 @@ const packageSchema = z.object({
   }).optional(),
 });
 
-//get the type of the package schema from zod
+//get the type of the package schema from zod: this Package type will be used 
 type Package = z.infer<typeof packageSchema>;
 
 //Omit the ID field from the metadata object

@@ -40,9 +40,10 @@ export default [
     },
 
     ignores: [
-      "node_modules",
-      "dist",
-      "test", // remove this if there's a need to lint test files
+      "node_modules/",
+      "dist/",
+      "test/", // remove this if there's a need to lint test files
+      "eslintrc.config.*"
     ],
   },
 ];

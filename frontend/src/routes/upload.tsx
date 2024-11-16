@@ -23,7 +23,7 @@ function uploadPackage() {
     onSubmit: async ({ value }) => {
       // Submit the form to the API to /packages endpoint
       const res = await api.package.$post({ json: value });
-      
+
       // Handle errors
       if (!res.ok) {
         throw new Error(`Error uploading package: ${res.statusText}`);

@@ -18,11 +18,7 @@ export const metadataRoutes = app
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
   .get("/", async (c) => {
-
-    const packages = await db
-      .select()
-      .from(packageMetadataTable)
-      .limit(10);
+    const packages = await db.select().from(packageMetadataTable).limit(10);
 
     return c.json({ packages: packages });
   })
@@ -43,8 +39,8 @@ export const metadataRoutes = app
       .values(packageWithID)
       .returning()
       .then((res) => res[0]);
-    
+
     // Return the new package with a status code of 201
     c.status(201);
-    return c.json({result: result});
+    return c.json({ result: result });
   });

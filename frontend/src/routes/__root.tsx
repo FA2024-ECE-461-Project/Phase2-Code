@@ -11,14 +11,14 @@ function NavBar() {
       <Link to="/" className="[&.active]:font-bold">
         Home
       </Link>{" "}
-      <Link to="/about" className="[&.active]:font-bold">
-        About
-      </Link>
       <Link to="/package" className="[&.active]:font-bold">
         Packages
       </Link>
       <Link to="/upload" className="[&.active]:font-bold">
         Upload
+      </Link>
+      <Link to="/search" className="[&.active]:font-bold">
+        Search
       </Link>
     </div>
   );

@@ -552,7 +552,6 @@ export class Api<
      */
     packageRetrieve: (
       id: PackageID,
-      id: PackageID,
       params: RequestParams = {},
     ) =>
       this.request<Package, void>({
@@ -570,7 +569,6 @@ export class Api<
      * @request PUT:/package/{id}
      */
     packageUpdate: (
-      id: PackageID,
       id: PackageID,
       data: Package,
       params: RequestParams = {},

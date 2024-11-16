@@ -1,3 +1,4 @@
+// this route handles all operations related to the package metadata
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
@@ -13,7 +14,7 @@ import {
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 
-export const metadataRoutes = app
+export const metadataRoutes = new Hono()
 
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
@@ -23,7 +24,8 @@ export const metadataRoutes = app
     return c.json({ packages: packages });
   })
 
-  // post request
+  // post request: use zValidator to validate the request body fits the schema for the db
+  // return all packages that fit the query parameters
   .post("/", zValidator("json", createPackageMetadataSchema), async (c) => {
     const newPackage = await c.req.valid("json");
 

@@ -1,3 +1,4 @@
+// Description: This file defines the routes for uploading, downloading, and deleting packages
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
@@ -12,6 +13,14 @@ import {
   createPackageDataSchema,
   createPackageMetadataSchema,
 } from "../sharedSchema";
+import { PackageQuery } from "../../schema/schema";
+
+// convert PackageQuery interface to ZodSchema
+const PackageQuerySchema = z.object({
+  name: z.string().optional(),
+  version: z.string().optional(),
+  description: z.string().optional(),
+});
 
 export const packageRoutes = new Hono()
   // get all packages
@@ -19,6 +28,9 @@ export const packageRoutes = new Hono()
     const packages = await db.select().from(pacakagesTable).limit(10);
     return c.json({ packages: packages });
   });
+  // POST endpoint: retrieving all packages fitting query parameters
+  .post("/", zValidator("json", PackageQuerySchema), async (c) => {
+
 
 // post request
 // .post("/", zValidator("json", createPackageMetadataSchema), async (c) => {

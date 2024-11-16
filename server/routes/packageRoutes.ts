@@ -75,7 +75,7 @@ export const packageRoutes = new Hono()
     return c.json({ packages: fakePackages });
   })
 
-  // post a package
+  // post a package: append packages to the fakePackages array
   //zValidator('json', packageSchema), middleware to validate the request body
   .post("/", zValidator("json", packagePostSchema), async (c) => {
     const newPackage = await c.req.valid("json");
@@ -118,7 +118,7 @@ export const packageRoutes = new Hono()
     return c.json({ Package: deletePackages[0] });
   })
 
-  // get the rating of a package by id
+  // get the rating of a package by id by executing run script
   .get("/:ID/rate", async (c) => {
     const id = c.req.param("ID");
     console.log(`Received request for package ID: ${id}`);
@@ -131,6 +131,7 @@ export const packageRoutes = new Hono()
 
     // const url = foundPackage.data.URL;
     // it's running the url.txt script, need to change to run url from the package
+    // TODO: change the script to run the URL from the package
     const command = `./run url.txt`;
 
     return new Promise((resolve) => {

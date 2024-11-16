@@ -17,7 +17,7 @@ type Packages = z.infer<typeof metadataSchema>;
 
 const metadataPostSchema = metadataSchema.omit({ ID: true });
 
-export const metadataRoutes = new Hono()
+export const metadataRoutes = app
 
   // get all packages
   .get("/", async (c) => {

@@ -12,23 +12,17 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
-interface PackageMetadata {
-  Name: string;
-  Version: string;
-  ID: string;
-}
-
 export const Route = createFileRoute("/package")({
   component: Index,
 });
 
 // Fetch packages from the API server
 async function getPackages() {
-  const response = await api.packages.$get();
-  if (!response.ok) {
-    throw new Error(`Error fetching packages: ${response.statusText}`);
+  const res = await api.packages.$get();
+  if (!res.ok) {
+    throw new Error(`Error fetching packages: ${res.statusText}`);
   }
-  const data = await response.json();
+  const data = await res.json();
 
   return { data };
 }
@@ -56,11 +50,11 @@ function Index() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.data.packages.map((pkg: PackageMetadata) => (
-            <TableRow key={pkg.ID}>
-              <TableCell className="font-medium">{pkg.Name}</TableCell>
-              <TableCell>{pkg.Version}</TableCell>
-              <TableCell>{pkg.ID}</TableCell>
+          {data.data.packages.map((packages) => (
+            <TableRow key={packages.id}>
+              <TableCell className="font-medium">{packages.name}</TableCell>
+              <TableCell>{packages.version}</TableCell>
+              <TableCell>{packages.id}</TableCell>
             </TableRow>
           ))}
         </TableBody>

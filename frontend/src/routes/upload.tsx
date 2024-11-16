@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { api } from "../lib/api";
 
+// frontend route "/upload" to upload a package named Route
 export const Route = createFileRoute("/upload")({
   component: uploadPackage,
 });

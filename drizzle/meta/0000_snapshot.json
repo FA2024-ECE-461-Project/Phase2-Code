@@ -102,12 +102,8 @@
           "name": "packages_metadata_id_package_metadata_id_fk",
           "tableFrom": "packages",
           "tableTo": "package_metadata",
-          "columnsFrom": [
-            "metadata_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["metadata_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -115,12 +111,8 @@
           "name": "packages_data_id_package_data_id_fk",
           "tableFrom": "packages",
           "tableTo": "package_data",
-          "columnsFrom": [
-            "data_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["data_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

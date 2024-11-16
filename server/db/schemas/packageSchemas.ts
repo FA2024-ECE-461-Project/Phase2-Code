@@ -7,6 +7,9 @@ import { v4 as uuidv4 } from "uuid";
 export const packages = pgTable(
   "packages",
   {
+    id: varchar("id", { length: 255 })
+      .primaryKey()
+      .$defaultFn(() => uuidv4()), // Automatically generates a UUID at runtime
     metadataId: varchar("metadata_id", { length: 255 })
       .notNull()
       .references(() => packageMetadata.id),

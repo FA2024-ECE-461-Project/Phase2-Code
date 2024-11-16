@@ -5,7 +5,14 @@ import { z } from "zod";
 import { exec } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
-import { packages as pacakagesTable } from "../db/schemas/packageSchemas";
+import {
+  selectPackageMetadataSchema,
+  selectPackageDataSchema,
+  selectPackagesSchema,
+  packages as packagesTable,
+  packageMetadata as packageMetadataTable,
+  packageData as packageDataTable,
+} from "../db/schemas/packageSchemas";
 import {
   createPackageData,
   createPackageMetadata,
@@ -13,46 +20,111 @@ import {
   createPackageDataSchema,
   createPackageMetadataSchema,
 } from "../sharedSchema";
-import { PackageQuery } from "../../schema/schema";
-
-// convert PackageQuery interface to ZodSchema
-const PackageQuerySchema = z.object({
-  name: z.string().optional(),
-  version: z.string().optional(),
-  description: z.string().optional(),
-});
+// import { getPackageDataFromGithub } from "../utils";
+import { uuid } from "drizzle-orm/pg-core";
 
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
-    const packages = await db.select().from(pacakagesTable).limit(10);
+    const packages = await db.select().from(packagesTable).limit(10);
     return c.json({ packages: packages });
   });
   // POST endpoint: retrieving all packages fitting query parameters
   .post("/", zValidator("json", PackageQuerySchema), async (c) => {
 
 
-// post request
-// .post("/", zValidator("json", createPackageMetadataSchema), async (c) => {
-//   const newPackage = await c.req.valid("json");
+  // post request
+  .post("/", zValidator("json", createPackageDataSchema), async (c) => {
+    // Validates the request body using the schema provided in the zValidator.
+    // If the payload is invalid, it will automatically return an error response with a 400 status code.
+    const newPackage = await c.req.valid("json");
 
-//   // Create a new package with a UUID
-//   const packageWithID = {
-//     ...newPackage,
-//     id: uuidv4(),
-//   };
-//   // Insert the new package into the database
-//   // Insert into the packageMetadata table
-//   const result = await db
-//     .insert(packageMetadataTable)
-//     .values(packageWithID)
-//     .returning()
-//     .then((res) => res[0]);
+    // check if content or url is provided
+    if (!newPackage.content && !newPackage.url) {
+      c.status(400);
+      return c.json({ error: "Content or URL is required" });
+    }
 
-//   // Return the new package with a status code of 201
-//   c.status(201);
-//   return c.json({result: result});
-// });
+    //if both content and url are provided, return an error
+    if (newPackage.content && newPackage.url) {
+      c.status(400);
+      return c.json({
+        error: "Content and URL cannot be provided at the same time",
+      });
+    }
+
+    // Create meta data id with a UUID
+    const dataId = uuidv4();
+    const data = {
+      ...newPackage, // Copy the newPackage object
+      id: dataId, // Add the UUID to the newPackage object
+    };
+
+    // If the URL is provided, fetch the package data from GitHub
+    let metadata: { name: string; version: string } = {
+      name: "Default Name",
+      version: "1.0.0",
+    };
+
+    if (newPackage.url) {
+      // const packageData = await getPackageDataFromGithub(newPackage.url!);
+      // if (!packageData) {
+      //   c.status(400);
+      //   return c.json({ error: "Invalid URL" });
+      // }
+      // metadata = {packageData.metadata};
+    }
+
+    // Create meta data id with a UUID
+    const metaDataId = uuidv4();
+    const metaData = {
+      id: metaDataId,
+      name: metadata.name, // Use the name from metadata
+      version: metadata.version, // Use the version from metadata
+    };
+
+    // Create a package object with the metadata and data
+    const packageObject = {
+      metadataId: metaData.id,
+      dataId: data.id,
+    };
+
+    // Insert the new package into the database
+    // Insert into the packageMetadata table
+    const metaDataResult = await db
+      .insert(packageMetadataTable)
+      .values(metaData)
+      .returning()
+      .then((res) => res[0]);
+
+    // Insert into the packageData table
+    const dataResult = await db
+      .insert(packageDataTable)
+      .values(data)
+      .returning()
+      .then((res) => res[0]);
+
+    // Insert into the packages table
+    const packageResult = await db
+      .insert(packagesTable)
+      .values(packageObject)
+      .returning()
+      .then((res) => res[0]);
+
+    // // construct the result object
+    // const package = {
+    //   metadata: metaDataResult,
+    //   data: dataResult,
+    // };
+
+    // Return the new package with a status code of 201
+    c.status(201);
+    return c.json({
+      metadata: metaDataResult,
+      data: dataResult,
+    });
+  });
+
 // get a package by id
 // .get("/:ID", (c) => {
 //   const id = c.req.param("ID");

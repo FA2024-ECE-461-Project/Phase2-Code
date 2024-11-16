@@ -12,8 +12,8 @@
 
 import { Route as rootRoute } from "./routes/__root";
 import { Route as UploadImport } from "./routes/upload";
+import { Route as SearchImport } from "./routes/search";
 import { Route as PackageImport } from "./routes/package";
-import { Route as AboutImport } from "./routes/about";
 import { Route as IndexImport } from "./routes/index";
 
 // Create/Update Routes
@@ -24,15 +24,15 @@ const UploadRoute = UploadImport.update({
   getParentRoute: () => rootRoute,
 } as any);
 
-const PackageRoute = PackageImport.update({
-  id: "/package",
-  path: "/package",
+const SearchRoute = SearchImport.update({
+  id: "/search",
+  path: "/search",
   getParentRoute: () => rootRoute,
 } as any);
 
-const AboutRoute = AboutImport.update({
-  id: "/about",
-  path: "/about",
+const PackageRoute = PackageImport.update({
+  id: "/package",
+  path: "/package",
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -53,18 +53,18 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexImport;
       parentRoute: typeof rootRoute;
     };
-    "/about": {
-      id: "/about";
-      path: "/about";
-      fullPath: "/about";
-      preLoaderRoute: typeof AboutImport;
-      parentRoute: typeof rootRoute;
-    };
     "/package": {
       id: "/package";
       path: "/package";
       fullPath: "/package";
       preLoaderRoute: typeof PackageImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/search": {
+      id: "/search";
+      path: "/search";
+      fullPath: "/search";
+      preLoaderRoute: typeof SearchImport;
       parentRoute: typeof rootRoute;
     };
     "/upload": {
@@ -81,46 +81,46 @@ declare module "@tanstack/react-router" {
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
   "/package": typeof PackageRoute;
+  "/search": typeof SearchRoute;
   "/upload": typeof UploadRoute;
 }
 
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
   "/package": typeof PackageRoute;
+  "/search": typeof SearchRoute;
   "/upload": typeof UploadRoute;
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute;
   "/": typeof IndexRoute;
-  "/about": typeof AboutRoute;
   "/package": typeof PackageRoute;
+  "/search": typeof SearchRoute;
   "/upload": typeof UploadRoute;
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/about" | "/package" | "/upload";
+  fullPaths: "/" | "/package" | "/search" | "/upload";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/about" | "/package" | "/upload";
-  id: "__root__" | "/" | "/about" | "/package" | "/upload";
+  to: "/" | "/package" | "/search" | "/upload";
+  id: "__root__" | "/" | "/package" | "/search" | "/upload";
   fileRoutesById: FileRoutesById;
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
-  AboutRoute: typeof AboutRoute;
   PackageRoute: typeof PackageRoute;
+  SearchRoute: typeof SearchRoute;
   UploadRoute: typeof UploadRoute;
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
   PackageRoute: PackageRoute,
+  SearchRoute: SearchRoute,
   UploadRoute: UploadRoute,
 };
 
@@ -137,19 +137,19 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/about",
         "/package",
+        "/search",
         "/upload"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/about": {
-      "filePath": "about.tsx"
-    },
     "/package": {
       "filePath": "package.tsx"
+    },
+    "/search": {
+      "filePath": "search.tsx"
     },
     "/upload": {
       "filePath": "upload.tsx"

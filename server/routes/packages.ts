@@ -1,41 +1,50 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { fakePackages } from "./packageRoutes";
-
-const app = new Hono();
-
-const fakeMetadata = fakePackages.map((pkg) => pkg.metadata);
-
-const metadataSchema = z.object({
-  Version: z.string(),
-  Name: z.string(),
-  ID: z.string().optional(),
-});
-
-type Packages = z.infer<typeof metadataSchema>;
-
-const metadataPostSchema = metadataSchema.omit({ ID: true });
+import { v4 as uuidv4 } from "uuid";
+import {
+  createPackageDataSchema,
+  createPackageMetadataSchema,
+} from "../sharedSchema";
+import {
+  packages as packagesTable,
+  packageMetadata as packageMetadataTable,
+  packageData as packageDataTable,
+} from "../db/schemas/packageSchemas";
+import { db } from "../db";
 
 export const metadataRoutes = new Hono()
 
-  // get all packages
+  // get packages
+  // Get the pacakages from the database in the packages table with pagination of 10
   .get("/", async (c) => {
-    return c.json({ packages: fakeMetadata });
+
+    const packages = await db
+      .select()
+      .from(packageMetadataTable)
+      .limit(10);
+
+    return c.json({ packages: packages });
   })
 
   // post request
-  .post("/", zValidator("json", metadataPostSchema), async (c) => {
+  .post("/", zValidator("json", createPackageMetadataSchema), async (c) => {
     const newPackage = await c.req.valid("json");
-    const newID = (fakeMetadata.length + 1).toString(); // Generate a new ID
+
+    // Create a new package with a UUID
     const packageWithID = {
       ...newPackage,
-      ID: newID,
+      id: uuidv4(),
     };
-
-    fakeMetadata.push(packageWithID);
-
+    // Insert the new package into the database
+    // Insert into the packageMetadata table
+    const result = await db
+      .insert(packageMetadataTable)
+      .values(packageWithID)
+      .returning()
+      .then((res) => res[0]);
+    
     // Return the new package with a status code of 201
     c.status(201);
-    return c.json(packageWithID);
+    return c.json({result: result});
   });

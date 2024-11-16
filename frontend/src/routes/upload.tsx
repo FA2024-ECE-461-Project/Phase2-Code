@@ -16,13 +16,13 @@ function uploadPackage() {
   // Create a form
   const form = useForm({
     defaultValues: {
-      Name: "Insert Package Name",
-      Version: "Insert Package Version",
+      name: "Insert Package Name",
+      version: "Insert Package Version",
     },
     onSubmit: async ({ value }) => {
       // Submit the form to the API to /packages endpoint
-      const res = await api.packages.$post({ json: value });
-
+      const res = await api.package.$post({ json: value });
+      
       // Handle errors
       if (!res.ok) {
         throw new Error(`Error uploading package: ${res.statusText}`);
@@ -45,7 +45,7 @@ function uploadPackage() {
         className=" max-w-xl m-auto"
       >
         <form.Field
-          name="Name"
+          name="name"
           children={(field) => (
             <>
               <Label htmlFor={field.name}>Package name</Label>
@@ -63,7 +63,7 @@ function uploadPackage() {
           )}
         />
         <form.Field
-          name="Version"
+          name="version"
           children={(field) => (
             <>
               <Label htmlFor={field.name}>Package version</Label>

@@ -51,8 +51,8 @@ export const packageRoutes = new Hono()
       return c.json({ error: "Content and URL cannot be provided at the same time" });
     }
   
-    let metadata: CreatePackageMetadata | null = null;
     // Initialize metadata
+    let metadata: CreatePackageMetadata | null = null;
     if (newPackage.url) {
       const packageData = await getPackageDataFromUrl(newPackage.url!);
       if (!packageData) {

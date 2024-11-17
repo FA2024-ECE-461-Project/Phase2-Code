@@ -27,7 +27,7 @@ function uploadPackage() {
 
       //check the upload mode and set the payload accordingly
       if (uploadMode === "url") {
-        if (!value.url) throw new Error("GitHub URL is required.");
+        if (!value.url) throw new Error("URL is required.");
         payload = { url: value.url };
       } else if (uploadMode === "zip") {
         if (!value.content) throw new Error("Base64-encoded file is required.");
@@ -54,7 +54,7 @@ function uploadPackage() {
           variant={uploadMode === "url" ? "default" : "outline"} // Set the button variant based on the upload mode
           onClick={() => setUploadMode("url")}
         >
-          Upload via GitHub URL
+          Upload via URL
         </Button>
         <Button
           variant={uploadMode === "zip" ? "default" : "outline"} // Set the button variant based on the upload mode
@@ -77,11 +77,11 @@ function uploadPackage() {
             name="url"
             children={(field) => (
               <>
-                <Label htmlFor={field.name}>GitHub Repository URL</Label>
+                <Label htmlFor={field.name}> Package URL</Label>
                 <Input
                   id={field.name}
                   name={field.name}
-                  placeholder="Enter GitHub Repository URL"
+                  placeholder="Enter URL"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}

@@ -1,14 +1,14 @@
-import { 
-    classifyURL, 
-    extractNpmPackageName, 
-    getNpmPackageGitHubUrl, 
-    parseGitHubUrl, 
-    UrlType,
-    getToken
+import {
+  classifyURL,
+  extractNpmPackageName,
+  getNpmPackageGitHubUrl,
+  parseGitHubUrl,
+  UrlType,
+  getToken,
 } from "./urlUtils";
 
-import axios from 'axios';
-import * as dotenv from 'dotenv';
+import axios from "axios";
+import * as dotenv from "dotenv";
 
 dotenv.config();
 
@@ -19,14 +19,14 @@ interface NpmPackageInfo {
 }
 
 // Helper function to omit the 'id' field from an object
-export function omitId<T extends { id?: any }>(obj: T): Omit<T, 'id'> {
-const { id, ...rest } = obj;
-return rest;
+export function omitId<T extends { id?: any }>(obj: T): Omit<T, "id"> {
+  const { id, ...rest } = obj;
+  return rest;
 }
 
 // Function to generate unique ID from package name and version
 export function generatePackageId(name: string, version: string): string {
-    return `${name}@${version}`;
+  return `${name}@${version}`;
 }
 
 export async function getPackageDataFromUrl(
@@ -84,9 +84,9 @@ export async function getPackageDataFromUrl(
     const content = response.data.content;
     const encoding = response.data.encoding;
 
-    if (content && encoding === 'base64') {
-      const packageJsonBuffer = Buffer.from(content, 'base64');
-      const packageJsonString = packageJsonBuffer.toString('utf8');
+    if (content && encoding === "base64") {
+      const packageJsonBuffer = Buffer.from(content, "base64");
+      const packageJsonString = packageJsonBuffer.toString("utf8");
       const packageJson = JSON.parse(packageJsonString);
 
       // Get name and version from package.json

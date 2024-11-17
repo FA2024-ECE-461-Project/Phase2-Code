@@ -38,7 +38,7 @@ function uploadPackage() {
       if (!res.ok) {
         throw new Error(`Error uploading package: ${res.statusText}`);
       }
-      
+
       //navigate to the package page after successful upload
       navigate({ to: "/package" });
     },
@@ -84,7 +84,8 @@ function uploadPackage() {
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
-                {field.state.meta.isTouched && field.state.meta.errors.length ? (
+                {field.state.meta.isTouched &&
+                field.state.meta.errors.length ? (
                   <em>{field.state.meta.errors.join(", ")}</em>
                 ) : null}
               </>
@@ -105,7 +106,8 @@ function uploadPackage() {
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
-                {field.state.meta.isTouched && field.state.meta.errors.length ? (
+                {field.state.meta.isTouched &&
+                field.state.meta.errors.length ? (
                   <em>{field.state.meta.errors.join(", ")}</em>
                 ) : null}
               </>

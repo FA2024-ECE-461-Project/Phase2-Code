@@ -50,5 +50,5 @@ export const metadataRoutes = new Hono()
       from(packageMetadataTable).
       where({name, version});
     
-    return c.json({packages: response});
+    return response;
   });

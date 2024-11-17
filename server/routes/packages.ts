@@ -13,7 +13,7 @@ import {
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 
-export const metadataRoutes = app
+export const metadataRoutes = new Hono()
 
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10

@@ -24,25 +24,10 @@ export const metadataRoutes = new Hono()
     return c.json({ packages: packages });
   })
 
-  // post request: use zValidator to validate the request body fits the schema for the db
-  // return all packages that fit the query parameters
-  .post("/", zValidator("json", createPackageMetadataSchema), async (c) => {
+  // POST request: use zValidator to validate the request body fits the schema for the db
+  // TODO: return all packages that fit the query parameters
+  .post("/", zValidator("json", ), async (c) => {
     const newPackage = await c.req.valid("json");
+    
 
-    // Create a new package with a UUID
-    const packageWithID = {
-      ...newPackage,
-      id: uuidv4(),
-    };
-    // Insert the new package into the database
-    // Insert into the packageMetadata table
-    const result = await db
-      .insert(packageMetadataTable)
-      .values(packageWithID)
-      .returning()
-      .then((res) => res[0]);
-
-    // Return the new package with a status code of 201
-    c.status(201);
-    return c.json({ result: result });
   });

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Button } from "../components/ui/button";
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/upload")({
 
 function uploadPackage() {
   const [uploadMode, setUploadMode] = useState<"url" | "zip">("url");
+  const navigate = useNavigate();
 
   const form = useForm({
     defaultValues: {
@@ -37,14 +38,13 @@ function uploadPackage() {
       if (!res.ok) {
         throw new Error(`Error uploading package: ${res.statusText}`);
       }
+
+      navigate({ to: "/package" });
     },
   });
 
   return (
-    <div
-      className="flex flex-col items-center justify-center min-h-screen p-4"
-      style={{ transform: "translateY(-10%)" }}
-    >
+    <div className="flex flex-col items-center justify-center p-4">
       <h3 className="mb-4 text-lg font-semibold">Upload a package</h3>
       <div className="flex gap-4 mb-6">
         <Button
@@ -83,8 +83,7 @@ function uploadPackage() {
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
-                {field.state.meta.isTouched &&
-                field.state.meta.errors.length ? (
+                {field.state.meta.isTouched && field.state.meta.errors.length ? (
                   <em>{field.state.meta.errors.join(", ")}</em>
                 ) : null}
               </>
@@ -105,8 +104,7 @@ function uploadPackage() {
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
-                {field.state.meta.isTouched &&
-                field.state.meta.errors.length ? (
+                {field.state.meta.isTouched && field.state.meta.errors.length ? (
                   <em>{field.state.meta.errors.join(", ")}</em>
                 ) : null}
               </>

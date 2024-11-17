@@ -40,7 +40,8 @@ function uploadPackage() {
       if (!res.ok) {
         throw new Error(`Error uploading package: ${res.statusText}`);
       }
-
+      
+      //navigate to the package page after successful upload
       navigate({ to: "/package" });
     },
   });

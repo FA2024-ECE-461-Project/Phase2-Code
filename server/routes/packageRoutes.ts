@@ -4,6 +4,7 @@ import { z } from "zod";
 import { exec } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
+import { eq, desc, sum, and } from "drizzle-orm";
 import {
   selectPackageMetadataSchema,
   selectPackageDataSchema,
@@ -20,6 +21,11 @@ import { createPackageData,
         } from "../sharedSchema";
 // import { getPackageDataFromGithub } from "../utils";
 import { uuid } from "drizzle-orm/pg-core";
+import { getPackageDataFromUrl, generatePackageId, omitId } from "../packageUtils";
+// Define types using Zod schemas
+type CreatePackageData = z.infer<typeof createPackageDataSchema>;
+type CreatePackageMetadata = z.infer<typeof createPackageMetadataSchema>;
+
 
 export const packageRoutes = new Hono()
   // get all packages
@@ -28,57 +34,84 @@ export const packageRoutes = new Hono()
     return c.json({ packages: packages });
   })
 
-  // post request
   .post("/", zValidator("json", createPackageDataSchema), async (c) => {
-
     // Validates the request body using the schema provided in the zValidator.
     // If the payload is invalid, it will automatically return an error response with a 400 status code.
-    const newPackage = await c.req.valid("json");
-
-    // check if content or url is provided
+    const newPackage: CreatePackageData = await c.req.valid("json");
+  
+    // Check if content or url is provided
     if (!newPackage.content && !newPackage.url) {
       c.status(400);
       return c.json({ error: "Content or URL is required" });
     }
-
-    //if both content and url are provided, return an error
+  
+    // If both content and url are provided, return an error
     if (newPackage.content && newPackage.url) {
       c.status(400);
       return c.json({ error: "Content and URL cannot be provided at the same time" });
     }
+  
+    let metadata: CreatePackageMetadata | null = null;
+    // Initialize metadata
+    if (newPackage.url) {
+      const packageData = await getPackageDataFromUrl(newPackage.url!);
+      if (!packageData) {
+        c.status(400);
+        return c.json({ error: "Invalid URL" });
+      }
 
+      // If the version is not provided, set it to 1.0.0
+      const version = packageData.version || "1.0.0";
+
+      // If the name is not provided, set it to "Default Name"
+      const name = packageData.name || "Default Name";
+
+      metadata = { name, version };
+    }
+  
     // Create meta data id with a UUID
     const dataId = uuidv4();
     const data = {
       ...newPackage, // Copy the newPackage object
       id: dataId,    // Add the UUID to the newPackage object
     };
-
-    // If the URL is provided, fetch the package data from GitHub
-    let metadata: { name: string; version: string } = { name: "Default Name", version: "1.0.0" };
-
-    if (newPackage.url) {
-      // const packageData = await getPackageDataFromGithub(newPackage.url!);
-      // if (!packageData) {
-      //   c.status(400);
-      //   return c.json({ error: "Invalid URL" });
-      // }
-      // metadata = {packageData.metadata};
-    }
-
+  
     // Create meta data id with a UUID
     const metaDataId = uuidv4();
     const metaData = {
       id: metaDataId,
-      name: metadata.name,    // Use the name from metadata
-      version: metadata.version,    // Use the version from metadata
+      name: metadata?.name || "Default Name",    // Use the name from metadata
+      version: metadata?.version || "1.0.0",    // Use the version from metadata
     };
-
+    
+    // Generate a package ID using the metadata name and version
     // Create a package object with the metadata and data
+    const packageId = generatePackageId(metaData.name, metaData.version);
     const packageObject = {
+      id: packageId,
       metadataId: metaData.id,
       dataId: data.id,
     };
+    
+    // Check if the package already exists
+    try {
+      const existingPackage = await db
+        .select()
+        .from(packagesTable)
+        .where(eq(packagesTable.id, packageId))
+        .then((res) => res[0]);
+  
+      if (existingPackage) {
+        // Package already exists, return 409 Conflict
+        c.status(409);
+        return c.json({ error: "Package already exists" });
+      }
+    } catch (error) {
+      // Handle any errors during the check
+      console.error("Error checking for existing package:", error);
+      c.status(500);
+      return c.json({ error: "Internal server error" });
+    }
 
     // Insert the new package into the database
     // Insert into the packageMetadata table
@@ -87,34 +120,32 @@ export const packageRoutes = new Hono()
       .values(metaData)
       .returning()
       .then((res) => res[0]);
-
+  
     // Insert into the packageData table
     const dataResult = await db
       .insert(packageDataTable)
       .values(data)
       .returning()
       .then((res) => res[0]);
-    
+  
     // Insert into the packages table
     const packageResult = await db
       .insert(packagesTable)
       .values(packageObject)
       .returning()
       .then((res) => res[0]);
-    
-    // // construct the result object
-    // const package = {
-    //   metadata: metaDataResult,
-    //   data: dataResult,
-    // };
-
+  
     // Return the new package with a status code of 201
+    // Omit 'id' field from dataResult
+    const dataWithoutId = omitId(dataResult);
     c.status(201);
     return c.json({
+      package: packageResult, // temp, need to remove
       metadata: metaDataResult,
-      data: dataResult,
+      data: dataWithoutId,
     });
   });
+
 
   // get a package by id
   // .get("/:ID", (c) => {

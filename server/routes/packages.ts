@@ -49,6 +49,5 @@ export const metadataRoutes = new Hono()
       select().
       from(packageMetadataTable).
       where({name, version});
-    
-    return response;
+    return JSON.stringify(response);
   });

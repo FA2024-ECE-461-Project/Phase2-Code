@@ -15,6 +15,7 @@ import {
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 
+//zod provides runtime type check/validation for request body
 //zod schema for query parameter of the POST endpoint
 const packageQuerySchema = z.object({
   name: z.string(),
@@ -31,16 +32,23 @@ export const metadataRoutes = new Hono()
     return c.json({ packages: packages });
   })
 
-  // POST request: use zValidator to validate the request body fits the schema for the db
-  // TODO: return all packages that fit the query parameters
+  // POST endpoint: should return all packages that fit the query parameters if valid JSON
+  // zValidator to validate the request body fits the schema for the db
+  // TODO: implement this and account for the "*" case
   .post("/", zValidator("json", packageQuerySchema), async (c) => {
-    // should handle the "*" case differently
-
     // the validator middleware will send an error message if the request isn't a valid JSON
-    const request = await c.req.valid("json");
-    const { name, version } = request;
+    // assume we get {name: "package-name", version: "x.y.z"} as request body
+    const { name, version } = c.req.valid("json");
+    if(name ==="*") {
+      // enumerate all packages in a list when given "*"
+      return await db.select().from(packageMetadataTable);
+    }
 
-    // do a search in the database for the package with the name and version
-    const response = await db
-
+    /* do a search in the database for the package using name and version as parameters */
+    const response = await db.
+      select().
+      from(packageMetadataTable).
+      where({name, version});
+    
+    return c.json({packages: response});
   });

@@ -22,7 +22,7 @@ export const packages = pgTable(
     index("data_idx").on(packages.dataId), // Index for dataId
   ],
 );
-
+// packageMetadata Table
 export const packageMetadata = pgTable(
   "package_metadata",
   {

@@ -40,6 +40,7 @@ function uploadPackage() {
         throw new Error(`Error uploading package: ${res.statusText}`);
       }
 
+      //navigate to the package page after successful upload
       navigate({ to: "/package" });
     },
   });

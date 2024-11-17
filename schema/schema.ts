@@ -550,10 +550,7 @@ export class Api<
      * @summary Interact with the package with this ID. (BASELINE)
      * @request GET:/package/{id}
      */
-    packageRetrieve: (
-      id: PackageID,
-      params: RequestParams = {},
-    ) =>
+    packageRetrieve: (id: PackageID, params: RequestParams = {}) =>
       this.request<Package, void>({
         path: `/package/${id}`,
         method: "GET",
@@ -568,11 +565,7 @@ export class Api<
      * @summary Update this content of the package. (BASELINE)
      * @request PUT:/package/{id}
      */
-    packageUpdate: (
-      id: PackageID,
-      data: Package,
-      params: RequestParams = {},
-    ) =>
+    packageUpdate: (id: PackageID, data: Package, params: RequestParams = {}) =>
       this.request<void, void>({
         path: `/package/${id}`,
         method: "PUT",

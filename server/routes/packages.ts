@@ -26,8 +26,6 @@ export const metadataRoutes = new Hono()
 
   // POST request: use zValidator to validate the request body fits the schema for the db
   // TODO: return all packages that fit the query parameters
-  .post("/", zValidator("json", ), async (c) => {
+  .post("/", zValidator("json"), async (c) => {
     const newPackage = await c.req.valid("json");
-    
-
   });

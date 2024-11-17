@@ -34,8 +34,7 @@ export const packageRoutes = new Hono()
   .get("/", async (c) => {
     const packages = await db.select().from(packagesTable).limit(10);
     return c.json({ packages: packages });
-  });
-
+  })
   .post("/", zValidator("json", createPackageDataSchema), async (c) => {
     // Validates the request body using the schema provided in the zValidator.
     // If the payload is invalid, it will automatically return an error response with a 400 status code.

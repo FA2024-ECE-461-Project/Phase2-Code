@@ -41,8 +41,8 @@ jobs:
           npm run build
 
           # Install backend dependencies
-          cd ../server/
-          bun install
+          cd ..
+          npm install
 
           # Execute deployment script on EC2
           cd ../          

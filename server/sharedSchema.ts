@@ -10,7 +10,8 @@ export const createPackageDataSchema = insertPackageDataSchema.omit({
 export const createPackageMetadataSchema = insertPackageMetadataSchema.omit({
     ID: true,
 });
-  
+
+export const createPackageSchema = insertPackagesSchema
 //get the type of the package schema from zod
 export type createPackageData = z.infer<typeof createPackageDataSchema>;
 export type createPackageMetadata = z.infer<typeof createPackageMetadataSchema>;

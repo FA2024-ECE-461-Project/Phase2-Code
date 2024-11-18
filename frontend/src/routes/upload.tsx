@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Button } from "../components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { api } from "../lib/api";
 import { useState } from "react";
+import { toast, Toaster } from "sonner";
 
 // frontend route "/upload" to upload a package named Route
 export const Route = createFileRoute("/upload")({
@@ -12,9 +13,7 @@ export const Route = createFileRoute("/upload")({
 });
 
 function uploadPackage() {
-
   const [uploadMode, setUploadMode] = useState<"url" | "zip">("url");
-  const navigate = useNavigate();
 
   const form = useForm({
     defaultValues: {
@@ -22,10 +21,10 @@ function uploadPackage() {
       Content: "",
     },
     onSubmit: async ({ value }) => {
-      //initialize the payload object
+      // Initialize the payload object
       let payload: { URL?: string; Content?: string } = {};
 
-      //check the upload mode and set the payload accordingly
+      // Check the upload mode and set the payload accordingly
       if (uploadMode === "url") {
         if (!value.URL) throw new Error("URL is required.");
         payload = { URL: value.URL };
@@ -34,15 +33,20 @@ function uploadPackage() {
         payload = { Content: value.Content };
       }
 
-      //send the payload to the API
+      // Send the payload to the API
       const res = await api.package.$post({ json: payload });
 
-      if (!res.ok) {
-        throw new Error(`Error uploading package: ${res.statusText}`);
+      if (res.status === 201) {
+        // Show a success toast on successful upload
+        toast.success("Successfully Uploaded Package");
+        // Navigate to the package page after successful upload
+      } else if (res.status === 409) {
+        // Show a conflict toast if there's a conflict
+        toast.error("There's a conflict with the package");
+      } else {
+        // Show a failure toast for other errors
+        toast.error(`Failed to upload package: ${res.statusText}`);
       }
-      
-      //navigate to the package page after successful upload
-      navigate({ to: "/package" });
     },
   });
 
@@ -124,6 +128,7 @@ function uploadPackage() {
           )}
         />
       </form>
+      <Toaster /> {/* Add the toaster component */}
     </div>
   );
 }

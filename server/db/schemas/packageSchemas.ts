@@ -58,10 +58,10 @@ export const packageData = pgTable(
 );
 
 // Schema for inserting a user - can be used to validate API requests
-export const insertPackagesSchema = createInsertSchema(packages, {
-  metadataId: z.string().uuid({ message: "metadataId must be a valid UUID" }), // Ensures metadataId is a valid UUID
-  dataId: z.string().uuid({ message: "dataId must be a valid UUID" }), // Ensures dataId is a valid UUID
-});
+// export const insertPackagesSchema = createInsertSchema(packages, {
+//   metadataId: z.string().uuid({ message: "metadataId must be a valid UUID" }), // Ensures metadataId is a valid UUID
+//   dataId: z.string().uuid({ message: "dataId must be a valid UUID" }), // Ensures dataId is a valid UUID
+// });
 
 export const insertPackageMetadataSchema = createInsertSchema(packageMetadata, {
   Name: z
@@ -77,6 +77,12 @@ export const insertPackageDataSchema = createInsertSchema(packageData, {
   URL: z.string().url({ message: "URL must be a valid URL" }).optional(), // Optional URL field with validation
   debloat: z.boolean().default(false), // Default value for debloat
   JSProgram: z.string().optional(), // Optional JS program
+});
+
+// Combine the schemas into a single schema for the request body
+export const insertPackagesSchema = z.object({
+  metadata: insertPackageMetadataSchema,
+  data: insertPackageDataSchema,
 });
 
 // Schema for selecting a user - can be used to validate API responses

@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as UploadImport } from './routes/upload'
+import { Route as UpdateImport } from './routes/update'
 import { Route as SearchImport } from './routes/search'
 import { Route as ResetImport } from './routes/reset'
 import { Route as PackageImport } from './routes/package'
@@ -22,6 +23,12 @@ import { Route as IndexImport } from './routes/index'
 const UploadRoute = UploadImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const UpdateRoute = UpdateImport.update({
+  id: '/update',
+  path: '/update',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -81,6 +88,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchImport
       parentRoute: typeof rootRoute
     }
+    '/update': {
+      id: '/update'
+      path: '/update'
+      fullPath: '/update'
+      preLoaderRoute: typeof UpdateImport
+      parentRoute: typeof rootRoute
+    }
     '/upload': {
       id: '/upload'
       path: '/upload'
@@ -98,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/package': typeof PackageRoute
   '/reset': typeof ResetRoute
   '/search': typeof SearchRoute
+  '/update': typeof UpdateRoute
   '/upload': typeof UploadRoute
 }
 
@@ -106,6 +121,7 @@ export interface FileRoutesByTo {
   '/package': typeof PackageRoute
   '/reset': typeof ResetRoute
   '/search': typeof SearchRoute
+  '/update': typeof UpdateRoute
   '/upload': typeof UploadRoute
 }
 
@@ -115,15 +131,23 @@ export interface FileRoutesById {
   '/package': typeof PackageRoute
   '/reset': typeof ResetRoute
   '/search': typeof SearchRoute
+  '/update': typeof UpdateRoute
   '/upload': typeof UploadRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/package' | '/reset' | '/search' | '/upload'
+  fullPaths: '/' | '/package' | '/reset' | '/search' | '/update' | '/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/package' | '/reset' | '/search' | '/upload'
-  id: '__root__' | '/' | '/package' | '/reset' | '/search' | '/upload'
+  to: '/' | '/package' | '/reset' | '/search' | '/update' | '/upload'
+  id:
+    | '__root__'
+    | '/'
+    | '/package'
+    | '/reset'
+    | '/search'
+    | '/update'
+    | '/upload'
   fileRoutesById: FileRoutesById
 }
 
@@ -132,6 +156,7 @@ export interface RootRouteChildren {
   PackageRoute: typeof PackageRoute
   ResetRoute: typeof ResetRoute
   SearchRoute: typeof SearchRoute
+  UpdateRoute: typeof UpdateRoute
   UploadRoute: typeof UploadRoute
 }
 
@@ -140,6 +165,7 @@ const rootRouteChildren: RootRouteChildren = {
   PackageRoute: PackageRoute,
   ResetRoute: ResetRoute,
   SearchRoute: SearchRoute,
+  UpdateRoute: UpdateRoute,
   UploadRoute: UploadRoute,
 }
 
@@ -157,6 +183,7 @@ export const routeTree = rootRoute
         "/package",
         "/reset",
         "/search",
+        "/update",
         "/upload"
       ]
     },
@@ -171,6 +198,9 @@ export const routeTree = rootRoute
     },
     "/search": {
       "filePath": "search.tsx"
+    },
+    "/update": {
+      "filePath": "update.tsx"
     },
     "/upload": {
       "filePath": "upload.tsx"

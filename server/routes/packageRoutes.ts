@@ -1,12 +1,10 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
 import { exec } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
 import { eq, desc, sum, and } from "drizzle-orm";
 import {
-  insertPackageDataSchema,
   selectPackageMetadataSchema,
   selectPackageDataSchema,
   selectPackagesSchema,
@@ -17,16 +15,11 @@ import {
 import { createPackageData, 
          createPackageMetadata, 
          createPackages, 
+         createPackageSchema,
          createPackageDataSchema, 
          createPackageMetadataSchema 
         } from "../sharedSchema";
-// import { getPackageDataFromGithub } from "../utils";
-import { uuid } from "drizzle-orm/pg-core";
 import { getPackageDataFromUrl, generatePackageId, omitId } from "../packageUtils";
-// Define types using Zod schemas
-type CreatePackageData = z.infer<typeof insertPackageDataSchema>;
-type CreatePackageMetadata = z.infer<typeof createPackageMetadataSchema>;
-
 
 export const packageRoutes = new Hono()
   // get all packages
@@ -35,7 +28,7 @@ export const packageRoutes = new Hono()
     return c.json({ packages: packages });
   })
 
-  .post("/", zValidator("json", insertPackageDataSchema), async (c) => {
+  .post("/", zValidator("json", createPackageDataSchema), async (c) => {
     // Validates the request body using the schema provided in the zValidator.
     // If the payload is invalid, it will automatically return an error response with a 400 status code.
     const newPackage = await c.req.valid("json");
@@ -53,7 +46,7 @@ export const packageRoutes = new Hono()
     }
   
     // Initialize metadata
-    let metadata: CreatePackageMetadata | null = null;
+    let metadata: createPackageMetadata | undefined;
     if (newPackage.URL) {
       const packageData = await getPackageDataFromUrl(newPackage.URL!);
       if (!packageData) {
@@ -141,19 +134,26 @@ export const packageRoutes = new Hono()
     const dataWithoutId = omitId(dataResult);
     c.status(201);
     return c.json({
-      package: packageResult, // temp, need to remove
+      // package: packageResult, // temp, need to remove
       metadata: metaDataResult,
       data: dataWithoutId,
     });
   })
 
 
-
-  // Get a package by id
-  .get("/:ID", async (c) => {
+  // Update a package by ID
+  .post("/:ID", zValidator("json", createPackageSchema),  async (c) => {
     const id = c.req.param("ID");
+    const body = await c.req.json(); // Parse request body
 
-    // Fetch the package from the database
+    // Validate incoming data
+    const { metadata, data } = body;
+    if (!metadata && !data) {
+      c.status(400);
+      return c.json({ error: "Invalid input: Must provide metadata or data to update." });
+    }
+
+    // Fetch the existing package from the database
     const packageResult = await db
       .select()
       .from(packagesTable)
@@ -165,27 +165,99 @@ export const packageRoutes = new Hono()
       return c.json({ error: "Package not found" });
     }
 
-    // Fetch the metadata and data using the IDs from the packageResult
-    const metaDataResult = await db
+    // Update metadata if provided
+    if (metadata) {
+      await db
+        .update(packageMetadataTable)
+        .set(metadata)
+        .where(eq(packageMetadataTable.ID, packageResult.metadataId));
+    }
+
+    // Update data if provided
+    if (data) {
+      await db
+        .update(packageDataTable)
+        .set(data)
+        .where(eq(packageDataTable.ID, packageResult.dataId));
+    }
+
+    // Fetch updated package details
+    const updatedPackage = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packagesTable.ID, id))
+      .then((res) => res[0]);
+
+    const updatedMetadata = await db
       .select()
       .from(packageMetadataTable)
       .where(eq(packageMetadataTable.ID, packageResult.metadataId))
       .then((res) => res[0]);
 
-    const dataResult = await db
+    const updatedData = await db
       .select()
       .from(packageDataTable)
       .where(eq(packageDataTable.ID, packageResult.dataId))
       .then((res) => res[0]);
 
-    // Omit 'id' field from dataResult
-    const dataWithoutId = omitId(dataResult);
+    // Omit 'id' field from updated data result
+    const dataWithoutId = omitId(updatedData);
 
-    // Return the package data
+    // Return updated package
     c.status(200);
     return c.json({
-      package: packageResult,
-      metadata: metaDataResult,
+      // package: updatedPackage,
+      metadata: updatedMetadata,
       data: dataWithoutId,
     });
   });
+
+
+  // .delete("/:ID", (c) => {
+  //   const id = c.req.param("ID");
+  //   const foundPackage = fakePackages.find((pkg) => pkg.metadata.ID === id);
+  //   if (!foundPackage) {
+  //     return c.notFound();
+  //   }
+  //   const deletePackages = fakePackages.splice(
+  //     fakePackages.indexOf(foundPackage),
+  //     1,
+  //   );
+  //   return c.json({ Package: deletePackages[0] });
+  // })
+  // // get the rating of a package by id by executing run script
+  // .get("/:ID/rate", async (c) => {
+  //   const id = c.req.param("ID");
+  //   console.log(`Received request for package ID: ${id}`);
+  //   const foundPackage = fakePackages.find((pkg) => pkg.metadata.ID === id);
+  //   if (!foundPackage) {
+  //     console.log(`Package with ID ${id} not found`);
+  //     return c.notFound();
+  //   }
+  //   // const url = foundPackage.data.URL;
+  //   // it's running the url.txt script, need to change to run url from the package
+  //   // TODO: change the script to run the URL from the package
+  //   const command = `./run url.txt`;
+  //   return new Promise((resolve) => {
+  //     exec(command, (error, stdout, stderr) => {
+  //       if (error) {
+  //         console.error(`Error executing script: ${error.message}`);
+  //         c.status(500);
+  //         resolve(c.json({ error: "Internal Server Error" }));
+  //       } else {
+  //         if (stderr) {
+  //           console.error(`Script stderr: ${stderr}`);
+  //         }
+  //         try {
+  //           const jsonResponse = JSON.parse(stdout);
+  //           delete jsonResponse.URL;
+  //           resolve(c.json(jsonResponse));
+  //         } catch (parseError) {
+  //           console.error(`Error parsing JSON: ${parseError}`);
+  //           c.status(500);
+  //           resolve(c.json({ error: "Internal Server Error" }));
+  //         }
+  //       }
+  //     });
+  //   });
+  // });

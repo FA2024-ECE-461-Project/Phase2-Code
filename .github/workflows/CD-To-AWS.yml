@@ -44,7 +44,6 @@ jobs:
           cd ..
           npm install
 
-          # Execute deployment script on EC2
-          cd ../          
+          # Execute deployment script on EC2        
           sudo systemctl restart myapp.service
           sudo systemctl restart caddy

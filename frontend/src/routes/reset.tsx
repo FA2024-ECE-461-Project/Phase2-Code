@@ -10,6 +10,8 @@ export const Route = createFileRoute("/reset")({
 });
 
 // Trigger reset endpoint
+// So far it's just deleting stuff from the database
+// Also need to delete stuff from the S3 bucket
 async function resetDatabase() {
   const res = await api.reset.$delete();
   if (!res.ok) {

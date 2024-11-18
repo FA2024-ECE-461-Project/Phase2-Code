@@ -30,20 +30,17 @@ jobs:
           cd /home/ec2-user/Phase2-Code/
           git pull
 
-          # delete node_modules and package-lock.json for a fresh install
+          # Install backend dependencies
           rm -rf node_modules package-lock.json
-
-          # Install dependencies for project
-          npm install @rollup/rollup-linux-x64-gnu --save-dev
+          npm install
 
           # Install dependencies for frontend
           cd frontend/
+          rm -rf node_modules package-lock.json
+          npm install
           npm run build
 
-          # Install backend dependencies
-          cd ..
-          npm install
-
+          cd ../
           # Execute deployment script on EC2        
           sudo systemctl restart myapp.service
           sudo systemctl restart caddy

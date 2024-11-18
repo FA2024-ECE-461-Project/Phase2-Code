@@ -39,7 +39,7 @@ function resetRegistry() {
   });
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex justify-center min-h-screen">
       <div className="p-4 flex flex-col items-center">
         <h1 className="text-2xl font-bold mb-4">Reset Database</h1>
         <Button

@@ -11,6 +11,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), TanStackRouterVite()],
+  build: {
+    rollupOptions: {
+      external: ['@rollup/rollup-linux-x64-gnu'], // Mark problematic module as external
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

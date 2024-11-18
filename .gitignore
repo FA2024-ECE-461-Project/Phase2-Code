@@ -14,3 +14,12 @@ coverage
 
 # Environment variables
 .env
+
+# api spec
+ece461-project-phase2-fall2024-updated.yaml
+
+#pem files
+*.pem
+
+# .gitignore
+.gitignore

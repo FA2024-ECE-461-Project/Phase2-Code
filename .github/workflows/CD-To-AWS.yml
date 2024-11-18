@@ -32,9 +32,9 @@ jobs:
 
           # delete node_modules and package-lock.json for a fresh install
           rm -rf node_modules package-lock.json
-          
+
           # Install dependencies for project
-          npm install
+          npm install @rollup/rollup-linux-x64-gnu --save-dev
 
           # Install dependencies for frontend
           cd frontend/

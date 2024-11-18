@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { packageRoutes } from "./routes/packageRoutes";
 import { metadataRoutes } from "./routes/packages";
+import { resetRoutes } from "./routes/resetRoutes";
 import { serveStatic } from "hono/bun";
 
 const app = new Hono();
@@ -14,7 +15,8 @@ app.use("*", logger());
 const apiRoutes = app
   .basePath("/api")
   .route("/package", packageRoutes)
-  .route("/packages", metadataRoutes);
+  .route("/packages", metadataRoutes)
+  .route("/reset", resetRoutes);
 // .route('/authenticate', authRoutes)
 // .route('/track', trackingRoutes)
 

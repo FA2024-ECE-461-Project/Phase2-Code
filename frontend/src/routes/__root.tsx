@@ -1,5 +1,5 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
-// import { TanStackRouterDevtools } from '@tanstack/router-devtools'
+// import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 
 export const Route = createRootRoute({
   component: Root,
@@ -19,6 +19,9 @@ function NavBar() {
       </Link>
       <Link to="/search" className="[&.active]:font-bold">
         Search
+      </Link>
+      <Link to="/reset" className="[&.active]:font-bold">
+        Reset
       </Link>
     </div>
   );

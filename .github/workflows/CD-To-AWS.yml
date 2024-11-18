@@ -30,6 +30,9 @@ jobs:
           cd /home/ec2-user/Phase2-Code/
           git pull
 
+          # delete node_modules and package-lock.json for a fresh install
+          rm -rf node_modules package-lock.json
+          
           # Install dependencies for project
           npm install
 

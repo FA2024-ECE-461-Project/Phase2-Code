@@ -18,20 +18,20 @@ function uploadPackage() {
 
   const form = useForm({
     defaultValues: {
-      url: "",
-      content: "",
+      URL: "",
+      Content: "",
     },
     onSubmit: async ({ value }) => {
       //initialize the payload object
-      let payload: { url?: string; content?: string } = {};
+      let payload: { URL?: string; Content?: string } = {};
 
       //check the upload mode and set the payload accordingly
       if (uploadMode === "url") {
-        if (!value.url) throw new Error("URL is required.");
-        payload = { url: value.url };
+        if (!value.URL) throw new Error("URL is required.");
+        payload = { URL: value.URL };
       } else if (uploadMode === "zip") {
-        if (!value.content) throw new Error("Base64-encoded file is required.");
-        payload = { content: value.content };
+        if (!value.Content) throw new Error("Base64-encoded file is required.");
+        payload = { Content: value.Content };
       }
 
       //send the payload to the API
@@ -74,7 +74,7 @@ function uploadPackage() {
       >
         {uploadMode === "url" && (
           <form.Field
-            name="url"
+            name="URL"
             children={(field) => (
               <>
                 <Label htmlFor={field.name}> Package URL</Label>
@@ -95,7 +95,7 @@ function uploadPackage() {
         )}
         {uploadMode === "zip" && (
           <form.Field
-            name="content"
+            name="Content"
             children={(field) => (
               <>
                 <Label htmlFor="Upload Zip File">Upload Zip File</Label>

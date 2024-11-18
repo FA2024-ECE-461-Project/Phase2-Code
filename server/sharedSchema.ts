@@ -4,11 +4,11 @@ import { z } from "zod";
 
 //mainly use for validation
 export const createPackageDataSchema = insertPackageDataSchema.omit({
-    id: true,
+    ID: true,
 });
 
 export const createPackageMetadataSchema = insertPackageMetadataSchema.omit({
-    id: true,
+    ID: true,
 });
   
 //get the type of the package schema from zod

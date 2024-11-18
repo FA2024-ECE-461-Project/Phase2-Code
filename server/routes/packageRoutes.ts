@@ -38,6 +38,7 @@ export const packageRoutes = new Hono()
     const packages = await db.select().from(packagesTable).limit(10);
     return c.json({ packages: packages });
   })
+
   .post("/", zValidator("json", createPackageDataSchema), async (c) => {
     // Validates the request body using the schema provided in the zValidator.
     // If the payload is invalid, it will automatically return an error response with a 400 status code.
@@ -57,8 +58,8 @@ export const packageRoutes = new Hono()
       });
     }
 
-    let metadata: CreatePackageMetadata | null = null;
     // Initialize metadata
+    let metadata: CreatePackageMetadata | null = null;
     if (newPackage.url) {
       const packageData = await getPackageDataFromUrl(newPackage.url!);
       if (!packageData) {
@@ -150,18 +151,48 @@ export const packageRoutes = new Hono()
       metadata: metaDataResult,
       data: dataWithoutId,
     });
+  })
+
+  // Get a package by id
+  .get("/:ID", async (c) => {
+    const id = c.req.param("ID");
+
+    // Fetch the package from the database
+    const packageResult = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packagesTable.id, id))
+      .then((res) => res[0]);
+
+    if (!packageResult) {
+      c.status(404);
+      return c.json({ error: "Package not found" });
+    }
+
+    // Fetch the metadata and data using the IDs from the packageResult
+    const metaDataResult = await db
+      .select()
+      .from(packageMetadataTable)
+      .where(eq(packageMetadataTable.id, packageResult.metadataId))
+      .then((res) => res[0]);
+
+    const dataResult = await db
+      .select()
+      .from(packageDataTable)
+      .where(eq(packageDataTable.id, packageResult.dataId))
+      .then((res) => res[0]);
+
+    // Omit 'id' field from dataResult
+    const dataWithoutId = omitId(dataResult);
+
+    // Return the package data
+    c.status(200);
+    return c.json({
+      package: packageResult,
+      metadata: metaDataResult,
+      data: dataWithoutId,
+    });
   });
-
-// get a package by id
-// .get("/:ID", (c) => {
-//   const id = c.req.param("ID");
-//   const PackageById = fakePackages.find((pkg) => pkg.metadata.ID === id);
-//   if (!PackageById) {
-//     return c.notFound();
-//   }
-
-//   return c.json({ PackageById });
-// })
 
 // delete a package by id
 // .delete("/:ID", (c) => {

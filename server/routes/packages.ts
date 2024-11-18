@@ -5,7 +5,6 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import {
   createPackageDataSchema,
-  createPackageMetadata,
   createPackageMetadataSchema,
 } from "../sharedSchema";
 import {
@@ -15,15 +14,11 @@ import {
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 
-//zod provides runtime type check/validation for request body
-//zod schema for query parameter of the POST endpoint
-const packageQuerySchema = z.object({
-  name: z.string(),
-  version: z.string(),
-});
-
+export const metadataRoutes = new Hono()
 export const metadataRoutes = new Hono()
 
+  // get packages
+  // Get the pacakages from the database in the packages table with pagination of 10
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
   .get("/", async (c) => {

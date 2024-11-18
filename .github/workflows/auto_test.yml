@@ -20,6 +20,7 @@ jobs: # run tests specified in test/
         # stops the workflow if package.json is not found
         run: |
           if [ -f package.json ]; then
+            npm install       # to sync up packagelock.json and package.json
             npm ci 
           else
             echo "package.json not found in this branch to be merged in"

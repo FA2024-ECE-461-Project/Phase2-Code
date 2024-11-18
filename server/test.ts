@@ -50,17 +50,17 @@
 //   console.log('--- Testing Completed ---');
 // })();
 
-import * as fs from 'fs';
-import * as unzipper from 'unzipper';
-import * as path from 'path';
+import * as fs from "fs";
+import * as unzipper from "unzipper";
+import * as path from "path";
 
 async function decodeAndExtract(base64FilePath: string, outputDir: string) {
   try {
     // Read the Base64 file
-    const base64Content = fs.readFileSync(base64FilePath, 'utf-8');
+    const base64Content = fs.readFileSync(base64FilePath, "utf-8");
 
     // Decode the Base64 content
-    const zipBuffer = Buffer.from(base64Content, 'base64');
+    const zipBuffer = Buffer.from(base64Content, "base64");
 
     // Ensure the output directory exists
     if (!fs.existsSync(outputDir)) {
@@ -68,7 +68,7 @@ async function decodeAndExtract(base64FilePath: string, outputDir: string) {
     }
 
     // Save the decoded content as a ZIP file for extraction
-    const tempZipPath = path.join(outputDir, 'temp.zip');
+    const tempZipPath = path.join(outputDir, "temp.zip");
     fs.writeFileSync(tempZipPath, zipBuffer);
 
     // Extract the ZIP file
@@ -76,14 +76,14 @@ async function decodeAndExtract(base64FilePath: string, outputDir: string) {
     await fs
       .createReadStream(tempZipPath)
       .pipe(unzipper.Parse())
-      .on('entry', async (entry) => {
+      .on("entry", async (entry) => {
         const fileName = entry.path;
-        if (entry.type === 'File') {
+        if (entry.type === "File") {
           const chunks: Buffer[] = [];
           for await (const chunk of entry) {
             chunks.push(chunk);
           }
-          const content = Buffer.concat(chunks).toString('utf-8');
+          const content = Buffer.concat(chunks).toString("utf-8");
           fileContents.push({ fileName, content });
         } else {
           entry.autodrain(); // Skip directories
@@ -94,20 +94,22 @@ async function decodeAndExtract(base64FilePath: string, outputDir: string) {
     // Return the extracted file names and their content
     return fileContents;
   } catch (error) {
-    console.error('Error during extraction:', error);
+    console.error("Error during extraction:", error);
     throw error;
   }
 }
 
 // Usage example
 (async () => {
-  const base64FilePath = '/Users/jimmyho/Desktop/Fall_2024/ECE46100/Phase_2/Project_Repo/Phase2-Code/mnt/data/underscore_base64.sample'; // Your Base64 file path
-  const outputDir = '/Users/jimmyho/Desktop/Fall_2024/ECE46100/Phase_2/Project_Repo/Phase2-Code/mnt/data/extracted_files'; // Output directory for extraction
+  const base64FilePath =
+    "/Users/jimmyho/Desktop/Fall_2024/ECE46100/Phase_2/Project_Repo/Phase2-Code/mnt/data/underscore_base64.sample"; // Your Base64 file path
+  const outputDir =
+    "/Users/jimmyho/Desktop/Fall_2024/ECE46100/Phase_2/Project_Repo/Phase2-Code/mnt/data/extracted_files"; // Output directory for extraction
 
   try {
     const extractedFiles = await decodeAndExtract(base64FilePath, outputDir);
-    console.log('Extracted Files:', extractedFiles);
+    console.log("Extracted Files:", extractedFiles);
   } catch (err) {
-    console.error('Error:', err);
+    console.error("Error:", err);
   }
 })();

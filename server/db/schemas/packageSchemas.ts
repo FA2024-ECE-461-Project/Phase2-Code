@@ -20,7 +20,7 @@ export const packages = pgTable(
   (packages) => [
     index("metadata_idx").on(packages.metadataId), // Index for metadataId
     index("data_idx").on(packages.dataId), // Index for dataId
-  ]
+  ],
 );
 
 export const packageMetadata = pgTable(
@@ -35,9 +35,9 @@ export const packageMetadata = pgTable(
   (package_metadata) => [
     index("name_version_idx").on(
       package_metadata.name,
-      package_metadata.version
+      package_metadata.version,
     ), // Ensures unique name/version pair
-  ]
+  ],
 );
 
 // Package Data Table
@@ -54,7 +54,7 @@ export const packageData = pgTable(
   },
   (package_data) => [
     index("url_idx").on(package_data.id), // Index for id lookups
-  ]
+  ],
 );
 
 // Schema for inserting a user - can be used to validate API requests

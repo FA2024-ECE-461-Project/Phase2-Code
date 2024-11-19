@@ -8,13 +8,14 @@ import { z } from "zod";
 
 //mainly use for validation
 export const createPackageDataSchema = insertPackageDataSchema.omit({
-  id: true,
+    ID: true,
 });
 
 export const createPackageMetadataSchema = insertPackageMetadataSchema.omit({
-  id: true,
+    ID: true,
 });
 
+export const createPackageSchema = insertPackagesSchema
 //get the type of the package schema from zod
 export type createPackageData = z.infer<typeof createPackageDataSchema>;
 export type createPackageMetadata = z.infer<typeof createPackageMetadataSchema>;

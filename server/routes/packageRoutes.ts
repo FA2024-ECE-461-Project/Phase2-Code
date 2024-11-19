@@ -141,77 +141,70 @@ export const packageRoutes = new Hono()
   })
 
 
-  // Update a package by ID
-  .post("/:ID", zValidator("json", createPackageSchema),  async (c) => {
+  .post("/:ID", zValidator("json", createPackageSchema), async (c) => {
     const id = c.req.param("ID");
-    const body = await c.req.json(); // Parse request body
-
+    const body = await c.req.json();
+  
     // Validate incoming data
     const { metadata, data } = body;
     if (!metadata && !data) {
       c.status(400);
       return c.json({ error: "Invalid input: Must provide metadata or data to update." });
     }
-
+  
     // Fetch the existing package from the database
     const packageResult = await db
       .select()
       .from(packagesTable)
       .where(eq(packagesTable.ID, id))
       .then((res) => res[0]);
-
+  
     if (!packageResult) {
       c.status(404);
       return c.json({ error: "Package not found" });
     }
-
+  
     // Update metadata if provided
     if (metadata) {
+      const { ID, ...metadataToUpdate } = metadata;
       await db
         .update(packageMetadataTable)
-        .set(metadata)
+        .set(metadataToUpdate)
         .where(eq(packageMetadataTable.ID, packageResult.metadataId));
     }
-
+  
     // Update data if provided
     if (data) {
+      const { ID, ...dataToUpdate } = data;
       await db
         .update(packageDataTable)
-        .set(data)
+        .set(dataToUpdate)
         .where(eq(packageDataTable.ID, packageResult.dataId));
     }
-
+  
     // Fetch updated package details
-    const updatedPackage = await db
-      .select()
-      .from(packagesTable)
-      .where(eq(packagesTable.ID, id))
-      .then((res) => res[0]);
-
     const updatedMetadata = await db
       .select()
       .from(packageMetadataTable)
       .where(eq(packageMetadataTable.ID, packageResult.metadataId))
       .then((res) => res[0]);
-
+  
     const updatedData = await db
       .select()
       .from(packageDataTable)
       .where(eq(packageDataTable.ID, packageResult.dataId))
       .then((res) => res[0]);
-
+  
     // Omit 'id' field from updated data result
     const dataWithoutId = omitId(updatedData);
-
+  
     // Return updated package
     c.status(200);
     return c.json({
-      // package: updatedPackage,
       metadata: updatedMetadata,
       data: dataWithoutId,
     });
   });
-
 
   // .delete("/:ID", (c) => {
   //   const id = c.req.param("ID");

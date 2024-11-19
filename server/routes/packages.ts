@@ -35,21 +35,22 @@ export const metadataRoutes = new Hono()
    TODO: implement this and account for the "*" case */
   .post("/", zValidator("json", insertPackageMetadataSchema), async (c) => {
     // assume we get {name: "package-name", version: "x.y.z"} as request body
-    const { name, version } = c.req.valid("json");
-    if (name === "*") {
+    const { Name, Version} = c.req.valid("json");
+    if (Name === "*") {
       // enumerate a list of all packages in a list when given "*"
       const response = await db.select().from(packageMetadataTable);
       return c.json(response);
     }
 
     // do a search in the database for the package using name and version as parameters
+    // equivalent to SELECT * FROM package_metadata WHERE Name = Name AND Version = Version
     const response = await db
       .select()
       .from(packageMetadataTable)
       .where(
         and(
-          eq(packageMetadataTable.name, name),
-          eq(packageMetadataTable.version, version),
+          eq(packageMetadataTable.Name, Name),
+          eq(packageMetadataTable.Version, Version),
         ),
       );
     return c.json(response); // this should be a list of packages (can be empty)

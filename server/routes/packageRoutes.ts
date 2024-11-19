@@ -4,7 +4,7 @@ import { zValidator } from "@hono/zod-validator";
 import { exec } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
-import { eq, desc, sum, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
   selectPackageMetadataSchema,
   selectPackageDataSchema,

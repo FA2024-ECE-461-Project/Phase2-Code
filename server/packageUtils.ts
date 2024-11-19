@@ -14,57 +14,57 @@ dotenv.config();
 
 interface NpmPackageInfo {
   repository?: {
-    url?: string;
+    URL?: string;
   };
 }
 
 // Helper function to omit the 'id' field from an object
-export function omitId<T extends { id?: any }>(obj: T): Omit<T, "id"> {
-  const { id, ...rest } = obj;
+export function omitId<T extends { ID?: any }>(obj: T): Omit<T, "ID"> {
+  const { ID, ...rest } = obj;
   return rest;
 }
 
 // Function to generate unique ID from package name and version
-export function generatePackageId(name: string, version: string): string {
-  return `${name}@${version}`;
+export function generatePackageId(Name: string, Version: string): string {
+  return `${Name}@${Version}`;
 }
 
 export async function getPackageDataFromUrl(
-  url: string,
-): Promise<{ name: string | null; version: string | null }> {
+  URL: string,
+): Promise<{ Name: string | null; Version: string | null }> {
   // Initialize name and version to null
-  let name: string | null = null;
-  let version: string | null = null;
+  let Name: string | null = null;
+  let Version: string | null = null;
 
   // Classify the URL
-  const urlType = classifyURL(url);
+  const urlType = classifyURL(URL);
 
-  let githubUrl = url; // Default to the input URL
+  let githubUrl = URL; // Default to the input URL
 
   if (urlType === UrlType.NPM) {
     // It's an NPM URL
-    const packageName = extractNpmPackageName(url);
+    const packageName = extractNpmPackageName(URL);
     if (packageName) {
       const repoUrl = await getNpmPackageGitHubUrl(packageName);
       if (repoUrl) {
         githubUrl = repoUrl;
       } else {
         // Cannot get GitHub URL from NPM package
-        return { name: null, version: null };
+        return { Name: null, Version: null };
       }
     } else {
       // Cannot extract package name from NPM URL
-      return { name: null, version: null };
+      return { Name: null, Version: null };
     }
   } else if (urlType !== UrlType.GitHub) {
     // Other URL type, cannot process
-    return { name: null, version: null };
+    return { Name: null, Version: null };
   }
 
   // Now we have the GitHub URL, parse it to get owner and repo
   const { owner, repo } = parseGitHubUrl(githubUrl);
   if (!owner || !repo) {
-    return { name: null, version: null };
+    return { Name: null, Version: null };
   }
 
   // Get the GitHub token
@@ -90,11 +90,11 @@ export async function getPackageDataFromUrl(
       const packageJson = JSON.parse(packageJsonString);
 
       // Get name and version from package.json
-      name = packageJson.name || null;
-      version = packageJson.version || null;
+      Name = packageJson.name || null;
+      Version = packageJson.version || null;
     } else {
       // Could not get content
-      return { name: null, version: null };
+      return { Name: null, Version: null };
     }
   } catch (error) {
     console.log("Error fetching package.json from GitHub repo", {
@@ -102,8 +102,8 @@ export async function getPackageDataFromUrl(
       repo,
       error: (error as Error).message,
     });
-    return { name: null, version: null };
+    return { Name: null, Version: null };
   }
 
-  return { name, version };
+  return { Name, Version };
 }

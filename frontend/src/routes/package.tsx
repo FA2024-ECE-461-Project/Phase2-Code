@@ -51,10 +51,10 @@ function Index() {
         </TableHeader>
         <TableBody>
           {data.data.packages.map((packages) => (
-            <TableRow key={packages.id}>
-              <TableCell className="font-medium">{packages.name}</TableCell>
-              <TableCell>{packages.version}</TableCell>
-              <TableCell>{packages.id}</TableCell>
+            <TableRow key={packages.ID}>
+              <TableCell className="font-medium">{packages.Name}</TableCell>
+              <TableCell>{packages.Version}</TableCell>
+              <TableCell>{packages.ID}</TableCell>
             </TableRow>
           ))}
         </TableBody>

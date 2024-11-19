@@ -17,6 +17,9 @@ function NavBar() {
       <Link to="/upload" className="[&.active]:font-bold">
         Upload
       </Link>
+      <Link to="/update" className="[&.active]:font-bold">
+        Update
+      </Link>
       <Link to="/search" className="[&.active]:font-bold">
         Search
       </Link>

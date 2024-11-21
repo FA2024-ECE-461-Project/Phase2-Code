@@ -28,6 +28,9 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
+
+          # Stash local changes before git pull
+          git stash --include-untracked || echo "Nothing to stash"
           git pull
 
           # Install backend dependencies

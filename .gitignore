@@ -23,3 +23,6 @@ ece461-project-phase2-fall2024-updated.yaml
 
 # .gitignore
 .gitignore
+
+# experiment file
+experiment.ts

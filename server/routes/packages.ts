@@ -22,8 +22,8 @@ const postPackageMetadataRequestSchema = z.object({
   Name: z
     .string()
     .min(1, { message: "Name must be at least 1 character long" })
-    .refine((name) => name.length > 1 || name === "*", {
-      message: 'Name must be "*" if it is a single character',
+    .refine((name) => name.length >= 3 || name === "*", {
+      message: "Name must be \"*\" if it's shorter than 3 characters",
     }),
   Version: z.string(),
   offset: z.string().optional(),
@@ -62,13 +62,10 @@ export const metadataRoutes = new Hono()
       const { Name, Version, offset } = c.req.valid("json");
       if (Name === "*") {
         // enumerate a list of all packages in a list when given "*"
-        const query = await db.select().from(packageMetadataTable);
-        if (offset) {
-          // offset parameter defines the beginning page of the search
-          //e.g. offset=10 will start the search from the 10th page
-          // go to page *offset* and start returning from there
-          const response = query.slice(parseInt(offset, 10));
-          return c.json(response);
+        // select all packages from packageMetadataTable, 10 packages per page
+        let query = await db.select().from(packageMetadataTable).limit(10);
+        if(offset) {
+          query = query.slice(parseInt(offset, 10));
         }
         return c.json(query);
       }
@@ -86,8 +83,7 @@ export const metadataRoutes = new Hono()
         );
 
       if (offset) {
-        const response = query.slice(parseInt(offset, 10));
-        return c.json(response);
+        return c.json(query.slice(parseInt(offset, 10)));
       }
 
       return c.json(query);

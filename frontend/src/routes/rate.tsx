@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from "@tanstack/react-router";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Button } from "../components/ui/button";
@@ -12,22 +12,45 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { toast, Toaster } from "sonner";
-import { useState } from 'react';
+import { useState } from "react";
+import { Separator } from "../components/ui/separator";
 
-export const Route = createFileRoute('/rate')({
+export const Route = createFileRoute("/rate")({
   component: ratePackage,
 });
 
 interface RateResponseSuccess {
-  Rate: string | null;
+  Rate: MetricsResult | null;
 }
 
 interface RateResponseError {
   error: string;
 }
 
+interface MetricsResult {
+  URL: string;
+  NetScore: number;
+  NetScore_Latency: number;
+  RampUp: number;
+  RampUp_Latency: number;
+  Correctness: number;
+  Correctness_Latency: number;
+  BusFactor: number;
+  BusFactor_Latency: number;
+  ResponsiveMaintainer: number;
+  ResponsiveMaintainer_Latency: number;
+  License: number;
+  License_Latency: number;
+  PR_Code_Reviews: number;
+  PR_Code_Reviews_Latency: number;
+  DependencyMetric: number;
+  DependencyMetric_Latency: number;
+}
+
 function ratePackage() {
-  const [packageRating, setPackageRating] = useState<string | null>(null);
+  const [packageRating, setPackageRating] = useState<MetricsResult | null>(
+    null
+  );
 
   const form = useForm({
     defaultValues: {
@@ -57,7 +80,9 @@ function ratePackage() {
       <Card className="w-[500px]">
         <CardHeader>
           <CardTitle>Rate Package</CardTitle>
-          <CardDescription>Enter the package ID to get its rating.</CardDescription>
+          <CardDescription>
+            Enter the package ID to get its rating.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form
@@ -88,17 +113,34 @@ function ratePackage() {
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
                 <Button type="submit" disabled={!canSubmit} className="mt-4">
-                  {isSubmitting ? "..." : "Rate"}
+                  {isSubmitting ? "Rating..." : "Rate"}
                 </Button>
               )}
             />
           </form>
-
           {packageRating !== null && (
-            <div className="mt-4">
-              <h2 className="text-xl font-semibold text-black">Package Rating:</h2>
-              <p>{packageRating}</p>
-            </div>
+            <>
+              <Separator className="my-4" />
+              <div className="flex flex-col space-y-2 text-sm">
+                <div><strong>URL:</strong> {packageRating.URL}</div>
+                <div><strong>NetScore:</strong> {packageRating.NetScore}</div>
+                <div><strong>NetScore Latency:</strong> {packageRating.NetScore_Latency}</div>
+                <div><strong>RampUp:</strong> {packageRating.RampUp}</div>
+                <div><strong>RampUp Latency:</strong> {packageRating.RampUp_Latency}</div>
+                <div><strong>Correctness:</strong> {packageRating.Correctness}</div>
+                <div><strong>Correctness Latency:</strong> {packageRating.Correctness_Latency}</div>
+                <div><strong>BusFactor:</strong> {packageRating.BusFactor}</div>
+                <div><strong>BusFactor Latency:</strong> {packageRating.BusFactor_Latency}</div>
+                <div><strong>ResponsiveMaintainer:</strong> {packageRating.ResponsiveMaintainer}</div>
+                <div><strong>ResponsiveMaintainer Latency:</strong> {packageRating.ResponsiveMaintainer_Latency}</div>
+                <div><strong>License:</strong> {packageRating.License}</div>
+                <div><strong>License Latency:</strong> {packageRating.License_Latency}</div>
+                <div><strong>PR Code Reviews:</strong> {packageRating.PR_Code_Reviews}</div>
+                <div><strong>PR Code Reviews Latency:</strong> {packageRating.PR_Code_Reviews_Latency}</div>
+                <div><strong>Dependency Metric:</strong> {packageRating.DependencyMetric}</div>
+                <div><strong>Dependency Metric Latency:</strong> {packageRating.DependencyMetric_Latency}</div>
+              </div>
+            </>
           )}
 
           <Toaster />

@@ -236,7 +236,7 @@ function createEmptyMetricsResult(url: string): MetricsResult {
 }
 
 
-export async function processSingleUrl(url: string): Promise<string> {
+export async function processSingleUrl(url: string): Promise<MetricsResult> {
   if (!process.env.LOG_FILE) {
     throw new Error('LOG_FILE environment variable is not set');
   }
@@ -263,10 +263,10 @@ export async function processSingleUrl(url: string): Promise<string> {
       License_Latency: parseFloat((result.License_Latency / 1000).toFixed(3)),
       PR_Code_Reviews: parseFloat(result.PR_Code_Reviews.toFixed(3)),
       PR_Code_Reviews_Latency: parseFloat((result.PR_Code_Reviews_Latency / 1000).toFixed(3)),
-      DependencyMectric: parseFloat(result.DependencyMetric.toFixed(3)),
-      DependencyNetric_Latency: parseFloat((result.DependencyMetric_Latency / 1000).toFixed(3))
+      DependencyMetric: parseFloat(result.DependencyMetric.toFixed(3)),
+      DependencyMetric_Latency: parseFloat((result.DependencyMetric_Latency / 1000).toFixed(3))
     };
-    return JSON.stringify(formattedResult, null, 2);
+    return formattedResult;
   } catch (error) {
     logger.error(`Error processing URL ${url}:`, { error });
     const emptyResult = {
@@ -288,7 +288,7 @@ export async function processSingleUrl(url: string): Promise<string> {
       DependencyMetric: -1,
       DependencyMetric_Latency: -1
     };
-    return JSON.stringify(emptyResult, null, 2);
+    return emptyResult;
   }
 }
 

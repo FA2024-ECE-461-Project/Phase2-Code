@@ -36,6 +36,7 @@ function ratePackage() {
     onSubmit: async ({ value }) => {
       const { ID } = value;
       // Send GET request to backend
+
       const res = await api.package[":ID"].rate.$get({
         param: { ID },
       });
@@ -98,7 +99,7 @@ function ratePackage() {
               <h2 className="text-xl font-semibold text-black">Package Rating:</h2>
               <p>{packageRating}</p>
             </div>
-          )} 
+          )}
 
           <Toaster />
         </CardContent>

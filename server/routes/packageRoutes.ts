@@ -18,7 +18,7 @@ import {
   generatePackageId,
   omitId,
 } from "../packageUtils";
-
+import { processUrl, processSingleUrl } from "../packageScore/src/index";
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
@@ -229,6 +229,14 @@ export const packageRoutes = new Hono()
   .get("/:ID/rate", async (c) => {
     const ID = c.req.param("ID");
 
+    // Print the ID to the console
+    console.log(`Package ID: ${ID}`);
+    // if no ID is provided, return an error
+    // Not sure why this is not working when no ID is provided
+    if (!ID) {
+      c.status(400);
+      return c.json({ error: "ID is required" });
+    }
     // Fetch the package from the database
     const packageResult = await db
       .select()
@@ -250,10 +258,13 @@ export const packageRoutes = new Hono()
 
     // Get the URL from the package data
     const URL = packageData.URL;
+    // if (typeof URL !== 'string') {
+    //   throw new Error('Invalid URL');
+    // }
     console.log(URL);
     // Need to implement the logic to get the rating from the URL
-
+    const rating = await processSingleUrl(URL!);
     // Return the rating
     c.status(200);
-    return c.json({ Rate: URL });
+    return c.json({ Rate: rating });
   });

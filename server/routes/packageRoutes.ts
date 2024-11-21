@@ -266,5 +266,5 @@ export const packageRoutes = new Hono()
     const rating = await processSingleUrl(URL!);
     // Return the rating
     c.status(200);
-    return c.json({ Rate: rating });
+    return c.json(rating);
   });

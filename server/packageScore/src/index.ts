@@ -306,7 +306,7 @@ export async function processSingleUrl(url: string): Promise<MetricsResult> {
 // }
 
 // main();
-// const program = new Command();
+const program = new Command();
 
 // program
 //   .version('1.0.0')

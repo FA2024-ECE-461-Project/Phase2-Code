@@ -65,8 +65,8 @@ function ratePackage() {
       });
 
       if (res.status === 200) {
-        const data = (await res.json()) as RateResponseSuccess;
-        setPackageRating(data.Rate); // Store the response data
+        const data = (await res.json()) as MetricsResult;
+        setPackageRating(data); // Store the response data
         toast.success("Package rated successfully!");
       } else {
         const data = (await res.json()) as RateResponseError;
@@ -142,7 +142,6 @@ function ratePackage() {
               </div>
             </>
           )}
-
           <Toaster />
         </CardContent>
       </Card>

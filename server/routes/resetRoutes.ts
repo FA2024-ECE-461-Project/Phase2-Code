@@ -1,11 +1,4 @@
 import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
-import {
-  createPackageDataSchema,
-  createPackageMetadataSchema,
-} from "../sharedSchema";
 import {
   packages as packagesTable,
   packageMetadata as packageMetadataTable,

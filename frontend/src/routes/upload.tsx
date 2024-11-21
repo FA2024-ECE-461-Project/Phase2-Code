@@ -6,6 +6,14 @@ import { useForm } from "@tanstack/react-form";
 import { api } from "../lib/api";
 import { useState } from "react";
 import { toast, Toaster } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+// import { Name } from "drizzle-orm";
 
 // frontend route "/upload" to upload a package named Route
 export const Route = createFileRoute("/upload")({
@@ -19,18 +27,40 @@ function uploadPackage() {
     defaultValues: {
       URL: "",
       Content: "",
+      JSProgram: "",
+      Name: "",
+      debloat: false,
     },
     onSubmit: async ({ value }) => {
       // Initialize the payload object
-      let payload: { URL?: string; Content?: string } = {};
+      let payload: {
+        URL?: string;
+        Content?: string;
+        Name?: string;
+        JSProgram?: string;
+        debloat?: boolean;
+      } = {};
+      
+      // Name exists, set the payload
+      payload = { Name: value.Name };
+
+      // JSProgram is optional, set the payload if it exists
+      if (value.JSProgram) {
+        payload = { ...payload, JSProgram: value.JSProgram };
+      }
+
+      // debloat is optional, set the payload if it exists
+      if (value.debloat) {
+        payload = { ...payload, debloat: value.debloat };
+      }
 
       // Check the upload mode and set the payload accordingly
       if (uploadMode === "url") {
         if (!value.URL) throw new Error("URL is required.");
-        payload = { URL: value.URL };
+        payload = { URL: value.URL, JSProgram: value.JSProgram};
       } else if (uploadMode === "zip") {
         if (!value.Content) throw new Error("Base64-encoded file is required.");
-        payload = { Content: value.Content };
+        payload = { Content: value.Content, Name: value.Name, debloat: value.debloat, JSProgram: value.JSProgram };
       }
 
       // Send the payload to the API
@@ -90,33 +120,78 @@ function uploadPackage() {
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
-                {field.state.meta.isTouched && field.state.meta.errors.length ? (
+                {/* {field.state.meta.isTouched && field.state.meta.errors.length ? (
                   <em>{field.state.meta.errors.join(", ")}</em>
-                ) : null}
+                ) : null} */}
               </>
             )}
           />
         )}
         {uploadMode === "zip" && (
-          <form.Field
-            name="Content"
-            children={(field) => (
-              <>
-                <Label htmlFor="Upload Zip File">Upload Zip File</Label>
-                <Input
-                  type="file"
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.isTouched && field.state.meta.errors.length ? (
-                  <em>{field.state.meta.errors.join(", ")}</em>
-                ) : null}
-              </>
-            )}
-          />
+          <>
+            <form.Field
+              name="Name"
+              children={(field) => (
+                <>
+                  <Label htmlFor={field.name}>Enter Package Name</Label>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    placeholder="Enter Package Name"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </>
+              )}
+            />
+            <form.Field
+              name="Content"
+              children={(field) => (
+                <>
+                  <Label htmlFor={field.name}>Upload Zip File</Label>
+                  <Input
+                    type="file"
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </>
+              )}
+            />
+            <form.Field
+              name="debloat"
+              children={(field) => (
+                <>
+                  <Label htmlFor={field.name}>Debloat</Label>
+                  <Select
+                    onValueChange={(value) =>
+                      field.handleChange(value === "True")
+                    }
+                  >
+                    {/* Updated SelectTrigger */}
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Select True or False" />
+                    </SelectTrigger>
+
+                    {/* Updated SelectContent */}
+                    <SelectContent>
+                      <SelectItem value="True">True</SelectItem>
+                      <SelectItem value="False">False</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Error Display */}
+                  {/* {field.state.meta.isTouched &&
+              field.state.meta.errors.length ? (
+                <em>{field.state.meta.errors.join(", ")}</em>
+              ) : null} */}
+                </>
+              )}
+            />
+          </>
         )}
         {/* This is the submit button */}
         <form.Subscribe

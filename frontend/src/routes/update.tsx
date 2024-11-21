@@ -26,87 +26,84 @@ export const Route = createFileRoute("/update")({
 });
 
 function updatePackage() {
-    const form = useForm({
-      defaultValues: {
+  const form = useForm({
+    defaultValues: {
+      metadata: {
+        Name: "",
+        Version: "",
         ID: "",
-        metadata: {
-          Name: "",
-          Version: "",
-        },
-        data: {
-          Content: "",
-          URL: "",
-          debloat: false,
-          JSProgram: "",
-        },
       },
-      onSubmit: async ({ value }) => {
-        const { ID, metadata, data } = value;
-  
-        // Check if the ID is empty
-        if (!ID) {
-          toast.error("ID is required.");
-          return;
-        }
-  
-        // Create payload object without ID
-        const payload = { metadata, data };
-  
-        // Send POST request to backend
-        const res = await api.package[":ID"].$post({
-          param: { ID },
-          json: payload,
-        });
-  
-        if (res.status === 200) {
-          toast.success("Package updated successfully!");
-        } else if (res.status === 400 || res.status === 404) {
-          const error = await res.json();
-          if ("error" in error) {
-            toast.error(error.error);
-          }
-        } else {
-          toast.error("An unexpected error occurred.");
-        }
+      data: {
+        Content: "",
+        URL: "",
+        debloat: false,
+        JSProgram: "",
       },
-    });
-  
-    return (
-      <div className="flex flex-col items-center justify-center p-4">
-        <Card className="w-[500px]">
-          <CardHeader>
-            <CardTitle>Update Package</CardTitle>
-            <CardDescription>Update your package details below.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void form.handleSubmit();
-              }}
-              className="max-w-xl w-full"
-            >
-              <form.Field
-                name="ID"
-                children={(field) => (
-                  <>
-                    <Label htmlFor={field.name}> Package ID</Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      placeholder="Enter Package ID to Update"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                    />
-                    {field.state.meta.isTouched &&
-                    field.state.meta.errors.length ? (
-                      <em>{field.state.meta.errors.join(", ")}</em>
-                    ) : null}
-                  </>
-                )}
-              />
+    },
+    onSubmit: async ({ value }) => {
+      const { metadata, data } = value;
+
+      // Check if the ID is empty
+      if (!metadata.ID) {
+        toast.error("ID is required.");
+        return;
+      }
+
+      // Create payload object without ID
+      const ID = metadata.ID;
+      const payload = { metadata, data };
+
+      // Send POST request to backend
+      const res = await api.package[":ID"].$post({
+        param: { ID },
+        json: payload,
+      });
+
+      if (res.status === 200) {
+        toast.success("Package updated successfully!");
+      } else if (res.status === 400 || res.status === 404) {
+        const error = await res.json();
+        if ("error" in error) {
+          toast.error(error.error);
+        }
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
+    },
+  });
+
+  return (
+    <div className="flex flex-col items-center justify-center p-4">
+      <Card className="w-[500px]">
+        <CardHeader>
+          <CardTitle>Update Package</CardTitle>
+          <CardDescription>Update your package details below.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              void form.handleSubmit();
+            }}
+            className="max-w-xl w-full"
+          >
+            <form.Field
+              name="metadata.ID"
+              children={(field) => (
+                <>
+                  <Label htmlFor={field.name}> Package ID</Label>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    placeholder="Enter Package ID"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </>
+              )}
+            />
             <form.Field
               name="metadata.Name"
               children={(field) => (
@@ -120,10 +117,6 @@ function updatePackage() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
-                  {field.state.meta.isTouched &&
-                  field.state.meta.errors.length ? (
-                    <em>{field.state.meta.errors.join(", ")}</em>
-                  ) : null}
                 </>
               )}
             />
@@ -140,10 +133,6 @@ function updatePackage() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
-                  {field.state.meta.isTouched &&
-                  field.state.meta.errors.length ? (
-                    <em>{field.state.meta.errors.join(", ")}</em>
-                  ) : null}
                 </>
               )}
             />
@@ -160,10 +149,6 @@ function updatePackage() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
-                  {field.state.meta.isTouched &&
-                  field.state.meta.errors.length ? (
-                    <em>{field.state.meta.errors.join(", ")}</em>
-                  ) : null}
                 </>
               )}
             />
@@ -180,10 +165,6 @@ function updatePackage() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
-                  {field.state.meta.isTouched &&
-                  field.state.meta.errors.length ? (
-                    <em>{field.state.meta.errors.join(", ")}</em>
-                  ) : null}
                 </>
               )}
             />
@@ -191,22 +172,23 @@ function updatePackage() {
               name="data.debloat"
               children={(field) => (
                 <>
-                  <Label htmlFor={field.name}> Debloat</Label>
+                  <Label htmlFor={field.name}>Debloat</Label>
                   <Select
-                    onValueChange={(value) => field.handleChange(value === "True")}
+                    onValueChange={(value) =>
+                      field.handleChange(value === "True")
+                    }
                   >
-                    <SelectTrigger id="framework">
-                      <SelectValue placeholder="Select" />
+                    {/* Updated SelectTrigger */}
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Select True or False" />
                     </SelectTrigger>
-                    <SelectContent position="popper">
+
+                    {/* Updated SelectContent */}
+                    <SelectContent>
                       <SelectItem value="True">True</SelectItem>
                       <SelectItem value="False">False</SelectItem>
                     </SelectContent>
                   </Select>
-                  {field.state.meta.isTouched &&
-                  field.state.meta.errors.length ? (
-                    <em>{field.state.meta.errors.join(", ")}</em>
-                  ) : null}
                 </>
               )}
             />
@@ -223,10 +205,6 @@ function updatePackage() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
-                  {field.state.meta.isTouched &&
-                  field.state.meta.errors.length ? (
-                    <em>{field.state.meta.errors.join(", ")}</em>
-                  ) : null}
                 </>
               )}
             />

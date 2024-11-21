@@ -159,7 +159,7 @@ export const packageRoutes = new Hono()
   })
 
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
-    const id = c.req.param("ID");
+    const ID = c.req.param("ID");
     const body = await c.req.json();
 
     // Validate incoming data
@@ -175,7 +175,7 @@ export const packageRoutes = new Hono()
     const packageResult = await db
       .select()
       .from(packagesTable)
-      .where(eq(packagesTable.ID, id))
+      .where(eq(packagesTable.ID, ID))
       .then((res) => res[0]);
 
     if (!packageResult) {
@@ -223,53 +223,37 @@ export const packageRoutes = new Hono()
       metadata: updatedMetadata,
       data: dataWithoutId,
     });
-  });
+  })
 
-// .delete("/:ID", (c) => {
-//   const id = c.req.param("ID");
-//   const foundPackage = fakePackages.find((pkg) => pkg.metadata.ID === id);
-//   if (!foundPackage) {
-//     return c.notFound();
-//   }
-//   const deletePackages = fakePackages.splice(
-//     fakePackages.indexOf(foundPackage),
-//     1,
-//   );
-//   return c.json({ Package: deletePackages[0] });
-// })
-// // get the rating of a package by id by executing run script
-// .get("/:ID/rate", async (c) => {
-//   const id = c.req.param("ID");
-//   console.log(`Received request for package ID: ${id}`);
-//   const foundPackage = fakePackages.find((pkg) => pkg.metadata.ID === id);
-//   if (!foundPackage) {
-//     console.log(`Package with ID ${id} not found`);
-//     return c.notFound();
-//   }
-//   // const url = foundPackage.data.URL;
-//   // it's running the url.txt script, need to change to run url from the package
-//   // TODO: change the script to run the URL from the package
-//   const command = `./run url.txt`;
-//   return new Promise((resolve) => {
-//     exec(command, (error, stdout, stderr) => {
-//       if (error) {
-//         console.error(`Error executing script: ${error.message}`);
-//         c.status(500);
-//         resolve(c.json({ error: "Internal Server Error" }));
-//       } else {
-//         if (stderr) {
-//           console.error(`Script stderr: ${stderr}`);
-//         }
-//         try {
-//           const jsonResponse = JSON.parse(stdout);
-//           delete jsonResponse.URL;
-//           resolve(c.json(jsonResponse));
-//         } catch (parseError) {
-//           console.error(`Error parsing JSON: ${parseError}`);
-//           c.status(500);
-//           resolve(c.json({ error: "Internal Server Error" }));
-//         }
-//       }
-//     });
-//   });
-// });
+  // Get rating of a package
+  .get("/:ID/rate", async (c) => {
+    const ID = c.req.param("ID");
+
+    // Fetch the package from the database
+    const packageResult = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packagesTable.ID, ID))
+      .then((res) => res[0]);
+
+    if (!packageResult) {
+      c.status(404);
+      return c.json({ error: "Package not found" });
+    }
+
+    // get the url from the package data
+    const packageData = await db
+      .select()
+      .from(packageDataTable)
+      .where(eq(packageDataTable.ID, packageResult.dataId))
+      .then((res) => res[0]);
+
+    // Get the URL from the package data
+    const URL = packageData.URL;
+    console.log(URL);
+    // Need to implement the logic to get the rating from the URL
+
+    // Return the rating
+    c.status(200);
+    return c.json({ Rate: URL });
+  });

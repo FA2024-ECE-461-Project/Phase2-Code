@@ -98,7 +98,7 @@ function ratePackage() {
               <h2 className="text-xl font-semibold text-black">Package Rating:</h2>
               <p>{packageRating}</p>
             </div>
-          )}
+          )} 
 
           <Toaster />
         </CardContent>

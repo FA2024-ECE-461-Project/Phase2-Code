@@ -19,9 +19,6 @@ export const Route = createFileRoute("/rate")({
   component: ratePackage,
 });
 
-interface RateResponseSuccess {
-  Rate: MetricsResult | null;
-}
 
 interface RateResponseError {
   error: string;

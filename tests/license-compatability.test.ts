@@ -2,11 +2,11 @@ import {
   get_license_compatibility,
   checkLicenseCompatibility,
   getLicense,
-} from "../server/packageScore/metrics/license-compatibility";
+} from "../server/packageScore/src/metrics/license-compatibility";
 import * as fs from "fs";
 import * as path from "path";
 
-jest.mock("../server/packageScore/logger");
+jest.mock("../server/packageScore/src/logger");
 jest.mock("fs");
 jest.mock("path");
 

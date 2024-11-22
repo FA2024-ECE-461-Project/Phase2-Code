@@ -29,10 +29,6 @@ const postPackageMetadataRequestSchema = z.object({
   offset: z.string().optional(),
 });
 
-insertPackageMetadataSchema.extend({
-  offset: z.string().optional(),
-});
-
 export const metadataRoutes = new Hono()
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
@@ -60,12 +56,14 @@ export const metadataRoutes = new Hono()
     async (c) => {
       // assume we get {name: "package-name", version: "x.y.z"} as request body
       const { Name, Version, offset } = c.req.valid("json");
+      const pageLimit = 10; // change this line when there is a spec on page limit
       if (Name === "*") {
         // enumerate a list of all packages in a list when given "*"
         // select all packages from packageMetadataTable, 10 packages per page
-        let query = await db.select().from(packageMetadataTable).limit(10);
+        const query = await db.select().from(packageMetadataTable).limit(pageLimit);
         if(offset) {
-          query = query.slice(parseInt(offset, 10));
+          const query = await db.select().from(packageMetadataTable).limit(pageLimit).offset(parseInt(offset, 10));
+          return c.json(query);
         }
         return c.json(query);
       }
@@ -80,10 +78,23 @@ export const metadataRoutes = new Hono()
             eq(packageMetadataTable.Name, Name),
             eq(packageMetadataTable.Version, Version),
           ),
-        );
+        )
+        .limit(pageLimit);
 
       if (offset) {
-        return c.json(query.slice(parseInt(offset, 10)));
+        const query = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(
+            and(
+              eq(packageMetadataTable.Name, Name),
+              eq(packageMetadataTable.Version, Version),
+            ),
+          )
+          .limit(pageLimit)
+          .offset(parseInt(offset, 10));
+        
+        return c.json(query);
       }
 
       return c.json(query);

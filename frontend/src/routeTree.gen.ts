@@ -22,8 +22,8 @@ import { Route as IndexImport } from './routes/index'
 // Create/Update Routes
 
 const UploadRoute = UploadImport.update({
-  id: "/upload",
-  path: "/upload",
+  id: '/upload',
+  path: '/upload',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -34,16 +34,16 @@ const UpdateRoute = UpdateImport.update({
 } as any)
 
 const SearchRoute = SearchImport.update({
-  id: "/search",
-  path: "/search",
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ResetRoute = ResetImport.update({
-  id: "/reset",
-  path: "/reset",
+  id: '/reset',
+  path: '/reset',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const RateRoute = RateImport.update({
   id: '/rate',
@@ -52,20 +52,20 @@ const RateRoute = RateImport.update({
 } as any)
 
 const PackageRoute = PackageImport.update({
-  id: "/package",
-  path: "/package",
+  id: '/package',
+  path: '/package',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const IndexRoute = IndexImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 // Populate the FileRoutesByPath interface
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
       id: '/'
@@ -194,13 +194,11 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   UpdateRoute: UpdateRoute,
   UploadRoute: UploadRoute,
-};
+}
 
 export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
-
-/* prettier-ignore-end */
+  ._addFileTypes<FileRouteTypes>()
 
 /* prettier-ignore-end */
 

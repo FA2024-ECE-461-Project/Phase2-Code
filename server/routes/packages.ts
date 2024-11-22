@@ -25,7 +25,6 @@ const postPackageMetadataRequestSchema = z.object({
       message: 'Name must be "*" if it\'s shorter than 3 characters',
     }),
   Version: z.string(),
-  offset: z.string().optional(),
 });
 
 export const metadataRoutes = new Hono()
@@ -54,7 +53,9 @@ export const metadataRoutes = new Hono()
     zValidator("json", postPackageMetadataRequestSchema),
     async (c) => {
       // assume we get {name: "package-name", version: "x.y.z"} as request body
-      const { Name, Version, offset } = c.req.valid("json");
+      const { Name, Version} = c.req.valid("json");
+      const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
+
       const pageLimit = 10; // change this line when there is a spec on page limit
       if (Name === "*") {
         // enumerate a list of all packages in a list when given "*"

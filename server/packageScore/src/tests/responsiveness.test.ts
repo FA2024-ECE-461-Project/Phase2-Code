@@ -62,7 +62,7 @@ describe("Responsiveness Tests", () => {
     (url.get_avg_Responsetime as jest.Mock).mockResolvedValue(12); // 12 hours
 
     const result = await calculateResponsiveness(
-      "https://github.com/mock-owner/mock-repo"
+      "https://github.com/mock-owner/mock-repo",
     );
 
     expect(result).toHaveProperty("score");
@@ -73,11 +73,11 @@ describe("Responsiveness Tests", () => {
 
     expect(logger.info).toHaveBeenCalledWith(
       "Starting responsiveness calculation",
-      { url: "https://github.com/mock-owner/mock-repo" }
+      { url: "https://github.com/mock-owner/mock-repo" },
     );
     expect(logger.info).toHaveBeenCalledWith(
       "Responsiveness calculation complete",
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -92,13 +92,13 @@ describe("Responsiveness Tests", () => {
     (url.get_avg_Responsetime as jest.Mock).mockResolvedValue(0);
 
     const result = await calculateResponsiveness(
-      "https://github.com/mock-owner/mock-repo"
+      "https://github.com/mock-owner/mock-repo",
     );
 
     expect(result).toEqual({ score: 0, latency: expect.any(Number) });
     expect(logger.warn).toHaveBeenCalledWith(
       "No issues or pull requests found",
-      { url: "https://github.com/mock-owner/mock-repo" }
+      { url: "https://github.com/mock-owner/mock-repo" },
     );
   });
 
@@ -110,17 +110,17 @@ describe("Responsiveness Tests", () => {
       headers: { Authorization: "token mock-token" },
     });
     (url.get_avg_ClosureTime as jest.Mock).mockRejectedValue(
-      new Error("API call failed")
+      new Error("API call failed"),
     );
 
     const result = await calculateResponsiveness(
-      "https://github.com/mock-owner/mock-repo"
+      "https://github.com/mock-owner/mock-repo",
     );
 
     expect(result).toEqual({ score: 0, latency: expect.any(Number) });
     expect(logger.error).toHaveBeenCalledWith(
       "Error calculating responsiveness",
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 });

@@ -11,7 +11,6 @@ import {
   packages as packagesTable,
   packageMetadata as packageMetadataTable,
   packageData as packageDataTable,
-  insertPackageMetadataSchema,
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import { eq, and } from "drizzle-orm";
@@ -23,7 +22,7 @@ const postPackageMetadataRequestSchema = z.object({
     .string()
     .min(1, { message: "Name must be at least 1 character long" })
     .refine((name) => name.length >= 3 || name === "*", {
-      message: "Name must be \"*\" if it's shorter than 3 characters",
+      message: 'Name must be "*" if it\'s shorter than 3 characters',
     }),
   Version: z.string(),
   offset: z.string().optional(),
@@ -60,9 +59,16 @@ export const metadataRoutes = new Hono()
       if (Name === "*") {
         // enumerate a list of all packages in a list when given "*"
         // select all packages from packageMetadataTable, 10 packages per page
-        const query = await db.select().from(packageMetadataTable).limit(pageLimit);
-        if(offset) {
-          const query = await db.select().from(packageMetadataTable).limit(pageLimit).offset(parseInt(offset, 10));
+        const query = await db
+          .select()
+          .from(packageMetadataTable)
+          .limit(pageLimit);
+        if (offset) {
+          const query = await db
+            .select()
+            .from(packageMetadataTable)
+            .limit(pageLimit)
+            .offset(parseInt(offset, 10));
           return c.json(query);
         }
         return c.json(query);
@@ -93,7 +99,7 @@ export const metadataRoutes = new Hono()
           )
           .limit(pageLimit)
           .offset(parseInt(offset, 10));
-        
+
         return c.json(query);
       }
 

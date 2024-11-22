@@ -53,7 +53,7 @@ describe("Test GitHub utility functions", () => {
 
     expect(token).toBeUndefined();
     expect(mockedLogger.error).toHaveBeenCalledWith(
-      "GITHUB_TOKEN is not set in .env file"
+      "GITHUB_TOKEN is not set in .env file",
     );
   });
 
@@ -101,7 +101,7 @@ describe("Test API functions", () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith(
       "https://api.github.com/repos/owner/repo/pulls?state=open",
-      { headers }
+      { headers },
     );
     expect(openPRs).toBe(3); // Mocked response has 3 open PRs
   });
@@ -114,7 +114,7 @@ describe("Test API functions", () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith(
       "https://api.github.com/repos/owner/repo/pulls?state=closed",
-      { headers }
+      { headers },
     );
     expect(closedPRs).toBe(2); // Mocked response has 2 closed PRs
   });
@@ -127,12 +127,12 @@ describe("Test API functions", () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith(
       "https://api.github.com/repos/nikivakil/461-team/pulls?state=all",
-      { headers: { Authorization: `token test-token` } } // Using the test token
+      { headers: { Authorization: `token test-token` } }, // Using the test token
     );
 
     expect(mockedLogger.info).toHaveBeenCalledWith(
       "Number of pull requests: 3",
-      { owner: "nikivakil", repo: "461-team" }
+      { owner: "nikivakil", repo: "461-team" },
     );
     expect(mockedLogger.error).not.toHaveBeenCalled();
   });
@@ -145,7 +145,7 @@ describe("Test API functions", () => {
 
     expect(mockedLogger.error).toHaveBeenCalledWith(
       "Error fetching pull requests",
-      { error: "API error", owner: "nikivakil", repo: "461-team" }
+      { error: "API error", owner: "nikivakil", repo: "461-team" },
     );
     expect(mockedLogger.info).not.toHaveBeenCalled();
   });
@@ -162,7 +162,7 @@ describe("Test API functions", () => {
       expect(packageName).toBe("some-package");
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         "Extracting NPM package name",
-        { url }
+        { url },
       );
     });
 
@@ -173,7 +173,7 @@ describe("Test API functions", () => {
       expect(packageName).toBeNull();
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         "Extracting NPM package name",
-        { url }
+        { url },
       );
     });
 
@@ -184,7 +184,7 @@ describe("Test API functions", () => {
       expect(packageName).toBeNull();
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         "Extracting NPM package name",
-        { url }
+        { url },
       );
     });
   });
@@ -209,15 +209,15 @@ describe("Test API functions", () => {
 
       expect(gitHubUrl).toBe("https://github.com/user/repo");
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        `https://registry.npmjs.org/${packageName}`
+        `https://registry.npmjs.org/${packageName}`,
       );
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         "Fetching GitHub URL for NPM package",
-        { packageName }
+        { packageName },
       );
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         "GitHub URL fetched for NPM package",
-        { packageName, cleanUrl: "https://github.com/user/repo" }
+        { packageName, cleanUrl: "https://github.com/user/repo" },
       );
     });
 
@@ -234,11 +234,11 @@ describe("Test API functions", () => {
 
       expect(gitHubUrl).toBeNull();
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        `https://registry.npmjs.org/${packageName}`
+        `https://registry.npmjs.org/${packageName}`,
       );
       expect(mockedLogger.warn).toHaveBeenCalledWith(
         "No GitHub URL found for NPM package",
-        { packageName }
+        { packageName },
       );
     });
 
@@ -251,11 +251,11 @@ describe("Test API functions", () => {
 
       expect(gitHubUrl).toBeNull();
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        `https://registry.npmjs.org/${packageName}`
+        `https://registry.npmjs.org/${packageName}`,
       );
       expect(mockedLogger.error).toHaveBeenCalledWith(
         "Error fetching NPM package info",
-        { packageName, error: "API error" }
+        { packageName, error: "API error" },
       );
     });
   });
@@ -303,15 +303,15 @@ describe("Test API functions", () => {
             Authorization: `token ${token}`,
             Accept: "application/vnd.github.v3+json",
           },
-        }
+        },
       );
       expect(mockedLogger.info).toHaveBeenCalledWith(
         "Fetching README content",
-        { owner, repo }
+        { owner, repo },
       );
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         "README content fetched successfully",
-        { owner, repo, contentLength: "README content".length }
+        { owner, repo, contentLength: "README content".length },
       );
     });
 
@@ -331,7 +331,7 @@ describe("Test API functions", () => {
       mockedAxios.get.mockResolvedValueOnce({ data: mockRepoContents });
 
       await expect(getReadmeContent(owner, repo)).rejects.toThrow(
-        "README file not found"
+        "README file not found",
       );
       expect(mockedAxios.get).toHaveBeenCalledWith(
         `https://api.github.com/repos/${owner}/${repo}/contents`,
@@ -340,7 +340,7 @@ describe("Test API functions", () => {
             Authorization: `token ${token}`,
             Accept: "application/vnd.github.v3+json",
           },
-        }
+        },
       );
       expect(mockedLogger.warn).toHaveBeenCalledWith("README file not found", {
         owner,
@@ -377,7 +377,7 @@ describe("Test API functions", () => {
       expect(avgClosureTime).toBe(24); // Average closure time in hours
       expect(logger.debug).toHaveBeenCalledWith(
         "Average closure time calculated",
-        { owner, repo, avgClosureTime }
+        { owner, repo, avgClosureTime },
       );
     });
 
@@ -405,7 +405,7 @@ describe("Test API functions", () => {
 
       expect(logger.error).toHaveBeenCalledWith(
         "Error calculating average closure time",
-        { owner, repo, error: errorMessage }
+        { owner, repo, error: errorMessage },
       );
     });
   });
@@ -440,7 +440,7 @@ describe("Test API functions", () => {
           repo,
           commitCount: mockCommitsResponse.data.length,
           contributorCount: mockContributorsResponse.data.length,
-        }
+        },
       );
     });
 
@@ -463,7 +463,7 @@ describe("Test API functions", () => {
           owner,
           repo,
           error: mockError.message,
-        }
+        },
       );
     });
   });
@@ -502,7 +502,7 @@ describe("Test API functions", () => {
       // Check that the API call was made with the correct URL and headers
       expect(axios.get).toHaveBeenCalledWith(
         `https://api.github.com/repos/${mockOwner}/${mockRepo}/issues?state=all`,
-        { headers: mockHeaders }
+        { headers: mockHeaders },
       );
 
       // Check that the returned result matches the mock issues
@@ -536,7 +536,7 @@ describe("Test API functions", () => {
 
       // Expect the function to throw an error
       await expect(url.getIssues(mockOwner, mockRepo)).rejects.toThrow(
-        "API error"
+        "API error",
       );
 
       // Check that the error logger was called with the correct arguments

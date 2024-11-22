@@ -18,4 +18,4 @@ Assume this repo is cloned,
 3. go to one ove them (session 1) and run `bun run dev`
 4. got to another terminal session (session 2), `cd` into `frontend/`, and do `bun run dev`
 5. session 2 should supply you an address you can open up with the browser, then you can look at the website hosted locally.
-6. (Optional) run ``bunx drizzle-kit studio`` in the terminal session that's in the root directory of the project to see what's in the database
+6. (Optional) run `bunx drizzle-kit studio` in the terminal session that's in the root directory of the project to see what's in the database

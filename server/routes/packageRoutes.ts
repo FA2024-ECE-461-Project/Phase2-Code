@@ -109,8 +109,8 @@ export const packageRoutes = new Hono()
         .where(
           and(
             eq(packageMetadataTable.Name, metaData.Name),
-            eq(packageMetadataTable.Version, metaData.Version)
-          )
+            eq(packageMetadataTable.Version, metaData.Version),
+          ),
         ) //If a package with the same name and same version already exists
         .then((res) => res[0]);
 

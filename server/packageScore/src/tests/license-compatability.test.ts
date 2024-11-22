@@ -62,7 +62,7 @@ describe("getLicense", () => {
     expect(fs.readdirSync).toHaveBeenCalledWith(repoPath);
     expect(fs.readFileSync).toHaveBeenCalledWith(
       path.join(repoPath, "LICENSE"),
-      "utf-8"
+      "utf-8",
     );
   });
   it("should extract license information from README.md when no LICENSE file exists", async () => {
@@ -86,11 +86,11 @@ describe("getLicense", () => {
     expect(result).toEqual("the MIT License ladi ladi da");
     expect(fs.readdirSync).toHaveBeenCalledWith(repoPath);
     expect(fs.existsSync).toHaveBeenCalledWith(
-      path.join(repoPath, "README.md")
+      path.join(repoPath, "README.md"),
     );
     expect(fs.readFileSync).toHaveBeenCalledWith(
       path.join(repoPath, "README.md"),
-      "utf-8"
+      "utf-8",
     );
   });
   it("should return null if license is not found", async () => {
@@ -104,11 +104,11 @@ describe("getLicense", () => {
     expect(result).toBeNull();
     expect(fs.readdirSync).toHaveBeenCalledWith(repoPath);
     expect(fs.existsSync).toHaveBeenCalledWith(
-      path.join(repoPath, "README.md")
+      path.join(repoPath, "README.md"),
     );
     expect(fs.readFileSync).toHaveBeenCalledWith(
       path.join(repoPath, "README.md"),
-      "utf-8"
+      "utf-8",
     );
   });
 });
@@ -131,7 +131,7 @@ describe("get_license_compatibility", () => {
     expect(fs.readdirSync).toHaveBeenCalledWith(mockRepoPath);
     expect(fs.readFileSync).toHaveBeenCalledWith(
       "/mock/repo/path/LICENSE",
-      "utf-8"
+      "utf-8",
     );
   });
 

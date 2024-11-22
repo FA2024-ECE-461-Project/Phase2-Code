@@ -1,12 +1,16 @@
 # 461-team
+
 **Members:**
+
 - Alex Pienkowski (apienkow@purdue.edu)
 - Aryana Lynch (amlynch@purdue.edu)
 - Niki Vakil (nvakil@purdue.edu)
 - Shaan Chanchani (schancha@purdue.edu)
 
 ## Project Overview
+
 This project is a GitHub utility tool designed to analyze repository responsiveness, manage API interactions, and provide insights into open-source projects. It includes the following key functionalities:
+
 1. Responsiveness Metrics: Calculates responsiveness scores based on the average closure and response times for issues and pull requests. It fetches data from GitHub and computes scores to help assess project engagement.
 2. GitHub API Integration: Utilizes the GitHub API to retrieve information about repositories, including open and closed pull requests, issues, commits, and contributors. It handles authentication and logs interactions for monitoring.
 3. NPM Package Management: Extracts GitHub URLs from NPM packages, retrieves README content, and verifies the existence of associated repositories, aiding in dependency management.
@@ -15,9 +19,10 @@ This project is a GitHub utility tool designed to analyze repository responsiven
 
 This tool aims to enhance the process of analyzing GitHub repositories and their responsiveness, making it easier for developers to assess project health and community engagement.
 
-
 ## Files
+
 ### src/index.ts
+
 #### Command-Line Program Setup:
 
 Uses the commander package to create CLI commands and arguments.
@@ -40,6 +45,7 @@ Outputs the metrics as a JSON object with calculated scores and latencies for ea
 Handles errors gracefully by returning an empty result for failed URLs.
 
 ### src/url.ts
+
 #### Environment Setup:
 
 Uses dotenv to load environment variables, including the GitHub API token.
@@ -68,6 +74,7 @@ Provides helper functions for constructing Axios request headers and extracting 
 Uses a logger for detailed logging of each action, including errors, warnings, and debugging information.
 
 ### src/logger.ts
+
 #### Environment Setup:
 
 Loads environment variables from a .env file using dotenv.
@@ -80,10 +87,12 @@ Ensures that the directory for logs exists. If not, it creates the directory usi
 #### Logger Configuration:
 
 Creates a logger using winston, configured with:
+
 - A log level (e.g., info, error) determined by the environment variable.
 - Formats for log output: timestamps, error stack traces, and JSON formatting.
 
 Two transport mechanisms:
+
 - Logs of level info and below are written to the main log file (package-evaluator.log).
 - Logs of level error are written to a separate error.log file.
 
@@ -92,6 +101,7 @@ Two transport mechanisms:
 The logger is exported for use in other parts of the application.
 
 ### src/metrics/bus-factor.ts
+
 #### Calculate Bus Factor:
 
 Commits and Contributors: The calculateBusFactor function processes the commit history and contributor data of a repository.
@@ -114,6 +124,7 @@ Measures the latency (time taken for the calculation) and returns the result.
 Logs errors if the repository data can't be fetched or if calculations fail, and returns default values in such cases.
 
 ### src/metrics/correctness.ts
+
 #### Main Function (getCorrectnessMetric):
 
 Fetches GitHub data for open/closed issues and PRs using the GitHub API.
@@ -129,6 +140,7 @@ Weights the two rates (60% issues, 40% PRs) and applies a logarithmic scaling to
 Clamps the score between 0 and 1 to ensure it falls within that range.
 
 ### src/metrics/license-compatibility.ts
+
 #### Main Function (get_license_compatibility):
 
 Takes a repository path, retrieves its license information (from a LICENSE file or README.md), and checks its compatibility with supported licenses.
@@ -150,6 +162,7 @@ Uses regular expressions to perform flexible, case-insensitive matches on the li
 A list of licenses is defined with patterns (e.g., MIT, Apache-2.0, GPL). Some licenses have multiple patterns to accommodate different variations of the license text.
 
 ### src/metrics/ramp-up-time.ts
+
 #### Main Function (get_ramp_up_time_metric):
 
 Takes a GitHub repository URL and retrieves the content of the repository's README.md file.
@@ -159,6 +172,7 @@ Logs the start and end of the process, as well as any errors, and returns the sc
 #### README Content Analysis (calculateRampUpScore):
 
 The score is calculated based on several factors:
+
 - Markdown headers: More headers indicate a well-structured README. (Capped at 0.3).
 - Code blocks: Shows examples of usage or implementation. (Capped at 0.2).
 - Installation instructions: Adds 0.15 if found.
@@ -171,6 +185,7 @@ The score is calculated based on several factors:
 The file logs key actions, such as retrieving the README, calculating scores, and handling errors.
 
 ### src/metrics/responsiveness.ts
+
 #### Main Function (calculateResponsiveness):
 
 Takes a GitHub repository URL and retrieves average issue closure time and pull request response time using GitHub API.
@@ -178,6 +193,7 @@ Calculates a responsiveness score based on how quickly the repository responds t
 Logs the start and end of the calculation, returns the score, and measures the latency (processing time).
 
 #### Supporting Functions:
+
 - getTimeDifferenceInHours: Calculates the time difference between two dates in hours.
 - normalizeTime: Normalizes the time values into a 0-1 range, where shorter times get a higher score.
 - calculateResponsivenessScore: Weighs response time (60%) and closure time (40%) to compute an overall responsiveness score.
@@ -191,6 +207,7 @@ Defines maximum closure time as 5 days and maximum response time as 36 hours, us
 Logs any errors and returns a score of 0 if no issues or PRs are found or if an error occurs.
 
 ### src/tests/bus-factor-test.ts
+
 #### Imports:
 
 It mocks axios, getToken, get_axios_params, getCommitsAndContributors, and logger to isolate the test environment and simulate data and responses.
@@ -203,19 +220,20 @@ The Bus Factor Tests suite includes three test cases that cover different scenar
 #### Test Cases:
 
 - Test 1: Valid Data:
-Simulates a repository with commits and contributors. The mocked data returns two authors.
-The test verifies that the get_bus_factor function returns the correct busFactor, a normalized score, and the latency.
-Ensures that appropriate logging functions are called and no errors are encountered.
+  Simulates a repository with commits and contributors. The mocked data returns two authors.
+  The test verifies that the get_bus_factor function returns the correct busFactor, a normalized score, and the latency.
+  Ensures that appropriate logging functions are called and no errors are encountered.
 
 - Test 2: No Commits or Contributors:
-Simulates a repository with no commits or contributors.
-Expects a default bus factor of 1, a normalized score of 0, and logs a warning about the absence of data.
+  Simulates a repository with no commits or contributors.
+  Expects a default bus factor of 1, a normalized score of 0, and logs a warning about the absence of data.
 
 - Test 3: Error Handling:
-Simulates an error (e.g., network failure) during the data fetching process.
-Expects the function to return default values (busFactor: 1, normalizedScore: 0) and logs an error.
+  Simulates an error (e.g., network failure) during the data fetching process.
+  Expects the function to return default values (busFactor: 1, normalizedScore: 0) and logs an error.
 
 ### src/tests/correctness-test.ts
+
 #### Imports:
 
 Mocks several functions from the url module that make API calls, such as getToken, get_axios_params, getOpenIssues, getClosedIssues, getOpenPRs, and getClosedPRs.
@@ -228,17 +246,19 @@ The Test getCorrectnessMetric suite focuses on verifying the behavior of the cor
 #### Test Cases:
 
 - Error Handling:
-Simulates a failure where API calls fail (e.g., due to network issues). It ensures that:
-The function returns a score of 0 and logs an error message.
-The logger.error function is properly called with details about the failure.
+  Simulates a failure where API calls fail (e.g., due to network issues). It ensures that:
+  The function returns a score of 0 and logs an error message.
+  The logger.error function is properly called with details about the failure.
 
 - Correctness Metric Calculation:
-Mocks the API calls to return valid data for open and closed issues and pull requests.
-Verifies that the function correctly computes the correctness score, logs the repository statistics, and tracks the latency for the calculation.
-The test ensures that both the score and latency are valid, and logging functions (logger.debug, logger.info) are called with the appropriate metadata.
+  Mocks the API calls to return valid data for open and closed issues and pull requests.
+  Verifies that the function correctly computes the correctness score, logs the repository statistics, and tracks the latency for the calculation.
+  The test ensures that both the score and latency are valid, and logging functions (logger.debug, logger.info) are called with the appropriate metadata.
 
 ### src/tests/license-compatibility-test.ts
+
 #### Functions Tested:
+
 1. checkLicenseCompatibility:
 
 This function checks if a given license text matches a valid open-source license.
@@ -249,23 +269,27 @@ A set of test cases with various license texts (both valid and invalid) is provi
 This function retrieves the license content from a repository's directory.
 
 It tests:
+
 - If the license file (LICENSE) exists, it returns its content.
 - If there's no LICENSE file, the license is extracted from the README.md file.
 - If neither contains license information, it returns null.
-  
+
 3. get_license_compatibility:
 
 This function checks the license compatibility of a repository and returns a compatibility score.
 
 #### Tests ensure:
+
 - A valid license (like MIT) gives a score of 1.
 - An incompatible or missing license results in a score of 0.
 
 #### Mocking:
+
 The file mocks modules like fs (for reading files) and path (for file path manipulations).
 It mocks API calls and logger functions to simulate different repository structures and license content without relying on actual file system operations.
 
 ### src/tests/responsiveness-test.ts
+
 #### Functions Tested:
 
 1. getTimeDifferenceInHours:
@@ -273,6 +297,7 @@ It mocks API calls and logger functions to simulate different repository structu
 Calculates the time difference in hours between two timestamps.
 
 Tests check for:
+
 - Correct time difference (e.g., for 36 hours, 4.5 hours).
 - Cases where times are identical (result should be 0).
 
@@ -281,6 +306,7 @@ Tests check for:
 Computes a responsiveness score based on average closure and response times.
 
 Tests ensure:
+
 - Proper score for average times.
 - Maximum score for fast response and closure times.
 - Minimum score for slow times.
@@ -290,6 +316,7 @@ Tests ensure:
 Integrates API calls to fetch average closure and response times for a GitHub repo.
 
 #### Tests check:
+
 - Correct score and latency when issues/PRs exist.
 - Proper handling when there are no issues/PRs (score 0, warning logged).
 - Handling of API call failures (score 0, error logged).
@@ -299,12 +326,14 @@ Integrates API calls to fetch average closure and response times for a GitHub re
 The file mocks external dependencies like logger and API calls (url) to simulate GitHub responses without making actual HTTP requests.
 
 ### src/tests/url-test.ts
+
 #### Mocks:
 
 Mocks environment variables, axios (to avoid real API calls), and a custom logger.
 Mocking ensures the tests are isolated and don't rely on real API interactions or actual environment settings.
 
 #### Tests:
+
 - Environment Token Handling: Tests the getToken function to ensure it retrieves the GitHub token from environment variables or logs an error if it's not found.
 - URL Classification and Parsing: Verifies that URLs are classified correctly (GitHub, NPM, or other) and that GitHub URLs are parsed into owner and repository parts.
 - API Calls: Tests functions like getOpenPRs, getClosedPRs, getIssues, and others to ensure they correctly call the GitHub API and handle responses or errors.
@@ -313,4 +342,5 @@ Mocking ensures the tests are isolated and don't rely on real API interactions o
 - Commits, Contributors, and Closure Times: Ensures functions properly fetch commit history, contributor data, and calculate average issue closure time.
 
 ## License
+
 MIT

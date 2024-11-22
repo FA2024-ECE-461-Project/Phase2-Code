@@ -10,19 +10,20 @@
 
 // Import Routes
 
-import { Route as rootRoute } from "./routes/__root";
-import { Route as UploadImport } from "./routes/upload";
-import { Route as UpdateImport } from "./routes/update";
-import { Route as SearchImport } from "./routes/search";
-import { Route as ResetImport } from "./routes/reset";
-import { Route as PackageImport } from "./routes/package";
-import { Route as IndexImport } from "./routes/index";
+import { Route as rootRoute } from './routes/__root'
+import { Route as UploadImport } from './routes/upload'
+import { Route as UpdateImport } from './routes/update'
+import { Route as SearchImport } from './routes/search'
+import { Route as ResetImport } from './routes/reset'
+import { Route as RateImport } from './routes/rate'
+import { Route as PackageImport } from './routes/package'
+import { Route as IndexImport } from './routes/index'
 
 // Create/Update Routes
 
 const UploadRoute = UploadImport.update({
-  id: "/upload",
-  path: "/upload",
+  id: '/upload',
+  path: '/upload',
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -33,145 +34,171 @@ const UpdateRoute = UpdateImport.update({
 } as any);
 
 const SearchRoute = SearchImport.update({
-  id: "/search",
-  path: "/search",
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ResetRoute = ResetImport.update({
-  id: "/reset",
-  path: "/reset",
+  id: '/reset',
+  path: '/reset',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
+
+const RateRoute = RateImport.update({
+  id: '/rate',
+  path: '/rate',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const PackageRoute = PackageImport.update({
-  id: "/package",
-  path: "/package",
+  id: '/package',
+  path: '/package',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const IndexRoute = IndexImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 // Populate the FileRoutesByPath interface
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/package": {
-      id: "/package";
-      path: "/package";
-      fullPath: "/package";
-      preLoaderRoute: typeof PackageImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/reset": {
-      id: "/reset";
-      path: "/reset";
-      fullPath: "/reset";
-      preLoaderRoute: typeof ResetImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/search": {
-      id: "/search";
-      path: "/search";
-      fullPath: "/search";
-      preLoaderRoute: typeof SearchImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/update": {
-      id: "/update";
-      path: "/update";
-      fullPath: "/update";
-      preLoaderRoute: typeof UpdateImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/upload": {
-      id: "/upload";
-      path: "/upload";
-      fullPath: "/upload";
-      preLoaderRoute: typeof UploadImport;
-      parentRoute: typeof rootRoute;
-    };
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/package': {
+      id: '/package'
+      path: '/package'
+      fullPath: '/package'
+      preLoaderRoute: typeof PackageImport
+      parentRoute: typeof rootRoute
+    }
+    '/rate': {
+      id: '/rate'
+      path: '/rate'
+      fullPath: '/rate'
+      preLoaderRoute: typeof RateImport
+      parentRoute: typeof rootRoute
+    }
+    '/reset': {
+      id: '/reset'
+      path: '/reset'
+      fullPath: '/reset'
+      preLoaderRoute: typeof ResetImport
+      parentRoute: typeof rootRoute
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchImport
+      parentRoute: typeof rootRoute
+    }
+    '/update': {
+      id: '/update'
+      path: '/update'
+      fullPath: '/update'
+      preLoaderRoute: typeof UpdateImport
+      parentRoute: typeof rootRoute
+    }
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/package": typeof PackageRoute;
-  "/reset": typeof ResetRoute;
-  "/search": typeof SearchRoute;
-  "/update": typeof UpdateRoute;
-  "/upload": typeof UploadRoute;
+  '/': typeof IndexRoute
+  '/package': typeof PackageRoute
+  '/rate': typeof RateRoute
+  '/reset': typeof ResetRoute
+  '/search': typeof SearchRoute
+  '/update': typeof UpdateRoute
+  '/upload': typeof UploadRoute
 }
 
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/package": typeof PackageRoute;
-  "/reset": typeof ResetRoute;
-  "/search": typeof SearchRoute;
-  "/update": typeof UpdateRoute;
-  "/upload": typeof UploadRoute;
+  '/': typeof IndexRoute
+  '/package': typeof PackageRoute
+  '/rate': typeof RateRoute
+  '/reset': typeof ResetRoute
+  '/search': typeof SearchRoute
+  '/update': typeof UpdateRoute
+  '/upload': typeof UploadRoute
 }
 
 export interface FileRoutesById {
-  __root__: typeof rootRoute;
-  "/": typeof IndexRoute;
-  "/package": typeof PackageRoute;
-  "/reset": typeof ResetRoute;
-  "/search": typeof SearchRoute;
-  "/update": typeof UpdateRoute;
-  "/upload": typeof UploadRoute;
+  __root__: typeof rootRoute
+  '/': typeof IndexRoute
+  '/package': typeof PackageRoute
+  '/rate': typeof RateRoute
+  '/reset': typeof ResetRoute
+  '/search': typeof SearchRoute
+  '/update': typeof UpdateRoute
+  '/upload': typeof UploadRoute
 }
 
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/package" | "/reset" | "/search" | "/update" | "/upload";
-  fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/package" | "/reset" | "/search" | "/update" | "/upload";
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/package'
+    | '/rate'
+    | '/reset'
+    | '/search'
+    | '/update'
+    | '/upload'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/package' | '/rate' | '/reset' | '/search' | '/update' | '/upload'
   id:
-    | "__root__"
-    | "/"
-    | "/package"
-    | "/reset"
-    | "/search"
-    | "/update"
-    | "/upload";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/package'
+    | '/rate'
+    | '/reset'
+    | '/search'
+    | '/update'
+    | '/upload'
+  fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  PackageRoute: typeof PackageRoute;
-  ResetRoute: typeof ResetRoute;
-  SearchRoute: typeof SearchRoute;
-  UpdateRoute: typeof UpdateRoute;
-  UploadRoute: typeof UploadRoute;
+  IndexRoute: typeof IndexRoute
+  PackageRoute: typeof PackageRoute
+  RateRoute: typeof RateRoute
+  ResetRoute: typeof ResetRoute
+  SearchRoute: typeof SearchRoute
+  UpdateRoute: typeof UpdateRoute
+  UploadRoute: typeof UploadRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PackageRoute: PackageRoute,
+  RateRoute: RateRoute,
   ResetRoute: ResetRoute,
   SearchRoute: SearchRoute,
   UpdateRoute: UpdateRoute,
   UploadRoute: UploadRoute,
-};
+}
 
 export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
 /* prettier-ignore-end */
 
@@ -183,6 +210,7 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/package",
+        "/rate",
         "/reset",
         "/search",
         "/update",
@@ -194,6 +222,9 @@ export const routeTree = rootRoute
     },
     "/package": {
       "filePath": "package.tsx"
+    },
+    "/rate": {
+      "filePath": "rate.tsx"
     },
     "/reset": {
       "filePath": "reset.tsx"

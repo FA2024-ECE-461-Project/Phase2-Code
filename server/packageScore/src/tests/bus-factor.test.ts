@@ -1,15 +1,11 @@
 import axios from "axios";
-import {
-  getToken,
-  get_axios_params,
-  getCommitsAndContributors,
-} from "../server/packageScore/src/url";
-import logger from "../server/packageScore/src/logger";
-import { get_bus_factor } from "../server/packageScore/src/metrics/bus-factor";
+import { getToken, get_axios_params, getCommitsAndContributors } from "../url";
+import logger from "../logger";
+import { get_bus_factor } from "../metrics/bus-factor";
 
 jest.mock("axios");
-jest.mock("../server/packageScore/src/url");
-jest.mock("../server/packageScore/src/logger");
+jest.mock("../url");
+jest.mock("../logger");
 
 describe("Bus Factor Tests", () => {
   beforeEach(() => {
@@ -45,7 +41,7 @@ describe("Bus Factor Tests", () => {
     });
     expect(logger.info).toHaveBeenCalledWith(
       "Starting bus factor calculation",
-      { url: "https://github.com/owner/repo" },
+      { url: "https://github.com/owner/repo" }
     );
     expect(logger.debug).toHaveBeenCalled();
     expect(logger.error).not.toHaveBeenCalled();
@@ -73,7 +69,7 @@ describe("Bus Factor Tests", () => {
     });
     expect(logger.warn).toHaveBeenCalledWith(
       "Repository has no commits or contributors",
-      { totalCommits: 0, totalContributors: 0 },
+      { totalCommits: 0, totalContributors: 0 }
     );
   });
 
@@ -85,7 +81,7 @@ describe("Bus Factor Tests", () => {
       headers: { Authorization: "token mock-token" },
     });
     (getCommitsAndContributors as jest.Mock).mockRejectedValue(
-      new Error("Network Error"),
+      new Error("Network Error")
     );
 
     const result = await get_bus_factor("https://github.com/owner/repo");

@@ -23,6 +23,9 @@ function NavBar() {
       <Link to="/search" className="[&.active]:font-bold">
         Search
       </Link>
+      <Link to="/rate" className="[&.active]:font-bold">
+        Rate
+      </Link>
       <Link to="/reset" className="[&.active]:font-bold">
         Reset
       </Link>

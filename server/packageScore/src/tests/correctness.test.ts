@@ -1,9 +1,9 @@
-import logger from "../server/packageScore/src/logger";
-import { getCorrectnessMetric } from "../server/packageScore/src/metrics/correctness";
-import * as url from "../server/packageScore/src/url";
+import logger from "../logger";
+import { getCorrectnessMetric } from "../metrics/correctness";
+import * as url from "../url";
 
 // Mock the functions that make API calls
-jest.mock("../server/packageScore/src/url", () => ({
+jest.mock("../url", () => ({
   getToken: jest.fn(),
   get_axios_params: jest.fn(),
   getOpenIssues: jest.fn(),
@@ -13,7 +13,7 @@ jest.mock("../server/packageScore/src/url", () => ({
 }));
 
 // Mock the logger
-jest.mock("../server/packageScore/src/logger", () => ({
+jest.mock("../logger", () => ({
   info: jest.fn(),
   debug: jest.fn(),
   warn: jest.fn(),
@@ -49,7 +49,7 @@ describe("Test getCorrectnessMetric", () => {
 
     // Mock API calls to throw an error
     (url.getOpenIssues as jest.Mock).mockRejectedValue(
-      new Error("Error calculating correctness metric"),
+      new Error("Error calculating correctness metric")
     );
 
     const result = await getCorrectnessMetric(mockGitHubUrl);
@@ -62,7 +62,7 @@ describe("Test getCorrectnessMetric", () => {
     // Check the actual logged error message and metadata
     expect(loggerErrorSpy).toHaveBeenCalledWith(
       "Error calculating correctness metric",
-      { error: "Error calculating correctness metric", url: mockGitHubUrl },
+      { error: "Error calculating correctness metric", url: mockGitHubUrl }
     );
 
     loggerErrorSpy.mockRestore();
@@ -101,7 +101,7 @@ describe("Test getCorrectnessMetric", () => {
         url: mockGitHubUrl,
         score: expect.any(Number), // Match the calculated score
         latency: expect.any(Number), // Check that latency was logged
-      },
+      }
     );
 
     // Check if the latency was calculated and logged

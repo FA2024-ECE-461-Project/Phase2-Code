@@ -4,8 +4,8 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import {
-  createPackageDataSchema,
-  createPackageMetadataSchema,
+  uploadRequestValidation,
+  updateRequestValidation,
 } from "../sharedSchema";
 import {
   packages as packagesTable,

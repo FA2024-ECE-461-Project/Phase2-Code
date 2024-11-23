@@ -45,7 +45,6 @@ export const metadataRoutes = new Hono()
      offset: string
   }
    this should return a list of packages (if only one package, return a list with one PackageMetadata Object)
-   TODO: implement this and account for the "*" case 
   */
   // c is a request context object that contains info about request and response
   .post(
@@ -55,8 +54,8 @@ export const metadataRoutes = new Hono()
       // assume we get {name: "package-name", version: "x.y.z"} as request body
       const { Name, Version} = c.req.valid("json");
       const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
-
       const pageLimit = 10; // change this line when there is a spec on page limit
+
       if (Name === "*") {
         // enumerate a list of all packages in a list when given "*"
         // select all packages from packageMetadataTable, 10 packages per page

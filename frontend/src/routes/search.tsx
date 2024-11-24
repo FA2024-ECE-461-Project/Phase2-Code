@@ -14,8 +14,9 @@ function searchPackage() {
 
   // adopted from https://www.freecodecamp.org/news/how-to-build-forms-in-react/
   const [formData, setFormData] = useState({ Name: "", Version: "" }); //init form state to empty name and version
+  const [response, setResponse] = useState("");
 
-  // change: when user types in one of the form fields
+  // change means when user types in one of the form fields
   const handleChange = (event: any) => {
     // extracts the name and value from the event target that has changed
     const { name, value } = event.target;
@@ -26,16 +27,21 @@ function searchPackage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    // open browser dev tool to see logs
+    console.log("Form data submitted:", formData);
     const reqBody = {
       Name: formData.Name,
       Version: formData.Version,
     };
 
     try {
+      console.log("Fetching packages...");
+      console.log("Request body:", reqBody);
       // Await the promise to be resolved
-      const packages = await api.packages.$post({ json: reqBody }); 
+      const response = await api.packages.$post({ json: reqBody });
+      console.log("Packages fetched:", response.text());
       // Display the returned data using alert
-      alert(JSON.stringify(packages)); 
+      alert(JSON.stringify(response.text()));
     } catch (error) {
       console.error("Error fetching packages:", error);
       alert("An error occurred while fetching packages.");
@@ -66,7 +72,9 @@ function searchPackage() {
             style={{ color: "black" }}
           />
         </label>
-        <button type="submit" style={{ marginTop: "10px" }}>Submit</button>
+        <button type="submit" style={{ marginTop: "10px" }}>
+          Submit
+        </button>
       </form>
     </>
   );

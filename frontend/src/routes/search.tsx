@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Verified } from "lucide-react";
 import { useState } from "react";
+import { api } from "../lib/api";
+import { string } from "zod";
 
 export const Route = createFileRoute("/search")({
   component: searchPackage,
@@ -8,41 +10,64 @@ export const Route = createFileRoute("/search")({
 
 function searchPackage() {
   // offset should be supplied by user clicking the next page button
-  let offset = 0;   // default page 0
+  let offset = 0; // default page 0
 
   // adopted from https://www.freecodecamp.org/news/how-to-build-forms-in-react/
-  const [formData, setFormData] = useState({Name: "", Version: ""} ); //init form state to empty name and version
+  const [formData, setFormData] = useState({ Name: "", Version: "" }); //init form state to empty name and version
 
   // change: when user types in one of the form fields
   const handleChange = (event: any) => {
     // extracts the name and value from the event target that has changed
-    const {name, value} = event.target;
+    const { name, value } = event.target;
     // update the form data with the new value
-    setFormData({...formData, [name]: value});
+    setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (event: any) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    alert(`Name: ${formData.Name}, Email: ${formData.Version}}`
-    );
-};
 
+    const reqBody = {
+      Name: formData.Name,
+      Version: formData.Version,
+    };
 
+    try {
+      // Await the promise to be resolved
+      const packages = await api.packages.$post({ json: reqBody }); 
+      // Display the returned data using alert
+      alert(JSON.stringify(packages)); 
+    } catch (error) {
+      console.error("Error fetching packages:", error);
+      alert("An error occurred while fetching packages.");
+    }
+  };
 
   return (
-    <><div className="p-2">
-      <h3>Search packages here by filling out the form below.</h3>
-    </div><form onSubmit={handleSubmit}>
+    <>
+      <div className="p-2">
+        <h3>Search packages here.</h3>
+      </div>
+      <form onSubmit={handleSubmit}>
         <label>
           Name:
-          <input type="text" name="Name" onChange={handleChange} />
+          <input
+            type="text"
+            name="Name"
+            onChange={handleChange}
+            style={{ color: "black" }}
+          />
         </label>
         <label>
           Version:
-          <input type="text" name="Version" onChange={handleChange} />
+          <input
+            type="text"
+            name="Version"
+            onChange={handleChange}
+            style={{ color: "black" }}
+          />
         </label>
-        <button type="submit">Submit</button>
-      </form></>
+        <button type="submit" style={{ marginTop: "10px" }}>Submit</button>
+      </form>
+    </>
   );
 }
-

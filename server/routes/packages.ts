@@ -2,15 +2,8 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
 import {
-  uploadRequestValidation,
-  updateRequestValidation,
-} from "../sharedSchema";
-import {
-  packages as packagesTable,
   packageMetadata as packageMetadataTable,
-  packageData as packageDataTable,
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import { eq, and } from "drizzle-orm";
@@ -59,24 +52,19 @@ export const metadataRoutes = new Hono()
       if (Name === "*") {
         // enumerate a list of all packages in a list when given "*"
         // select all packages from packageMetadataTable, 10 packages per page
-        const query = await db
+        let query = await db
           .select()
           .from(packageMetadataTable)
           .limit(pageLimit);
         if (offset) {
-          const query = await db
-            .select()
-            .from(packageMetadataTable)
-            .limit(pageLimit)
-            .offset(parseInt(offset, 10));
-          return c.json(query);
+          query = query.slice(parseInt(offset, 10));
         }
         return c.json(query);
       }
 
       // do a search in the database for the package using name and version as parameters
       // equivalent to SELECT * FROM package_metadata WHERE Name = Name AND Version = Version
-      const query = await db
+      let query = await db
         .select()
         .from(packageMetadataTable)
         .where(
@@ -88,19 +76,7 @@ export const metadataRoutes = new Hono()
         .limit(pageLimit);
 
       if (offset) {
-        const query = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(
-            and(
-              eq(packageMetadataTable.Name, Name),
-              eq(packageMetadataTable.Version, Version),
-            ),
-          )
-          .limit(pageLimit)
-          .offset(parseInt(offset, 10));
-
-        return c.json(query);
+        query = query.slice(parseInt(offset, 10));
       }
 
       return c.json(query);

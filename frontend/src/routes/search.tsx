@@ -14,6 +14,7 @@ function searchPackage() {
 
   // adopted from https://www.freecodecamp.org/news/how-to-build-forms-in-react/
   const [formData, setFormData] = useState({ Name: "", Version: "" }); //init form state to empty name and version
+  const [packages, setPackages] = useState([]);
   const [response, setResponse] = useState("");
 
   // change means when user types in one of the form fields
@@ -35,13 +36,24 @@ function searchPackage() {
     };
 
     try {
-      console.log("Fetching packages...");
-      console.log("Request body:", reqBody);
-      // Await the promise to be resolved
+      // Await getting response from backend
       const response = await api.packages.$post({ json: reqBody });
-      console.log("Packages fetched:", response.text());
+      if (!response.ok) {
+        console.error("Error fetching packages:", response);
+        throw new Error("An error occurred while fetching packages.");
+      }
+      // have to resolve response (a promise) to get the data
+      const data = await response.json();
+      console.log("Packages:", data);
+
+      if (Array.isArray(data)) {
+        setPackages(data);
+      } else {
+        setPackages([]);
+      }
+
       // Display the returned data using alert
-      alert(JSON.stringify(response.text()));
+      alert(JSON.stringify(packages));
     } catch (error) {
       console.error("Error fetching packages:", error);
       alert("An error occurred while fetching packages.");
@@ -76,6 +88,25 @@ function searchPackage() {
           Submit
         </button>
       </form>
+      {/* Display the fetched packages in a table */}
+      {packages.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Version</th>
+            </tr>
+          </thead>
+          <tbody>
+            {packages.map((pkg: any, index: number) => (
+              <tr key={index}>
+                <td>{pkg.Name}</td>
+                <td>{pkg.Version}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </>
   );
 }

@@ -82,3 +82,4 @@ export const metadataRoutes = new Hono()
       return c.json(query);
     },
   );
+  

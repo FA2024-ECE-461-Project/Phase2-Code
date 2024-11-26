@@ -19,6 +19,9 @@ import {
   omitId,
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
+import fs from "fs";
+import path from "path";
+
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
@@ -48,6 +51,8 @@ export const packageRoutes = new Hono()
 
     // Initialize metadata
     let metadata: { Name: string; Version: string } | undefined;
+    let packageContentBuffer: Buffer | undefined;
+
     if (newPackage.URL) {
       const packageData = await getPackageDataFromUrl(newPackage.URL!);
       if (!packageData) {
@@ -62,6 +67,48 @@ export const packageRoutes = new Hono()
       const Name = packageData.Name || newPackage.Name || "Default-Name";
 
       metadata = { Name, Version };
+    }
+    else if (newPackage.Content){
+      try {
+        packageContentBuffer = Buffer.from(newPackage.Content, "base64");
+      } catch (error) {
+        c.status(400);
+        return c.json({ error: "Invalid base64 content" });
+      }
+
+      const tempZipPath = path.join("/tmp", `${uuidv4()}.zip`);
+      fs.writeFileSync(tempZipPath, packageContentBuffer);
+
+      // Extract metadata from the zip file, e.g., read package.json
+      // For simplicity, we'll set default values
+      const Name = newPackage.Name || "Default-Name";
+      const Version = "1.0.0";
+
+      metadata = { Name, Version };
+
+      // Handle the JSProgram execution
+      if (newPackage.JSProgram) {
+        // Save the JSProgram to a temporary JS file
+        const tempJsPath = path.join("/tmp", `${uuidv4()}.js`);
+        fs.writeFileSync(tempJsPath, newPackage.JSProgram);
+
+        // Execute the JSProgram
+        exec(`node ${tempJsPath}`, (error, stdout, stderr) => {
+          if (error) {
+            console.error(`Execution error: ${error.message}`);
+            // You might choose to fail the upload if JSProgram execution fails
+          }
+
+          console.log(`stdout: ${stdout}`);
+          console.error(`stderr: ${stderr}`);
+
+          // Clean up temporary JS file
+          fs.unlinkSync(tempJsPath);
+        });
+      }
+
+      // Clean up temporary zip file
+      fs.unlinkSync(tempZipPath);
     }
 
     console.log(metadata);
@@ -267,4 +314,47 @@ export const packageRoutes = new Hono()
     // Return the rating
     c.status(200);
     return c.json(rating);
+  })
+
+  .get('/:ID/download', async (c) => {
+    const ID = c.req.param('ID');
+
+    if (!ID) {
+      c.status(400);
+      return c.json({ error: 'Package ID is required' });
+    }
+
+    // Fetch the package data from the database
+    const packageResult = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packagesTable.ID, ID))
+      .then((res) => res[0]);
+
+    if (!packageResult) {
+      c.status(404);
+      return c.json({ error: 'Package not found' });
+    }
+
+    // Get the package content
+    const packageDataResult = await db
+      .select()
+      .from(packageDataTable)
+      .where(eq(packageDataTable.ID, packageResult.dataId))
+      .then((res) => res[0]);
+
+    if (!packageDataResult || !packageDataResult.Content) {
+      c.status(404);
+      return c.json({ error: 'Package content not found' });
+    }
+
+    // Decode the base64 content to Buffer
+    const zipBuffer = Buffer.from(packageDataResult.Content, 'base64');
+
+    // Set headers for file download
+    c.res.headers.set('Content-Type', 'application/zip');
+    c.res.headers.set('Content-Disposition', `attachment; filename="${ID}.zip"`);
+
+    // Return the zip file as a stream
+    return c.body(zipBuffer);
   });

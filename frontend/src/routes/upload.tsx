@@ -80,6 +80,20 @@ function uploadPackage() {
     },
   });
 
+  // Handler for file input change
+  const handleFileChange = (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Remove the 'data:*/*;base64,' prefix
+        const base64String = (reader.result as string).split(",")[1];
+        field.handleChange(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center p-4">
       <h3 className="mb-4 text-lg font-semibold">Upload a package</h3>
@@ -156,6 +170,22 @@ function uploadPackage() {
                     name={field.name}
                     value={field.state.value}
                     onBlur={field.handleBlur}
+                    onChange={handleFileChange(field)}
+                  />
+                </>
+              )}
+            />
+            <form.Field
+              name="JSProgram"
+              children={(field) => (
+                <>
+                  <Label htmlFor={field.name}>JS Program (Optional)</Label>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    placeholder="Enter JS Program"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                 </>
@@ -167,7 +197,7 @@ function uploadPackage() {
                 <>
                   <Label htmlFor={field.name}>Debloat</Label>
                   <Select
-                    onValueChange={(value) =>
+                    onValueChange={(value: string) =>
                       field.handleChange(value === "True")
                     }
                   >

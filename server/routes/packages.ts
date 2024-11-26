@@ -35,7 +35,6 @@ export const metadataRoutes = new Hono()
    schema: {
      Name: string (at least 1 character long),
      Version: string,
-     offset: string
   }
    this should return a list of packages (if only one package, return a list with one PackageMetadata Object)
   */

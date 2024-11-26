@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
 import { eq, desc, sum, and } from "drizzle-orm";
@@ -21,6 +21,13 @@ import {
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import fs from "fs";
 import path from "path";
+import AWS from 'aws-sdk';
+
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Ensure these are set in your environment
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
 
 export const packageRoutes = new Hono()
   // get all packages
@@ -88,23 +95,25 @@ export const packageRoutes = new Hono()
 
       // Handle the JSProgram execution
       if (newPackage.JSProgram) {
-        // Save the JSProgram to a temporary JS file
-        const tempJsPath = path.join("/tmp", `${uuidv4()}.js`);
+        const tempJsPath = path.join('/tmp', `${uuidv4()}.js`);
         fs.writeFileSync(tempJsPath, newPackage.JSProgram);
-
-        // Execute the JSProgram
-        exec(`node ${tempJsPath}`, (error, stdout, stderr) => {
-          if (error) {
-            console.error(`Execution error: ${error.message}`);
-            // You might choose to fail the upload if JSProgram execution fails
-          }
-
+      
+        const additionalArgs = ['arg1', 'arg2', 'arg3', 'arg4', 'arg5'];
+      
+        try {
+          const stdout = execSync(`node ${tempJsPath} ${additionalArgs.join(' ')}`, { encoding: 'utf-8' });
           console.log(`stdout: ${stdout}`);
-          console.error(`stderr: ${stderr}`);
-
-          // Clean up temporary JS file
+        } catch (error) {
+          if (error instanceof Error) {
+            console.error(`Execution error: ${error.message}`);
+          } else {
+            console.error(`Execution error: ${String(error)}`);
+          }
           fs.unlinkSync(tempJsPath);
-        });
+          return c.json({ error: 'JSProgram execution failed' }, 400);
+        }
+      
+        fs.unlinkSync(tempJsPath);
       }
 
       // Clean up temporary zip file

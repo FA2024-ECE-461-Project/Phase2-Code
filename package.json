@@ -36,7 +36,9 @@
   "dependencies": {
     "@hono/zod-validator": "^0.4.1",
     "@tanstack/react-router": "",
+    "@types/aws-sdk": "^0.0.42",
     "adm-zip": "^0.5.16",
+    "aws-sdk": "^2.1692.0",
     "axios": "^1.7.7",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",

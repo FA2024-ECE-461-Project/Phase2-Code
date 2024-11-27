@@ -4,7 +4,7 @@ import { Label } from "../components/ui/label";
 import { Button } from "../components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { api } from "../lib/api";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast, Toaster } from "sonner";
 import {
   Select,
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/upload")({
 
 function uploadPackage() {
   const [uploadMode, setUploadMode] = useState<"url" | "zip">("url");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm({
     defaultValues: {
@@ -69,6 +70,13 @@ function uploadPackage() {
       if (res.status === 201) {
         // Show a success toast on successful upload
         toast.success("Successfully Uploaded Package");
+        // Reset the form fields
+        form.reset();
+
+        // Reset the file input using the ref
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         // Navigate to the package page after successful upload
       } else if (res.status === 409) {
         // Show a conflict toast if there's a conflict
@@ -82,17 +90,18 @@ function uploadPackage() {
 
   // Handler for file input change
   const handleFileChange = (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        // Remove the 'data:*/*;base64,' prefix
-        const base64String = (reader.result as string).split(",")[1];
-        field.handleChange(base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const file = e.target.files?.[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Remove the 'data:*/*;base64,' prefix if present
+      const result = reader.result as string;
+      const base64String = result.includes(",") ? result.split(",")[1] : result;
+      field.handleChange(base64String);
+    };
+    reader.readAsDataURL(file);
+  }
+};
 
   return (
     <div className="flex flex-col items-center justify-center p-4">
@@ -144,22 +153,6 @@ function uploadPackage() {
         {uploadMode === "zip" && (
           <>
             <form.Field
-              name="Name"
-              children={(field) => (
-                <>
-                  <Label htmlFor={field.name}>Enter Package Name</Label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    placeholder="Enter Package Name"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                </>
-              )}
-            />
-            <form.Field
               name="Content"
               children={(field) => (
                 <>
@@ -168,7 +161,7 @@ function uploadPackage() {
                     type="file"
                     id={field.name}
                     name={field.name}
-                    value={field.state.value}
+                    ref={fileInputRef}
                     onBlur={field.handleBlur}
                     onChange={handleFileChange(field)}
                   />

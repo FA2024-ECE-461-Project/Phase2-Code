@@ -6,18 +6,23 @@ import {
   packageMetadata as packageMetadataTable,
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 
 // schema for the post request body
 // use refine to ensure that the name is at least 1 character long or "*", but nothing else
+
+const versionRegex = /^(?:\d+\.\d+\.\d+|(?:\d+\.\d+\.\d+)-(?:\d+\.\d+\.\d+)|\^\d+\.\d+\.\d+|~\d+\.\d+\.\d+)$/;
 const postPackageMetadataRequestSchema = z.object({
   Name: z
     .string()
-    .min(1, { message: "Name must be at least 1 character long" })
+    .min(3, { message: "Name must be at least 3 character long" })
     .refine((name) => name.length >= 3 || name === "*", {
       message: 'Name must be "*" if it\'s shorter than 3 characters',
     }),
-  Version: z.string(),
+  Version: z.string().refine((version) => {
+    return versionRegex.test(version);
+  }, 
+  { message: "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z" })
 });
 
 export const metadataRoutes = new Hono()
@@ -36,9 +41,10 @@ export const metadataRoutes = new Hono()
      Name: string (at least 1 character long),
      Version: string,
   }
-   this should return a list of packages (if only one package, return a list with one PackageMetadata Object)
+    @param c is a request context object that contains info about request and response
+    @return return a list of packages (if only one package, return a list with one PackageMetadata Object)
+    TODO: 1. ensure response body has an offset parameter: use the c object
   */
-  // c is a request context object that contains info about request and response
   .post(
     "/",
     zValidator("json", postPackageMetadataRequestSchema),
@@ -48,37 +54,10 @@ export const metadataRoutes = new Hono()
       const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
       const pageLimit = 10; // change this line when there is a spec on page limit
 
-      if (Name === "*") {
-        // enumerate a list of all packages in a list when given "*"
-        // select all packages from packageMetadataTable, 10 packages per page
-        let query = await db
-          .select()
-          .from(packageMetadataTable)
-          .limit(pageLimit);
-        if (offset) {
-          query = query.slice(parseInt(offset, 10));
-        }
-        return c.json(query);
-      }
+      // no offset given: then a simple query, nextOffset will be 1 (0 + 1)
+      let query = await db.select().from(packageMetadataTable).limit(pageLimit);
 
-      // do a search in the database for the package using name and version as parameters
-      // equivalent to SELECT * FROM package_metadata WHERE Name = Name AND Version = Version
-      let query = await db
-        .select()
-        .from(packageMetadataTable)
-        .where(
-          and(
-            eq(packageMetadataTable.Name, Name),
-            eq(packageMetadataTable.Version, Version),
-          ),
-        )
-        .limit(pageLimit);
 
-      if (offset) {
-        query = query.slice(parseInt(offset, 10));
-      }
-
-      return c.json(query);
     },
   );
   

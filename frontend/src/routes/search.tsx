@@ -9,13 +9,9 @@ export const Route = createFileRoute("/search")({
 });
 
 function searchPackage() {
-  // offset should be supplied by user clicking the next page button
-  let offset = 0; // default page 0
-
   // adopted from https://www.freecodecamp.org/news/how-to-build-forms-in-react/
   const [formData, setFormData] = useState({ Name: "", Version: "" }); //init form state to empty name and version
   const [packages, setPackages] = useState([]);
-  const [response, setResponse] = useState("");
 
   // change means when user types in one of the form fields
   const handleChange = (event: any) => {
@@ -38,6 +34,8 @@ function searchPackage() {
     try {
       // Await getting response from backend
       const response = await api.packages.$post({ json: reqBody });
+      // API Spec: offset is in header of response
+      const offset = response.headers.get("offset");
       if (!response.ok) {
         console.error("Error fetching packages:", response);
         throw new Error("An error occurred while fetching packages.");

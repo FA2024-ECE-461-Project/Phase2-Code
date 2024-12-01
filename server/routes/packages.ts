@@ -8,10 +8,14 @@ import {
 import { db } from "../db";
 import { eq, and, or } from "drizzle-orm";
 
-// schema for the post request body
-// use refine to ensure that the name is at least 1 character long or "*", but nothing else
+// regex for version checking
+const exactRegex = /^\d+\.\d+\.\d+$/
+const rangeRegex = /^\d+\.\d+\.\d+-\d+\.\d+\.\d+$/
+const caretRegex = /^\^\d+\.\d+\.\d+$/
+const tildeRegex = /^~\d+\.\d+\.\d+$/
+const versionRegex = new RegExp(`(${exactRegex.source})|(${rangeRegex.source})|(${caretRegex.source})|(${tildeRegex.source})`)
 
-const versionRegex = /^(?:\d+\.\d+\.\d+|(?:\d+\.\d+\.\d+)-(?:\d+\.\d+\.\d+)|\^\d+\.\d+\.\d+|~\d+\.\d+\.\d+)$/;
+// schema for the post request body
 const postPackageMetadataRequestSchema = z.object({
   Name: z
     .string()
@@ -20,7 +24,8 @@ const postPackageMetadataRequestSchema = z.object({
       message: 'Name must be "*" if it\'s shorter than 3 characters',
     }),
   Version: z.string().refine((version) => {
-    return versionRegex.test(version);
+    // allowing empty string for version
+    return version === "" || versionRegex.test(version);
   }, 
   { message: "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z" })
 });
@@ -54,10 +59,40 @@ export const metadataRoutes = new Hono()
       const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
       const pageLimit = 10; // change this line when there is a spec on page limit
 
-      // no offset given: then a simple query, nextOffset will be 1 (0 + 1)
-      let query = await db.select().from(packageMetadataTable).limit(pageLimit);
+      // set nextOffset
+      const nextOffset = offset ? parseInt(offset) + 1 : 1;
+      c.header("nextOffset", nextOffset.toString());
 
+      if(!offset) {
+
+      }
 
     },
   );
-  
+
+async function queryPackageMetadata(Name: string, Version: string) {
+  // can assume Name is always "*" or a string of length >= 3
+  if(Version) {
+    // both Name and Version are given
+    
+  } else if(!Version) {
+    // only Name is given, no version
+  } else {
+    // 
+  }
+
+}
+
+function getVersionType(version:string) {
+  if(exactRegex.test(version)) {
+    return "exact";
+  } else if(rangeRegex.test(version)) {
+    return "range";
+  } else if(caretRegex.test(version)) {
+    return "caret";
+  } else if(tildeRegex.test(version)) {
+    return "tilde";
+  } else {
+    throw new Error("Invalid version format");
+  }
+}

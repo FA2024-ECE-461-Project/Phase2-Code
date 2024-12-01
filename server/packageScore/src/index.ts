@@ -1,22 +1,29 @@
 #!/usr/bin/env ts-node
 
-import { Command } from 'commander';
-import fs from 'fs';
-import path from 'path';
-import { spawn, exec } from 'child_process';
-import git from 'isomorphic-git';
-import http from 'isomorphic-git/http/node';
-import { getReadmeContent, parseGitHubUrl, classifyURL, UrlType, extractNpmPackageName, getNpmPackageGitHubUrl } from './url';
-import {get_bus_factor} from './metrics/bus-factor';
-import {getCorrectnessMetric} from './metrics/correctness';
-import { get_license_compatibility } from './metrics/license-compatibility';
-import { get_ramp_up_time_metric } from './metrics/ramp-up-time';
-import { calculateResponsiveness } from './metrics/responsiveness';
-import { calculatePRCodeReviews } from './metrics/PRCodeReviews';
-import { getDependencyPinningFraction } from './metrics/dependency'; // Adjust the path accordingly
-import logger from './logger';
-import { promisify } from 'util';
-import * as dotenv from 'dotenv';
+import { Command } from "commander";
+import fs from "fs";
+import path from "path";
+import { spawn, exec } from "child_process";
+import git from "isomorphic-git";
+import http from "isomorphic-git/http/node";
+import {
+  getReadmeContent,
+  parseGitHubUrl,
+  classifyURL,
+  UrlType,
+  extractNpmPackageName,
+  getNpmPackageGitHubUrl,
+} from "./url";
+import { get_bus_factor } from "./metrics/bus-factor";
+import { getCorrectnessMetric } from "./metrics/correctness";
+import { get_license_compatibility } from "./metrics/license-compatibility";
+import { get_ramp_up_time_metric } from "./metrics/ramp-up-time";
+import { calculateResponsiveness } from "./metrics/responsiveness";
+import { calculatePRCodeReviews } from "./metrics/PRCodeReviews";
+import { getDependencyPinningFraction } from "./metrics/dependency"; // Adjust the path accordingly
+import logger from "./logger";
+import { promisify } from "util";
+import * as dotenv from "dotenv";
 dotenv.config();
 
 interface MetricsResult {
@@ -40,11 +47,11 @@ interface MetricsResult {
 }
 
 async function cloneRepository(url: string, dir: string): Promise<void> {
-  if (fs.existsSync(path.join(dir, '.git'))) {
+  if (fs.existsSync(path.join(dir, ".git"))) {
     logger.debug(`Repository already exists, skipping clone: ${url}`);
     return;
   }
-  
+
   try {
     logger.info(`Cloning repository: ${url}`);
     console.log(`Cloning repository: ${url}`);
@@ -69,9 +76,8 @@ async function cloneRepository(url: string, dir: string): Promise<void> {
 }
 
 export async function processUrl(url: string): Promise<MetricsResult> {
-
   const urlType = classifyURL(url);
-  let githubUrl = '';
+  let githubUrl = "";
   // //print .env variable
   // console.log(process.env.GITHUB_TOKEN);
   // console.log(process.env.LOG_FILE);
@@ -86,7 +92,9 @@ export async function processUrl(url: string): Promise<MetricsResult> {
         const extractedGithubUrl = await getNpmPackageGitHubUrl(packageName);
         if (extractedGithubUrl) {
           githubUrl = extractedGithubUrl;
-          logger.info(`NPM package ${url} converted to GitHub URL: ${githubUrl}`);
+          logger.info(
+            `NPM package ${url} converted to GitHub URL: ${githubUrl}`,
+          );
         } else {
           logger.error(`Unable to extract GitHub URL for NPM package: ${url}`);
           return createEmptyMetricsResult(url);
@@ -104,7 +112,7 @@ export async function processUrl(url: string): Promise<MetricsResult> {
   const repoInfo = parseGitHubUrl(githubUrl);
   if (repoInfo) {
     try {
-      const cloneDir = path.join(process.cwd(), 'cloned_repos');
+      const cloneDir = path.join(process.cwd(), "cloned_repos");
       console.log(`Cloning to: ${cloneDir}`);
       await cloneRepository(githubUrl, cloneDir);
       return getMetrics(githubUrl, cloneDir);
@@ -118,11 +126,13 @@ export async function processUrl(url: string): Promise<MetricsResult> {
   }
 }
 
-
-async function getMetrics(url: string, cloneDir: string): Promise<MetricsResult> {
+async function getMetrics(
+  url: string,
+  cloneDir: string,
+): Promise<MetricsResult> {
   try {
     const startTime = Date.now();
-    
+
     const [
       correctnessResult,
       busFactorResult,
@@ -130,7 +140,7 @@ async function getMetrics(url: string, cloneDir: string): Promise<MetricsResult>
       rampUpTime,
       responsivenessResult,
       PRCodeReviewsResult,
-      DependencyResult
+      DependencyResult,
     ] = await Promise.all([
       getCorrectnessMetric(url),
       get_bus_factor(url),
@@ -138,7 +148,7 @@ async function getMetrics(url: string, cloneDir: string): Promise<MetricsResult>
       get_ramp_up_time_metric(url),
       calculateResponsiveness(url),
       calculatePRCodeReviews(url),
-      getDependencyPinningFraction(url)
+      getDependencyPinningFraction(url),
     ]);
 
     const endTime = Date.now();
@@ -151,12 +161,12 @@ async function getMetrics(url: string, cloneDir: string): Promise<MetricsResult>
       rampUpTime.score,
       responsivenessResult.score,
       PRCodeReviewsResult.score,
-      DependencyResult.score
+      DependencyResult.score,
     );
 
-    logger.info('Metrics calculated', { 
-      url, 
-      netScore, 
+    logger.info("Metrics calculated", {
+      url,
+      netScore,
       totalLatency,
       correctness: correctnessResult.score,
       busFactor: busFactorResult.normalizedScore,
@@ -164,7 +174,7 @@ async function getMetrics(url: string, cloneDir: string): Promise<MetricsResult>
       rampUp: rampUpTime.score,
       responsiveness: responsivenessResult.score,
       PRCodeReviewsResult: PRCodeReviewsResult.score,
-      Dependency: DependencyResult.score
+      Dependency: DependencyResult.score,
     });
 
     return {
@@ -176,7 +186,7 @@ async function getMetrics(url: string, cloneDir: string): Promise<MetricsResult>
       Correctness: correctnessResult.score,
       Correctness_Latency: correctnessResult.latency,
       BusFactor: busFactorResult.normalizedScore,
-      BusFactor_Latency: busFactorResult.latency,  // Now using the latency from busFactorResult
+      BusFactor_Latency: busFactorResult.latency, // Now using the latency from busFactorResult
       ResponsiveMaintainer: responsivenessResult.score,
       ResponsiveMaintainer_Latency: responsivenessResult.latency,
       License: licenseCompatibility.score,
@@ -184,14 +194,22 @@ async function getMetrics(url: string, cloneDir: string): Promise<MetricsResult>
       PR_Code_Reviews: PRCodeReviewsResult.score,
       PR_Code_Reviews_Latency: PRCodeReviewsResult.latency,
       DependencyMetric: DependencyResult.score,
-      DependencyMetric_Latency: DependencyResult.latency
+      DependencyMetric_Latency: DependencyResult.latency,
     };
   } catch (error) {
     logger.error(`Error calculating metrics for ${url}:`, error);
     return createEmptyMetricsResult(url);
   }
 }
-function calculateNetScore(correctness: number, busFactor: number, license: number, rampUp: number, responsiveness: number, prCodeReviews: number, dependency: number): number {
+function calculateNetScore(
+  correctness: number,
+  busFactor: number,
+  license: number,
+  rampUp: number,
+  responsiveness: number,
+  prCodeReviews: number,
+  dependency: number,
+): number {
   const weights = {
     correctness: 0.2,
     busFactor: 0.2,
@@ -199,7 +217,7 @@ function calculateNetScore(correctness: number, busFactor: number, license: numb
     rampUp: 0.2,
     license: 0.1,
     prCodeReviews: 0.05,
-    dependency: 0.05
+    dependency: 0.05,
   };
 
   return (
@@ -207,7 +225,7 @@ function calculateNetScore(correctness: number, busFactor: number, license: numb
     busFactor * weights.busFactor +
     responsiveness * weights.responsiveness +
     rampUp * weights.rampUp +
-    license * weights.license + 
+    license * weights.license +
     prCodeReviews * weights.prCodeReviews +
     dependency * weights.dependency
   );
@@ -231,18 +249,17 @@ function createEmptyMetricsResult(url: string): MetricsResult {
     PR_Code_Reviews: 0,
     PR_Code_Reviews_Latency: 0,
     DependencyMetric: 0,
-    DependencyMetric_Latency: 0
+    DependencyMetric_Latency: 0,
   };
 }
 
-
 export async function processSingleUrl(url: string): Promise<MetricsResult> {
   if (!process.env.LOG_FILE) {
-    throw new Error('LOG_FILE environment variable is not set');
+    throw new Error("LOG_FILE environment variable is not set");
   }
 
   if (!process.env.GITHUB_TOKEN) {
-    throw new Error('GITHUB_TOKEN environment variable is not set');
+    throw new Error("GITHUB_TOKEN environment variable is not set");
   }
 
   try {
@@ -254,17 +271,27 @@ export async function processSingleUrl(url: string): Promise<MetricsResult> {
       RampUp: parseFloat(result.RampUp.toFixed(3)),
       RampUp_Latency: parseFloat((result.RampUp_Latency / 1000).toFixed(3)),
       Correctness: parseFloat(result.Correctness.toFixed(3)),
-      Correctness_Latency: parseFloat((result.Correctness_Latency / 1000).toFixed(3)),
+      Correctness_Latency: parseFloat(
+        (result.Correctness_Latency / 1000).toFixed(3),
+      ),
       BusFactor: parseFloat(result.BusFactor.toFixed(3)),
-      BusFactor_Latency: parseFloat((result.BusFactor_Latency / 1000).toFixed(3)),
+      BusFactor_Latency: parseFloat(
+        (result.BusFactor_Latency / 1000).toFixed(3),
+      ),
       ResponsiveMaintainer: parseFloat(result.ResponsiveMaintainer.toFixed(3)),
-      ResponsiveMaintainer_Latency: parseFloat((result.ResponsiveMaintainer_Latency / 1000).toFixed(3)),
+      ResponsiveMaintainer_Latency: parseFloat(
+        (result.ResponsiveMaintainer_Latency / 1000).toFixed(3),
+      ),
       License: parseFloat(result.License.toFixed(3)),
       License_Latency: parseFloat((result.License_Latency / 1000).toFixed(3)),
       PR_Code_Reviews: parseFloat(result.PR_Code_Reviews.toFixed(3)),
-      PR_Code_Reviews_Latency: parseFloat((result.PR_Code_Reviews_Latency / 1000).toFixed(3)),
+      PR_Code_Reviews_Latency: parseFloat(
+        (result.PR_Code_Reviews_Latency / 1000).toFixed(3),
+      ),
       DependencyMetric: parseFloat(result.DependencyMetric.toFixed(3)),
-      DependencyMetric_Latency: parseFloat((result.DependencyMetric_Latency / 1000).toFixed(3))
+      DependencyMetric_Latency: parseFloat(
+        (result.DependencyMetric_Latency / 1000).toFixed(3),
+      ),
     };
     return formattedResult;
   } catch (error) {
@@ -286,7 +313,7 @@ export async function processSingleUrl(url: string): Promise<MetricsResult> {
       PR_Code_Reviews: -1,
       PR_Code_Reviews_Latency: -1,
       DependencyMetric: -1,
-      DependencyMetric_Latency: -1
+      DependencyMetric_Latency: -1,
     };
     return emptyResult;
   }
@@ -328,7 +355,7 @@ const program = new Command();
 //     try {
 //       const absolutePath = path.resolve(file);
 //       const urls = fs.readFileSync(absolutePath, 'utf-8').split('\n').filter(url => url.trim() !== '');
-      
+
 //       for (const url of urls) {
 //         try {
 //           const result = await processUrl(url);
@@ -376,7 +403,7 @@ const program = new Command();
 //           console.log(JSON.stringify(emptyResult));
 //         }
 //       }
-      
+
 //       process.exit(0);
 //     } catch (error) {
 //       logger.error('Error processing URL file:', { error });
@@ -422,9 +449,9 @@ const program = new Command();
 //       try {
 //         const results = JSON.parse(fs.readFileSync(resultsFilePath, 'utf-8'));
 //         const coverageSummary = JSON.parse(fs.readFileSync(coverageSummaryPath, 'utf-8'));
-      
+
 //         const lineCoverage = Math.round(coverageSummary.total.lines.pct);  // Round to nearest whole number
-      
+
 //         console.log(`Total: ${results.numTotalTests}`);
 //         console.log(`Passed: ${results.numPassedTests}`);
 //         console.log(`Line Coverage: ${lineCoverage}%`);
@@ -438,7 +465,5 @@ const program = new Command();
 //       }
 //     });
 //   });
-
-
 
 // program.parse(process.argv);

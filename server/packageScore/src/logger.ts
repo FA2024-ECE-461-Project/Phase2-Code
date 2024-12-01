@@ -1,6 +1,6 @@
-import winston from 'winston';
+import winston from "winston";
 import { appendFileSync, existsSync, truncateSync, PathLike } from "fs";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
 const LOG_LEVELS = {
@@ -29,18 +29,18 @@ let logLevel = process.env.LOG_LEVEL;
 
 switch (logLevel) {
   case String(LOG_LEVELS.INFO):
-    logLevel = 'info';
+    logLevel = "info";
     break;
   case String(LOG_LEVELS.DEBUG):
-    logLevel = 'debug';
+    logLevel = "debug";
     break;
   default:
-    logLevel = 'silent';
+    logLevel = "silent";
 }
 
 console.log("LOG_LEVEL: string", logLevel);
 
-const logFile = process.env.LOG_FILE || 'logs/package-evaluator.log';
+const logFile = process.env.LOG_FILE || "logs/package-evaluator.log";
 // Create logger
 const logger = winston.createLogger({
   level: logLevel,
@@ -48,16 +48,27 @@ const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
     winston.format.splat(),
-    winston.format.json()
+    winston.format.json(),
   ),
-  defaultMeta: { service: 'package-evaluator' },
+  defaultMeta: { service: "package-evaluator" },
   transports: [
     //silent console transport
-    new winston.transports.Console({ silent: (logLevel === 'silent' || logLevel === 'info' || logLevel === 'debug') }),
+    new winston.transports.Console({
+      silent:
+        logLevel === "silent" || logLevel === "info" || logLevel === "debug",
+    }),
     // Write to all logs with level `info` and below to `package-evaluator.log`
-    new winston.transports.File({ silent: logLevel === 'silent', filename: logFile , level: 'info' }),
+    new winston.transports.File({
+      silent: logLevel === "silent",
+      filename: logFile,
+      level: "info",
+    }),
     // Write all logs error (and below) to `error.log`
-    new winston.transports.File({ silent: logLevel === 'silent', filename: 'logs/error.log', level: 'debug' }),
+    new winston.transports.File({
+      silent: logLevel === "silent",
+      filename: "logs/error.log",
+      level: "debug",
+    }),
   ],
 });
 

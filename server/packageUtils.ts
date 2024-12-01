@@ -27,14 +27,14 @@ export const s3 = new AWS.S3({
 });
 
 // Helper function to omit the 'id' field from an object
-export function omitId<T extends { ID?: any }>(obj: T): Omit<T, 'ID'> {
-const { ID, ...rest } = obj;
-return rest;
+export function omitId<T extends { ID?: any }>(obj: T): Omit<T, "ID"> {
+  const { ID, ...rest } = obj;
+  return rest;
 }
 
 // Function to generate unique ID from package name and version
 export function generatePackageId(Name: string, Version: string): string {
-    return `${Name}@${Version}`;
+  return `${Name}@${Version}`;
 }
 
 export async function getPackageDataFromUrl(

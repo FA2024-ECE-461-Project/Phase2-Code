@@ -41,7 +41,7 @@ describe("Bus Factor Tests", () => {
     });
     expect(logger.info).toHaveBeenCalledWith(
       "Starting bus factor calculation",
-      { url: "https://github.com/owner/repo" }
+      { url: "https://github.com/owner/repo" },
     );
     expect(logger.debug).toHaveBeenCalled();
     expect(logger.error).not.toHaveBeenCalled();
@@ -69,7 +69,7 @@ describe("Bus Factor Tests", () => {
     });
     expect(logger.warn).toHaveBeenCalledWith(
       "Repository has no commits or contributors",
-      { totalCommits: 0, totalContributors: 0 }
+      { totalCommits: 0, totalContributors: 0 },
     );
   });
 
@@ -81,7 +81,7 @@ describe("Bus Factor Tests", () => {
       headers: { Authorization: "token mock-token" },
     });
     (getCommitsAndContributors as jest.Mock).mockRejectedValue(
-      new Error("Network Error")
+      new Error("Network Error"),
     );
 
     const result = await get_bus_factor("https://github.com/owner/repo");

@@ -26,4 +26,4 @@
 //     const buffer = fs.readFileSync(path.join(__dirname, 'test-zips', 'invalid-package.zip'));
 //     expect(() => extractMetadataFromZip(buffer)).toThrow('Invalid package.json format');
 //   });
-});
+// });

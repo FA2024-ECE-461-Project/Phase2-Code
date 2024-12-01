@@ -19,7 +19,6 @@ export const Route = createFileRoute("/rate")({
   component: ratePackage,
 });
 
-
 interface RateResponseError {
   error: string;
 }
@@ -46,7 +45,7 @@ interface MetricsResult {
 
 function ratePackage() {
   const [packageRating, setPackageRating] = useState<MetricsResult | null>(
-    null
+    null,
   );
 
   const form = useForm({
@@ -119,23 +118,68 @@ function ratePackage() {
             <>
               <Separator className="my-4" />
               <div className="flex flex-col space-y-2 text-sm">
-                <div><strong>URL:</strong> {packageRating.URL}</div>
-                <div><strong>NetScore:</strong> {packageRating.NetScore}</div>
-                <div><strong>NetScore Latency:</strong> {packageRating.NetScore_Latency}</div>
-                <div><strong>RampUp:</strong> {packageRating.RampUp}</div>
-                <div><strong>RampUp Latency:</strong> {packageRating.RampUp_Latency}</div>
-                <div><strong>Correctness:</strong> {packageRating.Correctness}</div>
-                <div><strong>Correctness Latency:</strong> {packageRating.Correctness_Latency}</div>
-                <div><strong>BusFactor:</strong> {packageRating.BusFactor}</div>
-                <div><strong>BusFactor Latency:</strong> {packageRating.BusFactor_Latency}</div>
-                <div><strong>ResponsiveMaintainer:</strong> {packageRating.ResponsiveMaintainer}</div>
-                <div><strong>ResponsiveMaintainer Latency:</strong> {packageRating.ResponsiveMaintainer_Latency}</div>
-                <div><strong>License:</strong> {packageRating.License}</div>
-                <div><strong>License Latency:</strong> {packageRating.License_Latency}</div>
-                <div><strong>PR Code Reviews:</strong> {packageRating.PR_Code_Reviews}</div>
-                <div><strong>PR Code Reviews Latency:</strong> {packageRating.PR_Code_Reviews_Latency}</div>
-                <div><strong>Dependency Metric:</strong> {packageRating.DependencyMetric}</div>
-                <div><strong>Dependency Metric Latency:</strong> {packageRating.DependencyMetric_Latency}</div>
+                <div>
+                  <strong>URL:</strong> {packageRating.URL}
+                </div>
+                <div>
+                  <strong>NetScore:</strong> {packageRating.NetScore}
+                </div>
+                <div>
+                  <strong>NetScore Latency:</strong>{" "}
+                  {packageRating.NetScore_Latency}
+                </div>
+                <div>
+                  <strong>RampUp:</strong> {packageRating.RampUp}
+                </div>
+                <div>
+                  <strong>RampUp Latency:</strong>{" "}
+                  {packageRating.RampUp_Latency}
+                </div>
+                <div>
+                  <strong>Correctness:</strong> {packageRating.Correctness}
+                </div>
+                <div>
+                  <strong>Correctness Latency:</strong>{" "}
+                  {packageRating.Correctness_Latency}
+                </div>
+                <div>
+                  <strong>BusFactor:</strong> {packageRating.BusFactor}
+                </div>
+                <div>
+                  <strong>BusFactor Latency:</strong>{" "}
+                  {packageRating.BusFactor_Latency}
+                </div>
+                <div>
+                  <strong>ResponsiveMaintainer:</strong>{" "}
+                  {packageRating.ResponsiveMaintainer}
+                </div>
+                <div>
+                  <strong>ResponsiveMaintainer Latency:</strong>{" "}
+                  {packageRating.ResponsiveMaintainer_Latency}
+                </div>
+                <div>
+                  <strong>License:</strong> {packageRating.License}
+                </div>
+                <div>
+                  <strong>License Latency:</strong>{" "}
+                  {packageRating.License_Latency}
+                </div>
+                <div>
+                  <strong>PR Code Reviews:</strong>{" "}
+                  {packageRating.PR_Code_Reviews}
+                </div>
+                <div>
+                  <strong>PR Code Reviews Latency:</strong>{" "}
+                  {packageRating.PR_Code_Reviews_Latency}
+                </div>
+                <div>
+                  <strong>Dependency Metric:</strong>{" "}
+                  {packageRating.DependencyMetric}
+                </div>
+                <div>
+                  <strong>Dependency Metric Latency:</strong>{" "}
+                  {packageRating.DependencyMetric_Latency}
+                </div>
               </div>
             </>
           )}

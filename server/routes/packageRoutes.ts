@@ -1,9 +1,10 @@
+// Description: This file defines the routes for uploading, downloading, and deleting packages
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { exec } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
-import { eq, desc, sum, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
   packages as packagesTable,
   packageMetadata as packageMetadataTable,
@@ -108,8 +109,8 @@ export const packageRoutes = new Hono()
         .where(
           and(
             eq(packageMetadataTable.Name, metaData.Name),
-            eq(packageMetadataTable.Version, metaData.Version)
-          )
+            eq(packageMetadataTable.Version, metaData.Version),
+          ),
         ) //If a package with the same name and same version already exists
         .then((res) => res[0]);
 

@@ -35,7 +35,7 @@ export const packageMetadata = pgTable(
   (package_metadata) => [
     index("name_version_idx").on(
       package_metadata.Name,
-      package_metadata.Version
+      package_metadata.Version,
     ), // Ensures unique name/version pair
   ],
 );
@@ -54,5 +54,5 @@ export const packageData = pgTable(
   },
   (package_data) => [
     index("url_idx").on(package_data.ID), // Index for id lookups
-  ]
+  ],
 );

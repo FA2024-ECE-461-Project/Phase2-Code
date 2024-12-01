@@ -40,7 +40,7 @@ function uploadPackage() {
         JSProgram?: string;
         debloat?: boolean;
       } = {};
-      
+
       // Name exists, set the payload
       payload = { Name: value.Name };
 
@@ -57,10 +57,15 @@ function uploadPackage() {
       // Check the upload mode and set the payload accordingly
       if (uploadMode === "url") {
         if (!value.URL) throw new Error("URL is required.");
-        payload = { URL: value.URL, JSProgram: value.JSProgram};
+        payload = { URL: value.URL, JSProgram: value.JSProgram };
       } else if (uploadMode === "zip") {
         if (!value.Content) throw new Error("Base64-encoded file is required.");
-        payload = { Content: value.Content, Name: value.Name, debloat: value.debloat, JSProgram: value.JSProgram };
+        payload = {
+          Content: value.Content,
+          Name: value.Name,
+          debloat: value.debloat,
+          JSProgram: value.JSProgram,
+        };
       }
 
       // Send the payload to the API

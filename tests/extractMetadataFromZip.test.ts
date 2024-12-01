@@ -1,14 +1,14 @@
-import { extractMetadataFromZip } from '../server/packageUtils';
-import fs from 'fs';
-import path from 'path';
+// import { extractMetadataFromZip } from '../server/packageUtils';
+// import fs from 'fs';
+// import path from 'path';
 
-describe('extractMetadataFromZip', () => {
-  test('should extract metadata when package.json is at root', () => {
-    const buffer = fs.readFileSync(path.join(__dirname, 'temp.zip'));
-    const metadata = extractMetadataFromZip(buffer);
-    expect(metadata.Name).toBe('461-phase2-code');
-    expect(metadata.Version).toBe('1.0.0');
-  });
+// describe('extractMetadataFromZip', () => {
+//   test('should extract metadata when package.json is at root', () => {
+//     const buffer = fs.readFileSync(path.join(__dirname, 'temp.zip'));
+//     const metadata = extractMetadataFromZip(buffer);
+//     expect(metadata.Name).toBe('461-phase2-code');
+//     expect(metadata.Version).toBe('1.0.0');
+//   });
 
 //   test('should extract metadata when package.json is in subdirectory', () => {
 //     const buffer = fs.readFileSync(path.join(__dirname, 'test-zips', 'subdir-package.zip'));

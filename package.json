@@ -35,6 +35,8 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.701.0",
+    "@aws-sdk/s3-request-presigner": "^3.701.0",
     "@hono/zod-validator": "^0.4.1",
     "@tanstack/react-router": "",
     "@types/aws-sdk": "^0.0.42",
@@ -45,7 +47,7 @@
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.36.3",
     "drizzle-zod": "^0.5.1",
-    "hono": "^4.6.5",
+    "hono": "^4.6.12",
     "i": "^0.3.7",
     "isomorphic-git": "^1.27.1",
     "pg": "^8.13.1",

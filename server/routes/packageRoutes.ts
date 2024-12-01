@@ -1,7 +1,7 @@
 // Description: This file defines the routes for uploading, downloading, and deleting packages
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
 import { eq, and } from "drizzle-orm";
@@ -18,8 +18,15 @@ import {
   getPackageDataFromUrl,
   generatePackageId,
   omitId,
+  uploadToS3,
+  extractMetadataFromZip,
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
+import fs from "fs";
+import path from "path";
+import { s3 } from "../packageUtils";
+
+
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
@@ -49,6 +56,8 @@ export const packageRoutes = new Hono()
 
     // Initialize metadata
     let metadata: { Name: string; Version: string } | undefined;
+    let s3Url: string | undefined;
+
     if (newPackage.URL) {
       const packageData = await getPackageDataFromUrl(newPackage.URL!);
       if (!packageData) {
@@ -64,7 +73,45 @@ export const packageRoutes = new Hono()
 
       metadata = { Name, Version };
     }
+    else if (newPackage.Content) {
+      // Handle Content-based package upload
+      let fileBuffer: Buffer;
+      try {
+        fileBuffer = Buffer.from(newPackage.Content, "base64");
+      } catch (error) {
+        return c.json({ error: "Invalid base64 content" }, 400);
+      }
 
+      // Extract metadata from the zip file
+      try {
+        metadata = extractMetadataFromZip(fileBuffer);
+      } catch (error) {
+        return c.json({ error: (error as Error).message }, 400);
+      }
+
+      // Execute JSProgram if provided
+      // if (newPackage.JSProgram) {
+      //   const executionResult = await executeJSProgram(newPackage.JSProgram);
+      //   if (!executionResult.success) {
+      //     return c.json({ error: 'JSProgram execution failed', details: executionResult.message }, 400);
+      //   }
+      //   console.log(`JSProgram Output: ${executionResult.message}`);
+      // }
+
+      // Upload the zip file to S3
+      const s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
+      const uploadResult = await uploadToS3(fileBuffer, s3Key, 'application/zip');
+
+      if (!uploadResult.success || !uploadResult.url) {
+        return c.json({ error: 'Failed to upload package to S3', details: uploadResult.error }, 500);
+      }
+
+      s3Url = uploadResult.url;
+
+      // Since uploaded to S3, consider setting Content to null to avoid redundancy
+      // Or keep it as is based on your requirements
+      // For this example, we'll set it to null
+    }
     console.log(metadata);
     // Handle debloating
     // If debloat is enabled, debloat the content
@@ -76,8 +123,11 @@ export const packageRoutes = new Hono()
     // Create meta data id with a UUID
     const dataId = uuidv4();
     const data = {
-      ...newPackage, // Copy the newPackage object
-      ID: dataId, // Add the UUID to the newPackage object
+      ID: dataId,
+      Content: newPackage.Content, 
+      URL: newPackage.URL || s3Url, 
+      JSProgram: newPackage.JSProgram || null,
+      debloat: newPackage.debloat || false,
     };
 
     // Create meta data id with a UUID
@@ -268,4 +318,66 @@ export const packageRoutes = new Hono()
     // Return the rating
     c.status(200);
     return c.json(rating);
+  })
+
+  .get('/:ID/download', async (c) => {
+    const ID = c.req.param('ID');
+
+    if (!ID) {
+      return c.json({ error: 'Package ID is required' }, 400);
+    }
+
+    // Fetch the package from the database
+    const packageResult = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packagesTable.ID, ID))
+      .then((res) => res[0]);
+
+    if (!packageResult) {
+      return c.json({ error: 'Package not found' }, 404);
+    }
+
+    // Fetch package data
+    const packageData = await db
+      .select()
+      .from(packageDataTable)
+      .where(eq(packageDataTable.ID, packageResult.dataId))
+      .then((res) => res[0]);
+
+    if (!packageData) {
+      return c.json({ error: 'Package data not found' }, 404);
+    }
+
+    if (packageData.URL) {
+      // If the package is stored in S3, redirect the user to the S3 URL
+      // Optionally, generate a pre-signed URL for secure download
+      const s3Params = {
+        Bucket: process.env.S3_BUCKET_NAME!,
+        Key: `packages/${packageResult.ID}.zip`, // Adjust the key as per your naming convention
+        Expires: 60 * 5, // 5 minutes
+      };
+
+      try {
+        const downloadUrl = s3.getSignedUrl('getObject', s3Params);
+        return c.redirect(downloadUrl, 302);
+      } catch (error) {
+        console.error(`Error generating S3 download URL: ${(error as Error).message}`);
+        return c.json({ error: 'Failed to generate download URL' }, 500);
+      }
+    }
+
+    if (packageData.Content) {
+      // If the package content is stored in the database (not recommended for large files)
+      const zipBuffer = Buffer.from(packageData.Content, 'base64');
+
+      // Set headers for file download
+      c.res.headers.set('Content-Type', 'application/zip');
+      c.res.headers.set('Content-Disposition', `attachment; filename="${ID}.zip"`);
+
+      // Return the zip file as a buffer
+      return c.body(zipBuffer);
+    }
+
+    return c.json({ error: 'Package content not found' }, 404);
   });

@@ -71,17 +71,28 @@ export const metadataRoutes = new Hono()
       const versionType = getVersionType(Version);
       let packages = [];
       // different selection strategy
-      if(Name === "*") {
-        packages = await db.select().from(packageMetadataTable).limit(pageLimit);
-      } else if(versionType === "empty") {
-        packages = await db.select().from(packageMetadataTable).where(eq(packageMetadataTable.Name, Name)).limit(pageLimit);
+      if (Name === "*") {
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .limit(pageLimit);
+      } else if (versionType === "empty") {
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(eq(packageMetadataTable.Name, Name))
+          .limit(pageLimit);
       } else if (versionType == "exact") {
         packages = await db
           .select()
           .from(packageMetadataTable)
           .where(
-            and(eq(packageMetadataTable.Name, Name), eq(packageMetadataTable.Version, Version)),
-          ).limit(pageLimit);
+            and(
+              eq(packageMetadataTable.Name, Name),
+              eq(packageMetadataTable.Version, Version),
+            ),
+          )
+          .limit(pageLimit);
       } else if (versionType == "range") {
         const [start, end] = Version.split("-");
         packages = await db
@@ -90,9 +101,13 @@ export const metadataRoutes = new Hono()
           .where(
             and(
               eq(packageMetadataTable.Name, Name),
-              and(gte(packageMetadataTable.Version, start), lte(packageMetadataTable.Version, end))
-            ) 
-          ).limit(pageLimit);
+              and(
+                gte(packageMetadataTable.Version, start),
+                lte(packageMetadataTable.Version, end),
+              ),
+            ),
+          )
+          .limit(pageLimit);
       } else if (versionType == "caret") {
         const [major, minor, patch] = Version.split(".");
         const start = `${major}.${minor}.${patch}`;
@@ -103,9 +118,13 @@ export const metadataRoutes = new Hono()
           .where(
             and(
               eq(packageMetadataTable.Name, Name),
-              and(gte(packageMetadataTable.Version, start), lt(packageMetadataTable.Version, end))
-            ) 
-          ).limit(pageLimit);
+              and(
+                gte(packageMetadataTable.Version, start),
+                lt(packageMetadataTable.Version, end),
+              ),
+            ),
+          )
+          .limit(pageLimit);
       } else if (versionType == "tilde") {
         const [major, minor, patch] = Version.split(".");
         const start = `${major}.${minor}.${patch}`;
@@ -116,9 +135,13 @@ export const metadataRoutes = new Hono()
           .where(
             and(
               eq(packageMetadataTable.Name, Name),
-              and(gte(packageMetadataTable.Version, start), lt(packageMetadataTable.Version, end))
-            ) 
-          ).limit(pageLimit);
+              and(
+                gte(packageMetadataTable.Version, start),
+                lt(packageMetadataTable.Version, end),
+              ),
+            ),
+          )
+          .limit(pageLimit);
       }
 
       // deal with offset

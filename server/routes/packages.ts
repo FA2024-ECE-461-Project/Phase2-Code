@@ -2,18 +2,18 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import {
-  packageMetadata as packageMetadataTable,
-} from "../db/schemas/packageSchemas";
+import { packageMetadata as packageMetadataTable } from "../db/schemas/packageSchemas";
 import { db } from "../db";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, gte, lte, gt, lt } from "drizzle-orm";
 
 // regex for version checking
-const exactRegex = /^\d+\.\d+\.\d+$/
-const rangeRegex = /^\d+\.\d+\.\d+-\d+\.\d+\.\d+$/
-const caretRegex = /^\^\d+\.\d+\.\d+$/
-const tildeRegex = /^~\d+\.\d+\.\d+$/
-const versionRegex = new RegExp(`(${exactRegex.source})|(${rangeRegex.source})|(${caretRegex.source})|(${tildeRegex.source})`)
+const exactRegex = /^\d+\.\d+\.\d+$/;
+const rangeRegex = /^\d+\.\d+\.\d+-\d+\.\d+\.\d+$/;
+const caretRegex = /^\^\d+\.\d+\.\d+$/;
+const tildeRegex = /^~\d+\.\d+\.\d+$/;
+const versionRegex = new RegExp(
+  `(${exactRegex.source})|(${rangeRegex.source})|(${caretRegex.source})|(${tildeRegex.source})`,
+);
 
 // schema for the post request body
 const postPackageMetadataRequestSchema = z.object({
@@ -23,11 +23,16 @@ const postPackageMetadataRequestSchema = z.object({
     .refine((name) => name.length >= 3 || name === "*", {
       message: 'Name must be "*" if it\'s shorter than 3 characters',
     }),
-  Version: z.string().refine((version) => {
-    // allowing empty string for version
-    return version === "" || versionRegex.test(version);
-  }, 
-  { message: "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z" })
+  Version: z.string().refine(
+    (version) => {
+      // allowing empty string for version
+      return version === "" || versionRegex.test(version);
+    },
+    {
+      message:
+        "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z",
+    },
+  ),
 });
 
 export const metadataRoutes = new Hono()
@@ -55,7 +60,7 @@ export const metadataRoutes = new Hono()
     zValidator("json", postPackageMetadataRequestSchema),
     async (c) => {
       // assume we get {name: "package-name", version: "x.y.z"} as request body
-      const { Name, Version} = c.req.valid("json");
+      const { Name, Version } = c.req.valid("json");
       const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
       const pageLimit = 10; // change this line when there is a spec on page limit
 
@@ -63,35 +68,79 @@ export const metadataRoutes = new Hono()
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
 
-      if(!offset) {
-
+      const versionType = getVersionType(Version);
+      let packages = [];
+      // different selection strategy
+      if(Name === "*") {
+        packages = await db.select().from(packageMetadataTable).limit(pageLimit);
+      } else if(versionType === "empty") {
+        packages = await db.select().from(packageMetadataTable).where(eq(packageMetadataTable.Name, Name)).limit(pageLimit);
+      } else if (versionType == "exact") {
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(
+            and(eq(packageMetadataTable.Name, Name), eq(packageMetadataTable.Version, Version)),
+          ).limit(pageLimit);
+      } else if (versionType == "range") {
+        const [start, end] = Version.split("-");
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(
+            and(
+              eq(packageMetadataTable.Name, Name),
+              and(gte(packageMetadataTable.Version, start), lte(packageMetadataTable.Version, end))
+            ) 
+          ).limit(pageLimit);
+      } else if (versionType == "caret") {
+        const [major, minor, patch] = Version.split(".");
+        const start = `${major}.${minor}.${patch}`;
+        const end = `${major}.${parseInt(minor) + 1}.0`;
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(
+            and(
+              eq(packageMetadataTable.Name, Name),
+              and(gte(packageMetadataTable.Version, start), lt(packageMetadataTable.Version, end))
+            ) 
+          ).limit(pageLimit);
+      } else if (versionType == "tilde") {
+        const [major, minor, patch] = Version.split(".");
+        const start = `${major}.${minor}.${patch}`;
+        const end = `${major}.${parseInt(minor) + 1}.0`;
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(
+            and(
+              eq(packageMetadataTable.Name, Name),
+              and(gte(packageMetadataTable.Version, start), lt(packageMetadataTable.Version, end))
+            ) 
+          ).limit(pageLimit);
       }
 
+      // deal with offset
+      if (offset) {
+        packages = packages.slice(parseInt(offset) * pageLimit);
+      }
+      // return packages
+      return c.json({ packages: packages });
     },
   );
 
-async function queryPackageMetadata(Name: string, Version: string) {
-  // can assume Name is always "*" or a string of length >= 3
-  if(Version) {
-    // both Name and Version are given
-    
-  } else if(!Version) {
-    // only Name is given, no version
-  } else {
-    // 
-  }
-
-}
-
-function getVersionType(version:string) {
-  if(exactRegex.test(version)) {
+function getVersionType(version: string) {
+  if (exactRegex.test(version)) {
     return "exact";
-  } else if(rangeRegex.test(version)) {
+  } else if (rangeRegex.test(version)) {
     return "range";
-  } else if(caretRegex.test(version)) {
+  } else if (caretRegex.test(version)) {
     return "caret";
-  } else if(tildeRegex.test(version)) {
+  } else if (tildeRegex.test(version)) {
     return "tilde";
+  } else if (version === "") {
+    return "empty";
   } else {
     throw new Error("Invalid version format");
   }

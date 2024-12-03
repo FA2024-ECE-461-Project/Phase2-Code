@@ -24,6 +24,8 @@ import { getDependencyPinningFraction } from "./metrics/dependency"; // Adjust t
 import logger from "./logger";
 import { promisify } from "util";
 import * as dotenv from "dotenv";
+
+
 dotenv.config();
 
 interface MetricsResult {
@@ -59,14 +61,14 @@ async function cloneRepository(url: string, dir: string): Promise<void> {
 
     //this is fuking weired
     // Here's a error cloneing the repo
-    // await git.clone({
-    //   fs,
-    //   http,
-    //   dir,
-    //   url,
-    //   singleBranch: true,
-    //   depth: 1
-    // });
+    await git.clone({
+      fs,
+      http,
+      dir,
+      url,
+      singleBranch: true,
+      depth: 1
+    });
 
     logger.info(`Repository cloned successfully: ${url}`);
   } catch (error) {
@@ -114,8 +116,13 @@ export async function processUrl(url: string): Promise<MetricsResult> {
     try {
       const cloneDir = path.join(process.cwd(), "cloned_repos");
       console.log(`Cloning to: ${cloneDir}`);
+
       await cloneRepository(githubUrl, cloneDir);
-      return getMetrics(githubUrl, cloneDir);
+      const metrics: MetricsResult = await getMetrics(githubUrl, cloneDir);
+      // Remove the cloned repository after processing
+      const removeStatus = await removeRepo(cloneDir);
+
+      return metrics;
     } catch (error) {
       logger.error(`Error processing ${githubUrl}:`, { error });
       return createEmptyMetricsResult(url);
@@ -124,6 +131,35 @@ export async function processUrl(url: string): Promise<MetricsResult> {
     logger.error(`Invalid GitHub URL: ${githubUrl}`);
     return createEmptyMetricsResult(url);
   }
+}
+
+async function removeRepo(repoPath: string): Promise<boolean> {
+  // Step 1: Normalize the input path
+  const normalizedRepoPath = path.normalize(repoPath);
+  // Step 2: Resolve the absolute path
+  const resolvedRepoPath = path.resolve(normalizedRepoPath);
+  const projectDirectory = path.resolve(process.cwd());
+
+  // Step 3: Prevent removing anything outside the project directory
+  // so that we don't accidentally delete important files like ~,/,...etc
+  if (!resolvedRepoPath.startsWith(projectDirectory)) {
+    throw new Error("Cannot remove files outside the project directory");
+  }
+  // Step 4: Prevent removal of the project directory itself
+  if (resolvedRepoPath === projectDirectory) {
+    throw new Error("Cannot remove the project directory");
+  }
+  // Step 5: Validate the repository path
+  if (!fs.existsSync(resolvedRepoPath)) {
+    throw new Error("Repository does not exist");
+  }
+  // Step 6: Proceed with removal (additional code for removal would go here)
+  fs.rm(resolvedRepoPath, { recursive: true }, (err) => {
+    if (err) {
+      throw new Error("Error removing the repository");
+    }
+  });
+  return true;
 }
 
 async function getMetrics(

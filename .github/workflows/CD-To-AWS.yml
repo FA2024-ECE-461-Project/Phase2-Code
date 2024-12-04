@@ -70,9 +70,10 @@ jobs:
 
           # copy frontend/dist/ to EC2 instance
           cd frontend/        
-          scp -o StrictHostKeyChecking=no -i ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
+          scp -o StrictHostKeyChecking=no -i ../ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
 
           # Deploy to EC2 via ssh
+          cd ../
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
 

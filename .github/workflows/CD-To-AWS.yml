@@ -65,16 +65,11 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add ec2-key.pem
 
-      # ensure we are in frontend/ when scp, so we can have a folder named dist/ in EC2
-      - name: Copy built files to EC2
-        run: |
-          cd frontend/        # I guess when @checkout, after each step, we go back to the root? so we have to go to frontend again
+          # copy frontend/dist/ to EC2 instance
+          cd frontend/        
           scp -o StrictHostKeyChecking=no -i ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
       
-      # we have already cloned "Phase-2 code" to AWS EC2 already
-      - name: Deploy to EC2
-        run: |
-          pwd
+          # Deploy to EC2 via ssh
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
 

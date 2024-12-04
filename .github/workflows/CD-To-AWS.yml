@@ -52,7 +52,18 @@ jobs:
     needs: build
     steps:
       - name: Ensure correct working directory
-        run: cd /home/runner/work/Phase2-Code/
+        run: |
+          # Print the current working directory to a file named temp
+          pwd > temp
+
+          # Read the content of the temp file
+          current_dir=$(cat temp)
+
+          # Check if the current directory is not /home/runner/work/Phase2-Code/
+          if [ "$current_dir" != "/home/runner/work/Phase2-Code/" ]; then
+            # Change to the /home/runner/work/Phase2-Code/ directory
+            cd /home/runner/work/Phase2-Code/
+          fi
 
       - name: Start SSH agent and add EC2 private key
         run: |

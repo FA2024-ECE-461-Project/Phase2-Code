@@ -51,6 +51,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Ensure correct working directory
+        run: cd /home/runner/work/Phase2-Code/
+
       - name: Start SSH agent and add EC2 private key
         run: |
           pwd

@@ -47,20 +47,15 @@ jobs:
         with:
           name: npm-error-log
           path: /home/runner/.npm/_logs/
-  Deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
+      # may have to keep everything in one job ...😔
       - name: Verify directory structure
         run: |
           pwd
           ls -la
           cd ../
 
-      - name: Start SSH agent and add EC2 private key
+      # Start SSH agent and add EC2 private key
+      - name: Deploy
         run: |
           pwd
           echo "${{ secrets.EC2_KEY}}" > ec2-key.pem

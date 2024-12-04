@@ -76,9 +76,12 @@ jobs:
           git stash --include-untracked || echo "Nothing to stash"
           git pull
 
-          # Install backend dependencies
-          rm -rf node_modules package-lock.json
-          npm install
+          # Install backend dependencies: maybe this is the bottleneck for timeout
+          # considering doing npm install in the build step then upload node_modules/, package.json, package-lock.json
+          # to EC2
+
+          # rm -rf node_modules package-lock.json
+          # npm install
 
           # replace the "old" frontend/dist/ with dist/ (the scp-ed one)
           cd frontend/

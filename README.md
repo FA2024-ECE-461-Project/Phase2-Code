@@ -27,3 +27,4 @@ Assume this repo is cloned, and the `bun` JavaScript runtime is installed on loc
 
 ## CD Notes:
 - Don't know why sometimes our session times out from time to time
+  - might be ``npm install``s, considering doing all npm installs in *Build* step then ``scp`` package.json, package-lock.json, node_modules/ to EC2 instance.

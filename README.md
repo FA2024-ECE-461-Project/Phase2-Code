@@ -25,3 +25,5 @@ Assume this repo is cloned, and the `bun` JavaScript runtime is installed on loc
 3. Only `get_license_compatibility()` in `server\packageScore\src\metrics` did a file tree walk (requires a repository to be cloned to our working repo)
 4. Functions that clone and remove repositories are all in `server\packageScore\src\index.ts`, namely `cloneRepository` and `removeRepo`
 
+## CD Notes:
+- Don't know why sometimes our session times out from time to time

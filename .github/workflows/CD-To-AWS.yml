@@ -77,8 +77,8 @@ jobs:
           git pull
 
           # Install backend dependencies
-          # rm -rf node_modules package-lock.json
-          # npm install
+          rm -rf node_modules package-lock.json
+          npm install
 
           # replace the "old" frontend/dist/ with dist/ (the scp-ed one)
           cd frontend/

@@ -17,8 +17,8 @@ jobs:
       - name: Install Bun
         run: |
           curl -fsSL https://bun.sh/install | bash
-          echo "PATH=$(bun env PATH):$PATH" >> $GITHUB_ENV # Add Bun to the PATH
-          source /home/runner/.bashrc      # ensure the added path takes effect
+          echo "PATH=$HOME/.bun/bin:$PATH" >> $GITHUB_ENV   # add bun to path so subsequent steps can use it
+
       - name: Verify Bun installation
         run: bun --version
 

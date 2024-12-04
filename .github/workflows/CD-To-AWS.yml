@@ -73,8 +73,8 @@ jobs:
           cd /home/ec2-user/Phase2-Code/
 
           # Stash local changes before git pull
-          git stash --include-untracked || echo "Nothing to stash"
-          git pull
+          # git stash --include-untracked || echo "Nothing to stash"
+          # git pull
 
           # Install backend dependencies: maybe this is the bottleneck for timeout
           # considering doing npm install in the build step then upload node_modules/, package.json, package-lock.json

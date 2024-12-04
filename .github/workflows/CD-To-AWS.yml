@@ -66,7 +66,7 @@ jobs:
           ssh-add ec2-key.pem
           
           # verify the key is added
-          ssh -i ec2-key.pem -o StrictHostKeyChecking=no ec2-user@your-ec2-instance 'echo "SSH connection successful"'
+          ssh -i ec2-key.pem -o StrictHostKeyChecking=no ec2-18-188-200-155.us-east-2.compute.amazonaws.com 'echo "SSH connection successful"'
 
           # copy frontend/dist/ to EC2 instance
           cd frontend/        

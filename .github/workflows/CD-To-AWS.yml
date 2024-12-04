@@ -14,7 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-
       - name: Install Bun
         run: |
           curl -fsSL https://bun.sh/install | bash
@@ -43,7 +42,7 @@ jobs:
       # output error logs so we can see them when job fails
       - name: Upload npm error log (if it exists)
         # only run if Build fails
-        if: failure()     
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: npm-error-log
@@ -52,11 +51,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-        # we need to checkout again, since Deploy is a separate job, we start another runner, have to go to our repo again
-      
-      - name: Checkout code
-        uses: actions/checkout@v2
-    
       - name: Start SSH agent and add EC2 private key
         run: |
           pwd
@@ -68,7 +62,7 @@ jobs:
           # copy frontend/dist/ to EC2 instance
           cd frontend/        
           scp -o StrictHostKeyChecking=no -i ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
-      
+
           # Deploy to EC2 via ssh
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/

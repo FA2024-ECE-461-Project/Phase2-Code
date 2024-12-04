@@ -46,4 +46,4 @@ jobs:
           cd ../
           # Execute deployment script on EC2        
           sudo systemctl restart myapp.service
-          sudo systemctl restart caddy
+          sudo systemctl restart caddy      

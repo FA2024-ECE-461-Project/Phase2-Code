@@ -19,7 +19,6 @@ const versionRegex = new RegExp(
 const postPackageMetadataRequestSchema = z.object({
   Name: z
     .string()
-    .min(3, { message: "Name must be at least 3 character long" })
     .refine((name) => name.length >= 3 || name === "*", {
       message: 'Name must be "*" if it\'s shorter than 3 characters',
     }),

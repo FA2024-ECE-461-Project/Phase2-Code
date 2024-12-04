@@ -17,7 +17,6 @@ jobs:
       - name: Install Bun
         run: |
           curl -fsSL https://bun.sh/install | bash
-          echo "::add-path::$(bun env PATH)" # Add Bun to the PATH
 
       - name: Verify Bun installation
         run: bun --version

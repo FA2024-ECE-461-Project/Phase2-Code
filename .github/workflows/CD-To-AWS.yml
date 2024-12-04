@@ -1,4 +1,4 @@
-name: CD - Deploy to AWS
+name: Build then Deploy to AWS
 
 on:
   workflow_run:
@@ -8,12 +8,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "::add-path::$(bun env PATH)" # Add Bun to the PATH
+
+      - name: Verify Bun installation
+        run: bun --version
+
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20.12.4"
+
+      - name: Install dependencies
+        run: |
+          npm install
+          cd frontend/
+          npm install
+
+      - name: Build
+        run: |
+          npm run build
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Start SSH agent and add EC2 private key
         run: |
           echo "${{ secrets.EC2_KEY}}" > ec2-key.pem
@@ -21,10 +47,13 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add ec2-key.pem
 
-      # Later goal: build first then deploy
+      # ensure we are in frontend/ when scp, so we can have a folder named dist/ in EC2
+      - name: Copy built files to EC2
+        run: |
+          scp -i ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/frontend
 
       # we have already cloned "Phase-2 code" to AWS EC2 already
-      - name: SSH into EC2 and git-pull our Phase-2 Repository
+      - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
@@ -37,11 +66,10 @@ jobs:
           rm -rf node_modules package-lock.json
           npm install
 
-          # Install dependencies for frontendd
+          # replace the "old" frontend/dist/ with dist/ (the scp-ed one)
           cd frontend/
-          rm -rf node_modules package-lock.json
-          npm install
-          npm run build
+          rm -rf dist/
+          mv ../dist/ dist/
 
           cd ../
           # Execute deployment script on EC2        

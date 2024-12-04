@@ -48,7 +48,7 @@ jobs:
         with:
           name: npm-error-log
           path: /home/runner/.npm/_logs/
-  y:
+  Deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -62,8 +62,8 @@ jobs:
       # ensure we are in frontend/ when scp, so we can have a folder named dist/ in EC2
       - name: Copy built files to EC2
         run: |
-          scp -i ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/frontend
-
+          scp -o StrictHostKeyChecking=no -i ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
+      
       # we have already cloned "Phase-2 code" to AWS EC2 already
       - name: Deploy to EC2
         run: |

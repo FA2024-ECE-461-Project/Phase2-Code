@@ -14,10 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+
       - name: Install Bun
         run: |
           curl -fsSL https://bun.sh/install | bash
-          echo "::add-path::$(bun env PATH)" # Add Bun to the PATH
+          echo "PATH=$HOME/.bun/bin:$PATH" >> $GITHUB_ENV # Add Bun to the PATH so later steps can use it
 
       - name: Verify Bun installation
         run: bun --version
@@ -25,7 +26,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "20.12.4"
+          node-version: "lts/*"
 
       - name: Install dependencies
         run: |
@@ -38,10 +39,11 @@ jobs:
           cd frontend/
           npm run build
         continue-on-error: true # Prevent workflow failure to allow log capture
-      
+
       # output error logs so we can see them when job fails
       - name: Upload npm error log (if it exists)
-        if: failure() # Run this step only if a previous step fails
+        # only run if Build fails
+        if: failure()     
         uses: actions/upload-artifact@v3
         with:
           name: npm-error-log

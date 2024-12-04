@@ -25,7 +25,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "20.12.4"
+          node-version: 'lts/*'    # Uses the latest LTS version
 
       - name: Install dependencies
         run: |

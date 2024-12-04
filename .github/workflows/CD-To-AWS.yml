@@ -55,6 +55,7 @@ jobs:
         run: |
           pwd
           ls -la
+          cd ../
 
       - name: Start SSH agent and add EC2 private key
         run: |

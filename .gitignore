@@ -29,3 +29,6 @@ experiment.ts
 
 # log files
 logs.txt
+
+commands.txt
+autograder_openapi_spec.yaml

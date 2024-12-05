@@ -5,7 +5,7 @@ import { z } from "zod";
 import { packageMetadata as packageMetadataTable } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import * as semver from "semver";
-import { eq, and, or, gte, lte, gt, lt } from "drizzle-orm";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
 
 // regex for version checking
 const exactRegex = /^\d+\.\d+\.\d+$/;
@@ -109,35 +109,26 @@ export const metadataRoutes = new Hono()
           .where(
             and(
               eq(packageMetadataTable.Name, Name),
-              and(
-                gte(packageMetadataTable.Version, start),
-                lte(packageMetadataTable.Version, end),
-              ),
+              sql`semver_gte(${packageMetadataTable.Version}, ${start})`,
+              sql`semver_lte(${packageMetadataTable.Version}, ${end})`
             ),
           )
           .limit(pageLimit);
       } else if (versionType == "caret") {
-        const [major, minor, patch] = Version.split(".");
-        const start = `${major}.${minor}.${patch}`;
-        const end = `${major}.${parseInt(minor) + 1}.${patch}`;
-        console.log(start, end)
+        const caretVersion = Version.slice(1); // Remove the ^ 
         packages = await db
           .select()
           .from(packageMetadataTable)
           .where(
             and(
               eq(packageMetadataTable.Name, Name),
-              and(
-                gte(packageMetadataTable.Version, start),
-                lt(packageMetadataTable.Version, end),
-              ),
-            ),
+              sql`semver_satisfies(${packageMetadataTable.Version}, ${Version})`
+            )
           )
           .limit(pageLimit);
       } else if (versionType == "tilde") {
         const [major, minor, patch] = Version.split(".");
         const start = `${major}.${minor}.${patch}`;
-        const end = semver.inc(Version, "minor")
         packages = await db
           .select()
           .from(packageMetadataTable)
@@ -146,7 +137,7 @@ export const metadataRoutes = new Hono()
               eq(packageMetadataTable.Name, Name),
               and(
                 gte(packageMetadataTable.Version, start),
-                lt(packageMetadataTable.Version, end),
+                sql `semver_satisfies(${packageMetadataTable.Version}, ${Version})`
               ),
             ),
           )

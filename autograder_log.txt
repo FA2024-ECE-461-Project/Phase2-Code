@@ -1,0 +1,58 @@
+{
+    "Package Cost Test Group": {
+        "Total": "0 / 3 (3 hidden)"
+    },
+    "Package Read Test Group": {
+        "Get Package By ID Test Package 0": 0,
+        "Get Package By ID Test Package 1": 0,
+        "Get Package By ID Test Package 2": 0,
+        "Get Package By ID Test Package 3": 0,
+        "Get Package By ID Test Package 4": 0,
+        "Get Package By ID Test Package 5": 0,
+        "Get Package By ID Test Package 6": 0,
+        "Get Package By Name Test Package 0": 0,
+        "Get Package By Name Test Package 1": 0,
+        "Get Package By Name Test Package 2": 0,
+        "Get Package By Name Test Package 3": 0,
+        "Get Package By Name Test Package 4": 0,
+        "Get Package By Name Test Package 5": 0,
+        "Get Package By Name Test Package 6": 0,
+        "Invalid Package Read Test": 0,
+        "Total": "0 / 15 "
+    },
+    "Rate packages Test Group": {
+        "Total": "0 / 22 (8 hidden)"
+    },
+    "Regex Tests Group": {
+        "Exact Match Name Regex Test": 0,
+        "Extra Chars Name Regex Test": 0,
+        "Random String Regex Test": 0,
+        "Total": "0 / 6 (3 hidden)"
+    },
+    "Setup and Reset Test Group": {
+        "Check No Packages after Reset": 0,
+        "System Reset Test": 0,
+        "System Tracks Test": 1,
+        "Total": "1 / 5 "
+    },
+    "Total": "2 / 69 ",
+    "Update Package Test Group": {
+        "Total": "1 / 9 (9 hidden)"
+    },
+    "Upload Packages Test Group": {
+        "Get Package Query Test": 0,
+        "Total": "0 / 9 ",
+        "Upload Content package 1 via Content": 0,
+        "Upload Content package 2 via Content": 0,
+        "Upload Content package 3 via Content": 0,
+        "Upload Ingest package 1 via Ingest": 0,
+        "Upload Ingest package 2 via Ingest": 0,
+        "Upload Ingest package 3 via Ingest": 0,
+        "Upload Ingest package 4 via Ingest": 0
+    },
+    "autgrader_run_log": "data/8/run/phase2/autograder_05-12-15-41.log",
+    "end_time": "2024-12-05 15:42:11.647385",
+    "run_time": "29.138664 seconds",
+    "start_time": "2024-12-05 15:41:42.508721",
+    "system_run_log": "data/8/run/phase2/autograder_05-12-15-41.sysout.log"
+}

@@ -215,10 +215,36 @@ export const packageRoutes = new Hono()
     });
   })
 
+  .post("/byRegEx", zValidator("json", PackageRegEx), async (c) => {
+    const body = c.req.valid("json");
+    const regex = body.RegEx;
+    console.log("Executing query with regex:", regex);
+
+    // Fetch packages that match the regex
+    try {
+      const packages = await db
+        .select({
+          name: packageMetadataTable.Name,
+          version: packageMetadataTable.Version,
+          id: packageMetadataTable.ID,
+        })
+        .from(packageMetadataTable)
+        .where(sql`${packageMetadataTable.Name} ~ ${regex}`);
+
+      if (packages.length === 0) {
+        return c.json({ error: "No package found under this regex" }, 404);
+      }
+
+      return c.json({ packages });
+    } catch (error) {
+      return c.json({ error: 'No package found under this regex' }, 404);
+    }
+  })
+
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
     const ID = c.req.param("ID");
     const body = await c.req.json();
-
+    
     // Validate incoming data
     const { metadata, data } = body;
     if (!metadata && !data) {
@@ -392,29 +418,5 @@ export const packageRoutes = new Hono()
     return c.json({ error: 'Package content not found' }, 404);
   })
 
-  .post("/byRegEx", zValidator("json", PackageRegEx), async (c) => {
-    const body = c.req.valid("json");
-    const regex = body.RegEx;
-    console.log("Executing query with regex:", regex);
 
-    // Fetch packages that match the regex
-    try {
-      const packages = await db
-        .select({
-          name: packageMetadataTable.Name,
-          version: packageMetadataTable.Version,
-          id: packageMetadataTable.ID,
-        })
-        .from(packageMetadataTable)
-        .where(sql`${packageMetadataTable.Name} ~ ${regex}`);
-
-      if (packages.length === 0) {
-        return c.json({ error: "No package found under this regex" }, 404);
-      }
-
-      return c.json({ packages });
-    } catch (error) {
-      return c.json({ error: 'No package found under this regex' }, 404);
-    }
-  });
 

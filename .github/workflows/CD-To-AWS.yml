@@ -1,4 +1,4 @@
-name: CD - Deploy to AWS
+name: Build then Deploy to AWS
 
 on:
   workflow_run:
@@ -8,42 +8,88 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-then-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Start SSH agent and add EC2 private key
+      - name: Install Bun
         run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "PATH=$HOME/.bun/bin:$PATH" >> $GITHUB_ENV # Add Bun to the PATH so later steps can use it
+
+      - name: Verify Bun installation
+        run: bun --version
+
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "lts/*"
+
+      - name: Install dependencies
+        run: |
+          npm install
+          cd frontend/
+          npm install
+
+      - name: Build
+        run: |
+          cd frontend/
+          npm run build
+        continue-on-error: true # Prevent workflow failure to allow log capture
+
+      # output error logs so we can see them when job fails
+      - name: Upload npm error log (if it exists)
+        # only run if Build fails
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: npm-error-log
+          path: /home/runner/.npm/_logs/
+      # may have to keep everything in one job ...😔
+      - name: Verify directory structure
+        run: |
+          pwd
+          ls -la
+          cd ../
+
+      # Start SSH agent and add EC2 private key
+      - name: Deploy
+        run: |
+          pwd
           echo "${{ secrets.EC2_KEY}}" > ec2-key.pem
           chmod 600 ec2-key.pem     # Set the permissions of the key file
           eval "$(ssh-agent -s)"
           ssh-add ec2-key.pem
 
-      # Later goal: build first then deploy
+          # copy frontend/dist/ to EC2 instance
+          cd frontend/        
+          scp -o StrictHostKeyChecking=no -i ../ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
 
-      # we have already cloned "Phase-2 code" to AWS EC2 already
-      - name: SSH into EC2 and git-pull our Phase-2 Repository
-        run: |
+          # Deploy to EC2 via ssh
+          cd ../
           ssh -o StrictHostKeyChecking=no -i ec2-key.pem ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com << 'EOF'
           cd /home/ec2-user/Phase2-Code/
 
           # Stash local changes before git pull
-          git stash --include-untracked || echo "Nothing to stash"
-          git pull
+          # git stash --include-untracked || echo "Nothing to stash"
+          # git pull
 
-          # Install backend dependencies
-          rm -rf node_modules package-lock.json
-          npm install
+          # Install backend dependencies: maybe this is the bottleneck for timeout
+          # considering doing npm install in the build step then upload node_modules/, package.json, package-lock.json
+          # to EC2
 
-          # Install dependencies for frontendd
+          # rm -rf node_modules package-lock.json
+          # npm install
+
+          # replace the "old" frontend/dist/ with dist/ (the scp-ed one)
           cd frontend/
-          rm -rf node_modules package-lock.json
-          npm install
-          npm run build
+          rm -rf dist/
+          mv ../dist/ dist/
 
           cd ../
           # Execute deployment script on EC2        
           sudo systemctl restart myapp.service
-          sudo systemctl restart caddy      
+          sudo systemctl restart caddy
+          EOF

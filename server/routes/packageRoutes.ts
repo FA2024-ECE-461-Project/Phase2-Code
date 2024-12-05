@@ -314,7 +314,11 @@ export const packageRoutes = new Hono()
     // }
     console.log(URL);
     // Need to implement the logic to get the rating from the URL
-    const rating = await processSingleUrl(URL!);
+    // const rating = await processSingleUrl(URL!);  
+
+    /* Team 7 has shitty function naming: they call processUrl in processSingleUrl 
+                                                            -- Nick Ko, 12/03/2023 */
+    const rating = await processUrl(URL!);
     // Return the rating
     c.status(200);
     return c.json(rating);

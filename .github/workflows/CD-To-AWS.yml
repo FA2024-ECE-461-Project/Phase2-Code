@@ -27,15 +27,15 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - name: Install dependencies
+      - name: Build Backend
         run: |
           npm install
-          cd frontend/
-          npm install
+          npm run build-server
 
-      - name: Build
+      - name: Build Frontend
         run: |
           cd frontend/
+          npm install
           npm run build
         continue-on-error: true # Prevent workflow failure to allow log capture
 
@@ -63,9 +63,9 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add ec2-key.pem
 
-          # copy frontend/dist/ to EC2 instance
+          # copy ./server.js and frontend/dist/ to EC2 instance
           cd frontend/        
-          scp -o StrictHostKeyChecking=no -i ../ec2-key.pem -r dist/ ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
+          scp -o StrictHostKeyChecking=no -i ../ec2-key.pem -r dist/ ../server.js ec2-user@ec2-${{secrets.EC2_HOST}}.us-east-2.compute.amazonaws.com:/home/ec2-user/Phase2-Code/
 
           # Deploy to EC2 via ssh
           cd ../

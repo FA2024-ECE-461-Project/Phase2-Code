@@ -220,13 +220,27 @@ export const packageRoutes = new Hono()
     const regex = body.RegEx;
     console.log("Executing query with regex:", regex);
 
+    if (!regex) {
+      return c.json({ error: "RegEx is required" }, 400);
+    }
+
+    // Validate the regex pattern
+    try {
+      new RegExp(regex);
+    } catch (e) {
+      return c.json({ error: "Invalid RegEx pattern" }, 400);
+    }
+
+    // Ensure no SQL injection by escaping special characters
+    const sanitizedRegex = regex.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
     // Fetch packages that match the regex
     try {
       const packages = await db
         .select({
-          name: packageMetadataTable.Name,
-          version: packageMetadataTable.Version,
-          id: packageMetadataTable.ID,
+          Name: packageMetadataTable.Name,
+          Version: packageMetadataTable.Version,
+          ID: packageMetadataTable.ID,
         })
         .from(packageMetadataTable)
         .where(sql`${packageMetadataTable.Name} ~ ${regex}`);

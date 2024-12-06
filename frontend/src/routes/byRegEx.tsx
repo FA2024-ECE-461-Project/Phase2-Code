@@ -40,8 +40,8 @@ function PackageSearchRegEx() {
       });
 
       if (res.status === 200) {
-        const data: {packages: PackageSearchRegExList[]} = await res.json();
-        setResult(data.packages);
+        const data: PackageSearchRegExList[] = await res.json();        
+        setResult(data);
         toast.success("Packages found!");
       } else if (res.status === 400) {
         toast.error("Invalid or Empty RegEx");

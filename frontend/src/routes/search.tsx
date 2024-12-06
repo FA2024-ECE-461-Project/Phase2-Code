@@ -21,7 +21,7 @@ export const Route = createFileRoute('/search')({
 
 interface SearchPackageResponse {
   Name: string;
-  Version: string;
+  Version?: string;
 }
 
 function searchPackage() {

@@ -12,7 +12,8 @@
     "get-score": "ts-node server/packageScore/index.ts",
     "start": "bun server/index.ts",
     "dev": "bun --watch server/index.ts",
-    "lint": "eslint '*.{ts,tsx}' --fix && eslint '*.{ts,tsx}' --format json --output-file eslint-report.json"
+    "lint": "eslint '*.{ts,tsx}' --fix && eslint '*.{ts,tsx}' --format json --output-file eslint-report.json",
+    "build-server": "node build_server.js"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.6",

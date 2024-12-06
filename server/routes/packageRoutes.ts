@@ -249,7 +249,7 @@ export const packageRoutes = new Hono()
         return c.json({ error: "No package found under this regex" }, 404);
       }
 
-      return c.json({ packages });
+      return c.json(packages);
     } catch (error) {
       return c.json({ error: 'No package found under this regex' }, 404);
     }

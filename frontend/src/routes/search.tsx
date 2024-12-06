@@ -1,110 +1,141 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Verified } from "lucide-react";
-import { useState } from "react";
-import { api } from "../lib/api";
-import { string } from "zod";
+import { createFileRoute } from '@tanstack/react-router'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import { Button } from '../components/ui/button'
+import { useForm } from '@tanstack/react-form'
+import { api } from '../lib/api'
+import { useState } from 'react'
+// import * as React from "react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card'
+import { toast, Toaster } from 'sonner'
 
-export const Route = createFileRoute("/search")({
+export const Route = createFileRoute('/search')({
   component: searchPackage,
-});
+})
+
+interface SearchPackageResponse {
+  Name: string;
+  Version: string;
+}
 
 function searchPackage() {
-  // adopted from https://www.freecodecamp.org/news/how-to-build-forms-in-react/
-  const [formData, setFormData] = useState({ Name: "", Version: "" }); //init form state to empty name and version
-  const [packages, setPackages] = useState([]);
+  const [result, setResult] = useState<SearchPackageResponse[]>([]); // State to hold the returned package
+  // const [error, setError] = useState(null) // State to hold error messages
 
-  // change means when user types in one of the form fields
-  const handleChange = (event: any) => {
-    // extracts the name and value from the event target that has changed
-    const { name, value } = event.target;
-    // update the form data with the new value
-    setFormData({ ...formData, [name]: value });
-  };
+  const form = useForm({
+    defaultValues: {
+      Name: "",
+      Version: ""
+    },
+    onSubmit: async ({ value }) => {
+      const { Name, Version } = value
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    // open browser dev tool to see logs
-    console.log("Form data submitted:", formData);
-    const reqBody = {
-      Name: formData.Name,
-      Version: formData.Version,
-    };
-
-    try {
-      // Await getting response from backend
-      const response = await api.packages.$post({ json: reqBody });
-      // API Spec: offset is in header of response
-      const offset = response.headers.get("offset");
-      if (!response.ok) {
-        console.error("Error fetching packages:", response);
-        throw new Error("An error occurred while fetching packages.");
+      // Check if the ID is empty
+      if (!Name) {
+        toast.error('Name is required.')
+        return
       }
-      // have to resolve response (a promise) to get the data
-      const data = await response.json();
-      console.log("Packages:", data);
 
-      if (Array.isArray(data)) {
-        setPackages(data);
+      // Create payload object
+      const payload = { Name, Version }
+
+      // Send POST request to backend
+      const res = await api.packages.$post({
+        json: payload,
+      })
+
+      if (res.status === 200) {
+        const data: { packages: SearchPackageResponse[] } = await res.json(); // Parse the response body
+        setResult(data.packages); // Set the returned package data
+        toast.success('Package Found!');
+      } else if (res.status === 404) {
+        toast.error('Package not found.');
       } else {
-        setPackages([]);
+        toast.error('An unexpected error occurred. (i dont know why lol)');
       }
-
-      // Display the returned data using alert
-      alert(JSON.stringify(packages));
-    } catch (error) {
-      console.error("Error fetching packages:", error);
-      alert("An error occurred while fetching packages.");
-    }
-  };
+    },
+  })
 
   return (
-    <>
-      <div className="p-2">
-        <h3>Search packages here.</h3>
-      </div>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Name:
-          <input
-            type="text"
-            name="Name"
-            onChange={handleChange}
-            style={{ color: "black" }}
-          />
-        </label>
-        <label>
-          Version:
-          <input
-            type="text"
-            name="Version"
-            onChange={handleChange}
-            style={{ color: "black" }}
-          />
-        </label>
-        <button type="submit" style={{ marginTop: "10px" }}>
-          Submit
-        </button>
-      </form>
-      {/* Display the fetched packages in a table */}
-      {packages.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Version</th>
-            </tr>
-          </thead>
-          <tbody>
-            {packages.map((pkg: any, index: number) => (
-              <tr key={index}>
-                <td>{pkg.Name}</td>
-                <td>{pkg.Version}</td>
-              </tr>
+    <div className="flex flex-col items-center justify-center p-4">
+      <Card className="w-[500px]">
+        <CardHeader>
+          <CardTitle>Search Package</CardTitle>
+          <CardDescription>Search Package by Name or Version</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              void form.handleSubmit()
+            }}
+            className="max-w-xl w-full"
+          >
+            <form.Field
+              name="Name"
+              children={(field) => (
+                <>
+                  <Label htmlFor={field.name}> Package Name</Label>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    placeholder="Enter Package ID"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </>
+              )}
+            />
+            <form.Field
+              name="Version"
+              children={(field) => (
+                <>
+                  <Label htmlFor={field.name}> Package Version</Label>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    placeholder="Enter Version"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </>
+              )}
+            />
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+              children={([canSubmit, isSubmitting]) => (
+                <Button type="submit" disabled={!canSubmit} className="mt-4">
+                  {isSubmitting ? '...' : 'Search'}
+                </Button>
+              )}
+            />
+          </form>
+          <Toaster /> {/* Add the toaster component */}
+        </CardContent>
+      </Card>
+      <div className="mt-4 w-[500px]">
+        {result.length > 0 ? (
+          <ul>
+            {result.map((pkg, index) => (
+              <li key={index} className="border-b py-2">
+                <strong>Name:</strong> {pkg.Name} <br />
+                <strong>Version:</strong> {pkg.Version}
+              </li>
             ))}
-          </tbody>
-        </table>
-      )}
-    </>
-  );
+          </ul>
+        ) : (
+          <p>No packages found.</p>
+        )}
+      </div>
+    </div>
+  )
 }

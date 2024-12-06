@@ -72,7 +72,7 @@ export const metadataRoutes = new Hono()
       // set nextOffset
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
-      let packages = [];
+      let packages: PostPackageMetadataRequest[] = [];
 
       if (!Version) {
         if(Name === "*") {
@@ -98,7 +98,6 @@ export const metadataRoutes = new Hono()
 
       const versionType = getVersionType(Version);
 
-      let packages: PostPackageMetadataRequest[] = [];
       // different selection strategy
       if (Name === "*") {
         packages = await db

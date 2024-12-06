@@ -36,7 +36,7 @@ def main():
 
   # register
   print("registering...")
-  # print("Register body JSON:", register_body_json)
+  print("Register body JSON:", register_body_json)
   response = requests.post(f"{BASE_URL}/register", headers={'Content-Type': 'application/json'}, data=register_body_json)
   print("Response status code:", response.status_code)
   print("Response body:", response.text)
@@ -72,14 +72,18 @@ def main():
   # print("end getting latest score")
 
   print("download autgrader_run_log.txt...")
-  schedule_body["autgrader_run_log"] = json.loads(response.text)["autgrader_run_log"]
-  # print("schedule_body:", schedule_body)
-  request = requests.get(f"{BASE_URL}/log/download", 
+  schedule_body["log"] = json.loads(response.text)["autgrader_run_log"]
+
+  response = requests.get(f"{BASE_URL}/log/download", 
                           headers={'Content-Type': 'application/json'},
                           data=json.dumps(schedule_body))
 
+  print("Response status code:", response.status_code)
+
+  print("response:", response.content)
+
   with open("autograder_run_log.txt", "wb") as file:
-    file.write(request.content)
+    file.write(response.content)
 
   print("end download autgrader_run_log.txt")
 

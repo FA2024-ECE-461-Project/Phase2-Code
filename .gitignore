@@ -37,3 +37,7 @@ autograder_openapi_spec.yaml
 commands.txt
 
 logs/
+
+*txt
+
+.gitignore

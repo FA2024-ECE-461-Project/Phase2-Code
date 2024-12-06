@@ -71,6 +71,18 @@ def main():
   # print("Response body:", response.text)
   # print("end getting latest score")
 
+  print("download autgrader_run_log.txt...")
+  schedule_body["autgrader_run_log"] = json.loads(response.text)["autgrader_run_log"]
+  # print("schedule_body:", schedule_body)
+  request = requests.get(f"{BASE_URL}/log/download", 
+                          headers={'Content-Type': 'application/json'},
+                          data=json.dumps(schedule_body))
+
+  with open("autograder_run_log.txt", "wb") as file:
+    file.write(request.content)
+
+  print("end download autgrader_run_log.txt")
+
 
 if __name__ == "__main__":
   main()

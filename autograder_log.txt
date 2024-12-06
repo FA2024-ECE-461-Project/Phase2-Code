@@ -21,13 +21,20 @@
         "Total": "1 / 15 "
     },
     "Rate packages Test Group": {
-        "Total": "1 / 22 (8 hidden)"
+        "Get Package Rate Test Package 0": 0,
+        "Get Package Rate Test Package 1": 0,
+        "Get Package Rate Test Package 2": 0,
+        "Get Package Rate Test Package 3": 0,
+        "Get Package Rate Test Package 4": 0,
+        "Get Package Rate Test Package 5": 0,
+        "Get Package Rate Test Package 6": 0,
+        "Total": "1 / 22 (1 hidden)"
     },
     "Regex Tests Group": {
-        "Exact Match Name Regex Test": 0,
-        "Extra Chars Name Regex Test": 0,
+        "Exact Match Name Regex Test": 1,
+        "Extra Chars Name Regex Test": 1,
         "Random String Regex Test": 1,
-        "Total": "1 / 6 (3 hidden)"
+        "Total": "3 / 6 (3 hidden)"
     },
     "Setup and Reset Test Group": {
         "Check No Packages after Reset": 0,
@@ -35,7 +42,7 @@
         "System Tracks Test": 1,
         "Total": "2 / 5 "
     },
-    "Total": "12 / 69 ",
+    "Total": "14 / 69 ",
     "Update Package Test Group": {
         "Total": "0 / 9 (9 hidden)"
     },

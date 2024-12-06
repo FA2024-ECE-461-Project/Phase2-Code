@@ -5,7 +5,7 @@ import { z } from "zod";
 import { packageMetadata as packageMetadataTable } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import * as semver from "semver";
-import { eq, and, gte, lt, sql } from "drizzle-orm";
+import { eq, and, gte, lt, sql, lte } from "drizzle-orm";
 
 // regex for version checking
 const exactRegex = /^\d+\.\d+\.\d+$/;
@@ -109,39 +109,27 @@ export const metadataRoutes = new Hono()
           .where(
             and(
               eq(packageMetadataTable.Name, Name),
-              sql`semver_gte(${packageMetadataTable.Version}, ${start})`,
-              sql`semver_lte(${packageMetadataTable.Version}, ${end})`
-            ),
-          )
-          .limit(pageLimit);
-      } else if (versionType == "caret") {
-        const caretVersion = Version.slice(1); // Remove the ^ 
-        packages = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(
-            and(
-              eq(packageMetadataTable.Name, Name),
-              sql`semver_satisfies(${packageMetadataTable.Version}, ${Version})`
-            )
-          )
-          .limit(pageLimit);
-      } else if (versionType == "tilde") {
-        const [major, minor, patch] = Version.split(".");
-        const start = `${major}.${minor}.${patch}`;
-        packages = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(
-            and(
-              eq(packageMetadataTable.Name, Name),
               and(
                 gte(packageMetadataTable.Version, start),
-                sql `semver_satisfies(${packageMetadataTable.Version}, ${Version})`
+                lte(packageMetadataTable.Version, end),
               ),
             ),
           )
           .limit(pageLimit);
+      } else if (versionType == "caret") {
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(and(eq(packageMetadataTable.Name, Name)))
+          .limit(pageLimit);
+        packages = packages.filter((pkg) => {semver.satisfies(pkg.Version, Version)});
+      } else if (versionType == "tilde") {
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(and(eq(packageMetadataTable.Name, Name)))
+          .limit(pageLimit);
+        packages = packages.filter((pkg) => {semver.satisfies(pkg.Version, Version)});
       }
 
       // deal with offset

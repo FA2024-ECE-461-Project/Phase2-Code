@@ -34,6 +34,8 @@ const postPackageMetadataRequestSchema = z.object({
   ),
 });
 
+type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchema>;
+
 export const metadataRoutes = new Hono()
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
@@ -68,7 +70,7 @@ export const metadataRoutes = new Hono()
       c.header("nextOffset", nextOffset.toString());
 
       const versionType = getVersionType(Version);
-      let packages = [];
+      let packages: PostPackageMetadataRequest[] = [];
       // different selection strategy
       if (Name === "*") {
         packages = await db

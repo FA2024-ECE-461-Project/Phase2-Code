@@ -356,7 +356,7 @@ export const packageRoutes = new Hono()
     return c.json(rating);
   })
 
-  .get('/:ID/download', async (c) => {
+  .get('/:ID', async (c) => {
     const ID = c.req.param('ID');
 
     if (!ID) {
@@ -412,6 +412,7 @@ export const packageRoutes = new Hono()
       c.res.headers.set('Content-Disposition', `attachment; filename="${ID}.zip"`);
 
       // Return the zip file as a buffer
+      
       return c.body(zipBuffer);
     }
 

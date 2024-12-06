@@ -5,7 +5,7 @@ import { z } from "zod";
 import { packageMetadata as packageMetadataTable } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import * as semver from "semver";
-import { eq, and, gte, lt, sql, lte } from "drizzle-orm";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
 
 // regex for version checking
 const exactRegex = /^\d+\.\d+\.\d+$/;
@@ -70,20 +70,31 @@ export const metadataRoutes = new Hono()
       // set nextOffset
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
+      let packages = [];
+
       if (!Version) {
-        let packages = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(eq(packageMetadataTable.Name, Name))
-          .limit(pageLimit);
+        if(Name === "*") {
+          packages = await db
+            .select()
+            .from(packageMetadataTable)
+            .where(eq(packageMetadataTable.Name, Name))
+            .limit(pageLimit);
+        } else {
+          packages = await db
+            .select()
+            .from(packageMetadataTable)
+            .where(eq(packageMetadataTable.Name, Name))
+            .limit(pageLimit);
+        }
+
         if (offset) {
-          packages = packages.slice(parseInt(offset) * pageLimit);
+          const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
+          packages = packages.slice(sliceIdx);
         }
         return c.json({ packages: packages });
       }
 
       const versionType = getVersionType(Version);
-      let packages = [];
       // different selection strategy
       if (Name === "*") {
         packages = await db
@@ -111,7 +122,7 @@ export const metadataRoutes = new Hono()
               eq(packageMetadataTable.Name, Name),
               and(
                 gte(packageMetadataTable.Version, start),
-                lte(packageMetadataTable.Version, end),
+                lt(packageMetadataTable.Version, end),
               ),
             ),
           )
@@ -120,21 +131,25 @@ export const metadataRoutes = new Hono()
         packages = await db
           .select()
           .from(packageMetadataTable)
-          .where(and(eq(packageMetadataTable.Name, Name)))
+          .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
-        packages = packages.filter((pkg) => {semver.satisfies(pkg.Version, Version)});
+        packages = packages.filter((pkg) => semver.satisfies(pkg.Version, Version));
+        console.log("after filter:", packages);
+
       } else if (versionType == "tilde") {
         packages = await db
           .select()
           .from(packageMetadataTable)
-          .where(and(eq(packageMetadataTable.Name, Name)))
+          .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
-        packages = packages.filter((pkg) => {semver.satisfies(pkg.Version, Version)});
+        packages = packages.filter((pkg) => semver.satisfies(pkg.Version, Version));
       }
-
+      
+      console.log("after filter/query:", packages);
       // deal with offset
       if (offset) {
-        packages = packages.slice(parseInt(offset) * pageLimit);
+        const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
+        packages = packages.slice(sliceIdx);
       }
       // return packages
       return c.json({ packages: packages });

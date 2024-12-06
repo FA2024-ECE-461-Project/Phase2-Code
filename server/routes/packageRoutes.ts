@@ -325,7 +325,6 @@ export const packageRoutes = new Hono()
   // Get rating of a package
   .get("/:ID/rate", async (c) => {
     const ID = c.req.param("ID");
-
     // Print the ID to the console
     console.log(`Package ID: ${ID}`);
     // if no ID is provided, return an error
@@ -370,7 +369,7 @@ export const packageRoutes = new Hono()
     return c.json(rating);
   })
 
-  .get('/:ID/download', async (c) => {
+  .get('/:ID', async (c) => {
     const ID = c.req.param('ID');
 
     if (!ID) {
@@ -426,6 +425,7 @@ export const packageRoutes = new Hono()
       c.res.headers.set('Content-Disposition', `attachment; filename="${ID}.zip"`);
 
       // Return the zip file as a buffer
+      
       return c.body(zipBuffer);
     }
 

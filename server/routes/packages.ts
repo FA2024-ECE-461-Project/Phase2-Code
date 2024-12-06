@@ -4,7 +4,8 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { packageMetadata as packageMetadataTable } from "../db/schemas/packageSchemas";
 import { db } from "../db";
-import { eq, and, or, gte, lte, gt, lt } from "drizzle-orm";
+import * as semver from "semver";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
 
 // regex for version checking
 const exactRegex = /^\d+\.\d+\.\d+$/;
@@ -17,22 +18,27 @@ const versionRegex = new RegExp(
 
 // schema for the post request body
 const postPackageMetadataRequestSchema = z.object({
-  Name: z
+  Name: z.string().refine((name) => name.length >= 3 || name === "*", {
+    message: 'Name must be "*" if it\'s shorter than 3 characters',
+  }),
+  Version: z
     .string()
-    .refine((name) => name.length >= 3 || name === "*", {
-      message: 'Name must be "*" if it\'s shorter than 3 characters',
-    }),
-  Version: z.string().refine(
-    (version) => {
-      // allowing empty string for version
-      return version === "" || versionRegex.test(version);
-    },
-    {
-      message:
-        "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z",
-    },
-  ),
+    .optional()
+    .refine(
+      (version) => {
+        if (version) {
+          return versionRegex.test(version);
+        }
+        return true;    // allow Version field to be empty
+      },
+      {
+        message:
+          "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z",
+      },
+    ),
 });
+
+type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchema>;
 
 export const metadataRoutes = new Hono()
   // get packages
@@ -66,20 +72,37 @@ export const metadataRoutes = new Hono()
       // set nextOffset
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
+      let packages: PostPackageMetadataRequest[] = [];
+
+      if (!Version) {
+        if(Name === "*") {
+          packages = await db
+            .select()
+            .from(packageMetadataTable)
+            .where(eq(packageMetadataTable.Name, Name))
+            .limit(pageLimit);
+        } else {
+          packages = await db
+            .select()
+            .from(packageMetadataTable)
+            .where(eq(packageMetadataTable.Name, Name))
+            .limit(pageLimit);
+        }
+
+        if (offset) {
+          const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
+          packages = packages.slice(sliceIdx);
+        }
+        return c.json({ packages: packages });
+      }
 
       const versionType = getVersionType(Version);
-      let packages = [];
+
       // different selection strategy
       if (Name === "*") {
         packages = await db
           .select()
           .from(packageMetadataTable)
-          .limit(pageLimit);
-      } else if (versionType === "empty") {
-        packages = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
       } else if (versionType == "exact") {
         packages = await db
@@ -102,50 +125,34 @@ export const metadataRoutes = new Hono()
               eq(packageMetadataTable.Name, Name),
               and(
                 gte(packageMetadataTable.Version, start),
-                lte(packageMetadataTable.Version, end),
+                lt(packageMetadataTable.Version, end),
               ),
             ),
           )
           .limit(pageLimit);
       } else if (versionType == "caret") {
-        const [major, minor, patch] = Version.split(".");
-        const start = `${major}.${minor}.${patch}`;
-        const end = `${major}.${parseInt(minor) + 1}.0`;
         packages = await db
           .select()
           .from(packageMetadataTable)
-          .where(
-            and(
-              eq(packageMetadataTable.Name, Name),
-              and(
-                gte(packageMetadataTable.Version, start),
-                lt(packageMetadataTable.Version, end),
-              ),
-            ),
-          )
+          .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
-      } else if (versionType == "tilde") {
-        const [major, minor, patch] = Version.split(".");
-        const start = `${major}.${minor}.${patch}`;
-        const end = `${major}.${parseInt(minor) + 1}.0`;
-        packages = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(
-            and(
-              eq(packageMetadataTable.Name, Name),
-              and(
-                gte(packageMetadataTable.Version, start),
-                lt(packageMetadataTable.Version, end),
-              ),
-            ),
-          )
-          .limit(pageLimit);
-      }
+        packages = packages.filter((pkg) => semver.satisfies(pkg.Version, Version));
+        console.log("after filter:", packages);
 
+      } else if (versionType == "tilde") {
+        packages = await db
+          .select()
+          .from(packageMetadataTable)
+          .where(eq(packageMetadataTable.Name, Name))
+          .limit(pageLimit);
+        packages = packages.filter((pkg) => semver.satisfies(pkg.Version, Version));
+      }
+      
+      console.log("after filter/query:", packages);
       // deal with offset
       if (offset) {
-        packages = packages.slice(parseInt(offset) * pageLimit);
+        const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
+        packages = packages.slice(sliceIdx);
       }
       // return packages
       return c.json({ packages: packages });
@@ -161,8 +168,6 @@ function getVersionType(version: string) {
     return "caret";
   } else if (tildeRegex.test(version)) {
     return "tilde";
-  } else if (version === "") {
-    return "empty";
   } else {
     throw new Error("Invalid version format");
   }

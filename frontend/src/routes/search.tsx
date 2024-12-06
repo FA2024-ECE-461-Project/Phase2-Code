@@ -114,7 +114,7 @@ function searchPackage() {
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
                 <Button type="submit" disabled={!canSubmit} className="mt-4">
-                  {isSubmitting ? '...' : 'Update'}
+                  {isSubmitting ? '...' : 'Search'}
                 </Button>
               )}
             />

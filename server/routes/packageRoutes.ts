@@ -311,7 +311,6 @@ export const packageRoutes = new Hono()
   // Get rating of a package
   .get("/:ID/rate", async (c) => {
     const ID = c.req.param("ID");
-
     // Print the ID to the console
     console.log(`Package ID: ${ID}`);
     // if no ID is provided, return an error

@@ -17,8 +17,8 @@
         "Get Package By Name Test Package 4": 0,
         "Get Package By Name Test Package 5": 0,
         "Get Package By Name Test Package 6": 0,
-        "Invalid Package Read Test": 0,
-        "Total": "0 / 15 "
+        "Invalid Package Read Test": 1,
+        "Total": "1 / 15 "
     },
     "Rate packages Test Group": {
         "Total": "1 / 22 (8 hidden)"
@@ -35,7 +35,7 @@
         "System Tracks Test": 1,
         "Total": "2 / 5 "
     },
-    "Total": "11 / 69 ",
+    "Total": "12 / 69 ",
     "Update Package Test Group": {
         "Total": "0 / 9 (9 hidden)"
     },
@@ -50,9 +50,9 @@
         "Upload Ingest package 3 via Ingest": 1,
         "Upload Ingest package 4 via Ingest": 1
     },
-    "autgrader_run_log": "data/8/run/phase2/autograder_06-12-15-12.log",
-    "end_time": "2024-12-06 15:12:55.108018",
-    "run_time": "31.63179 seconds",
-    "start_time": "2024-12-06 15:12:23.476228",
-    "system_run_log": "data/8/run/phase2/autograder_06-12-15-12.sysout.log"
+    "autgrader_run_log": "data/8/run/phase2/autograder_06-12-16-25.log",
+    "end_time": "2024-12-06 16:25:33.375377",
+    "run_time": "32.460581 seconds",
+    "start_time": "2024-12-06 16:25:00.914796",
+    "system_run_log": "data/8/run/phase2/autograder_06-12-16-25.sysout.log"
 }

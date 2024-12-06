@@ -27,6 +27,9 @@ function NavBar() {
       <Link to="/rate" className="[&.active]:font-bold">
         Rate
       </Link>
+      <Link to="/byRegEx" className="[&.active]:font-bold">
+        RegEx
+      </Link>
       <Link to="/reset" className="[&.active]:font-bold">
         Reset
       </Link>

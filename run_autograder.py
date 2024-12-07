@@ -18,7 +18,8 @@ def check_env():
 def main():
   check_env()
   load_dotenv()  # Load environment variables from .env file
-
+  
+  SITE_URL = "http://18.188.200.155/"
   BASE_URL = 'http://dl-berlin.ecn.purdue.edu:8000'
   SITE_URL = "http://18.188.200.155/"
 

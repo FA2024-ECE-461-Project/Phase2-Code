@@ -174,3 +174,19 @@ export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version:
 
   return { Name, Version };
 }
+
+export function removeDotGitFolderFromZip(buffer: Buffer): string {
+  const zip = new AdmZip(buffer);
+  const zipEntries = zip.getEntries();
+
+  // Filter out the .git folder
+  const newEntries = zipEntries.filter(entry => !entry.entryName.startsWith('.git/'));
+
+  // Create a new zip file with the filtered entries
+  const newZip = new AdmZip();
+  newEntries.forEach(entry => {
+    newZip.addFile(entry.entryName, entry.getData());
+  });
+  // encode new zip file to base64 string
+  return newZip.toBuffer().toString('base64');
+}

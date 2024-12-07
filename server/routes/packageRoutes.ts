@@ -1,7 +1,7 @@
 // Description: This file defines the routes for uploading, downloading, and deleting packages
 import { Hono } from "hono";
-import {zValidator } from "@hono/zod-validator";
-import {z} from "zod";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 import { exec, execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
@@ -21,6 +21,7 @@ import {
   omitId,
   uploadToS3,
   extractMetadataFromZip,
+  removeDotGitFolderFromZip,
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import fs from "fs";
@@ -32,6 +33,18 @@ const PackageRegEx = z.object({
   RegEx: z.string().optional(),
 });
 
+// Schema for package/download response (export this so it could be used in the frontend)
+export type PackageDownloadResponseType = {
+  metadata: {
+    Name: string;
+    Version: string | undefined;
+  };
+  data: {
+    content: string;
+    JSProgram: string;
+  };
+};
+
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
@@ -39,7 +52,6 @@ export const packageRoutes = new Hono()
     return c.json({ packages: packages });
   })
 
-  
   .post("/", zValidator("json", uploadRequestValidation), async (c) => {
     // Validates the request body using the schema provided in the zValidator.
     // If the payload is invalid, it will automatically return an error response with a 400 status code.
@@ -78,8 +90,7 @@ export const packageRoutes = new Hono()
       const Name = packageData.Name || newPackage.Name || "Default-Name";
 
       metadata = { Name, Version };
-    }
-    else if (newPackage.Content) {
+    } else if (newPackage.Content) {
       // Handle Content-based package upload
       let fileBuffer: Buffer;
       try {
@@ -106,10 +117,20 @@ export const packageRoutes = new Hono()
 
       // Upload the zip file to S3
       const s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
-      const uploadResult = await uploadToS3(fileBuffer, s3Key, 'application/zip');
+      const uploadResult = await uploadToS3(
+        fileBuffer,
+        s3Key,
+        "application/zip",
+      );
 
       if (!uploadResult.success || !uploadResult.url) {
-        return c.json({ error: 'Failed to upload package to S3', details: uploadResult.error }, 500);
+        return c.json(
+          {
+            error: "Failed to upload package to S3",
+            details: uploadResult.error,
+          },
+          500,
+        );
       }
 
       s3Url = uploadResult.url;
@@ -130,8 +151,8 @@ export const packageRoutes = new Hono()
     const dataId = uuidv4();
     const data = {
       ID: dataId,
-      Content: newPackage.Content, 
-      URL: newPackage.URL || s3Url, 
+      Content: newPackage.Content,
+      URL: newPackage.URL || s3Url,
       JSProgram: newPackage.JSProgram || null,
       debloat: newPackage.debloat || false,
     };
@@ -232,7 +253,7 @@ export const packageRoutes = new Hono()
     }
 
     // Ensure no SQL injection by escaping special characters
-    const sanitizedRegex = regex.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const sanitizedRegex = regex.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
 
     // Fetch packages that match the regex
     try {
@@ -251,14 +272,84 @@ export const packageRoutes = new Hono()
 
       return c.json(packages);
     } catch (error) {
-      return c.json({ error: 'No package found under this regex' }, 404);
+      return c.json({ error: "No package found under this regex" }, 404);
     }
+  })
+
+  // download package endpoint
+  .get("/:ID", async (c) => {
+    // get ID from the request
+    const ID = c.req.param("ID");
+    // if no ID is provided, return an error
+    if (!ID) {
+      return c.json({ error: "ID is required" }, 400);
+    }
+
+    // query packagesTable for package ID, then use this entry to reference packageMetadataTable
+    type MetaDataAndPackageDataEntry = {
+      Name: string;
+      Version: string | undefined;
+      Content: string;
+      JSProgram: string;
+    };
+    let metaDataAndPackageDataEntry: MetaDataAndPackageDataEntry = await db
+      .select({
+        Name: packageMetadataTable.Name,
+        Version: packageMetadataTable.Version,
+        Content: packageDataTable.Content,
+        JSProgram: packageDataTable.JSProgram,
+      })
+      .from(packagesTable)
+      .where(eq(packagesTable.ID, ID))
+      .innerJoin(
+        packageMetadataTable,
+        eq(packagesTable.metadataId, packageMetadataTable.ID),
+      )
+      .innerJoin(
+        packageDataTable,
+        eq(packagesTable.dataId, packageDataTable.ID),
+      )
+      .then((res) => res[0]); // once we have the entry (a list), get only the first one
+
+    //when no package matches with ID from request
+    if (!metaDataAndPackageDataEntry) {
+      return c.json({ error: `no package with ID ${ID} found` }, 404);
+    }
+
+    if (metaDataAndPackageDataEntry.Content === null) {
+      console.log(
+        "no zipfile content found in " +
+          metaDataAndPackageDataEntry.Name +
+          " " +
+          metaDataAndPackageDataEntry.Version,
+      );
+      return c.json({ error: "no zipfile content found" }, 404);
+    }
+
+    // remove .git folder from the zip file
+    const contentBuffer = Buffer.from(metaDataAndPackageDataEntry.Content);
+    metaDataAndPackageDataEntry.Content = removeDotGitFolderFromZip(contentBuffer);
+
+    // fill in payload
+    const payload: PackageDownloadResponseType = {
+      metadata: {
+        Name: metaDataAndPackageDataEntry.Name,
+        Version: metaDataAndPackageDataEntry.Version,
+      },
+      data: {
+        content: metaDataAndPackageDataEntry.Content,
+        JSProgram: metaDataAndPackageDataEntry.JSProgram
+          ? metaDataAndPackageDataEntry.JSProgram
+          : "",
+      },
+    };
+    return c.json(payload);
   })
 
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
     const ID = c.req.param("ID");
     const body = await c.req.json();
-    
+
     // Validate incoming data
     const { metadata, data } = body;
     if (!metadata && !data) {
@@ -359,7 +450,7 @@ export const packageRoutes = new Hono()
     // }
     console.log(URL);
     // Need to implement the logic to get the rating from the URL
-    // const rating = await processSingleUrl(URL!);  
+    // const rating = await processSingleUrl(URL!);
 
     /* Team 7 has shitty function naming: they call processUrl in processSingleUrl 
                                                             -- Nick Ko, 12/03/2023 */
@@ -369,11 +460,11 @@ export const packageRoutes = new Hono()
     return c.json(rating);
   })
 
-  .get('/:ID', async (c) => {
-    const ID = c.req.param('ID');
+  .get("/:ID", async (c) => {
+    const ID = c.req.param("ID");
 
     if (!ID) {
-      return c.json({ error: 'Package ID is required' }, 400);
+      return c.json({ error: "Package ID is required" }, 400);
     }
 
     // Fetch the package from the database
@@ -384,7 +475,7 @@ export const packageRoutes = new Hono()
       .then((res) => res[0]);
 
     if (!packageResult) {
-      return c.json({ error: 'Package not found' }, 404);
+      return c.json({ error: "Package not found" }, 404);
     }
 
     // Fetch package data
@@ -395,7 +486,7 @@ export const packageRoutes = new Hono()
       .then((res) => res[0]);
 
     if (!packageData) {
-      return c.json({ error: 'Package data not found' }, 404);
+      return c.json({ error: "Package data not found" }, 404);
     }
 
     if (packageData.URL) {
@@ -408,29 +499,31 @@ export const packageRoutes = new Hono()
       };
 
       try {
-        const downloadUrl = s3.getSignedUrl('getObject', s3Params);
+        const downloadUrl = s3.getSignedUrl("getObject", s3Params);
         return c.redirect(downloadUrl, 302);
       } catch (error) {
-        console.error(`Error generating S3 download URL: ${(error as Error).message}`);
-        return c.json({ error: 'Failed to generate download URL' }, 500);
+        console.error(
+          `Error generating S3 download URL: ${(error as Error).message}`,
+        );
+        return c.json({ error: "Failed to generate download URL" }, 500);
       }
     }
 
     if (packageData.Content) {
       // If the package content is stored in the database (not recommended for large files)
-      const zipBuffer = Buffer.from(packageData.Content, 'base64');
+      const zipBuffer = Buffer.from(packageData.Content, "base64");
 
       // Set headers for file download
-      c.res.headers.set('Content-Type', 'application/zip');
-      c.res.headers.set('Content-Disposition', `attachment; filename="${ID}.zip"`);
+      c.res.headers.set("Content-Type", "application/zip");
+      c.res.headers.set(
+        "Content-Disposition",
+        `attachment; filename="${ID}.zip"`,
+      );
 
       // Return the zip file as a buffer
-      
+
       return c.body(zipBuffer);
     }
 
-    return c.json({ error: 'Package content not found' }, 404);
-  })
-
-
-
+    return c.json({ error: "Package content not found" }, 404);
+  });

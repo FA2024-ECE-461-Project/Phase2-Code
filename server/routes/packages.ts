@@ -79,7 +79,6 @@ export const metadataRoutes = new Hono()
           packages = await db
             .select()
             .from(packageMetadataTable)
-            .where(eq(packageMetadataTable.Name, Name))
             .limit(pageLimit);
         } else {
           packages = await db
@@ -88,7 +87,6 @@ export const metadataRoutes = new Hono()
             .where(eq(packageMetadataTable.Name, Name))
             .limit(pageLimit);
         }
-
         if (offset) {
           const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
           packages = packages.slice(sliceIdx);

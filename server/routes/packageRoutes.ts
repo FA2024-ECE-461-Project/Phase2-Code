@@ -21,6 +21,7 @@ import {
   omitId,
   uploadToS3,
   extractMetadataFromZip,
+  removeDotGitFolderFromZip,
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import fs from "fs";
@@ -39,8 +40,8 @@ type PackageDownloadResponse = {
     Version: string | undefined;
   }
   data: {
-    content: string | null;
-    JSProgram: string | null;
+    content: string;
+    JSProgram: string;
   }
 }
 
@@ -268,7 +269,7 @@ export const packageRoutes = new Hono()
   })
   
   // download package endpoint
-  .get("/:ID/download", async (c) => {
+  .get("/:ID", async (c) => {
     // get ID from the request
     const ID = c.req.param("ID");
     // query packageDataTable to find if it exists
@@ -317,8 +318,10 @@ export const packageRoutes = new Hono()
       }
     }
 
-    // TODO: remove .git folder from content
-
+    // remove the .git/ folder from zip file
+    const zipEncodedStr: string = content[0].field1 ? content[0].field1 : "";
+    const zipBuffer = Buffer.from(zipEncodedStr, 'base64');
+    const newEncodedZip: string = removeDotGitFolderFromZip(zipBuffer);
 
     // fill in payload
     const payload: PackageDownloadResponse = {
@@ -327,8 +330,8 @@ export const packageRoutes = new Hono()
         Version: metadata[0].field2
       },
       data: {
-        content: content[0].field1,
-        JSProgram: content[0].field3
+        content: newEncodedZip,
+        JSProgram: content[0].field3 ? content[0].field3 : ""
       }
     }
     return c.json(payload);

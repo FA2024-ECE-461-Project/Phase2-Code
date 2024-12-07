@@ -33,8 +33,8 @@ const PackageRegEx = z.object({
   RegEx: z.string().optional(),
 });
 
-// Schema for package/download response
-type PackageDownloadResponseType = {
+// Schema for package/download response (export this so it could be used in the frontend)
+export type PackageDownloadResponseType = {
   metadata: {
     Name: string;
     Version: string | undefined;

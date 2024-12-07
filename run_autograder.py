@@ -21,6 +21,8 @@ def main():
   
   SITE_URL = "http://18.188.200.155/"
   BASE_URL = 'http://dl-berlin.ecn.purdue.edu:8000'
+  SITE_URL = "http://18.188.200.155/"
+
   register_body = {
     "group": 8,
     "github": "https://github.com/FA2024-ECE-461-Project/Phase2-Code/",
@@ -28,8 +30,8 @@ def main():
         "Jimmy Ho", "Gaurav Vermani", "Ryan Lin", "Nick Ko"
     ],
     "gh_token": os.getenv("GITHUB_TOKEN"),
-    "endpoint": f"http://localhost:3000",
-    "fe_endpoint": f"http://localhost:5173",
+    "endpoint": f"{SITE_URL}api",
+    "fe_endpoint": SITE_URL
   }
 
   # Convert the dictionary to a JSON string

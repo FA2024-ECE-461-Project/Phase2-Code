@@ -32,6 +32,18 @@ const PackageRegEx = z.object({
   RegEx: z.string().optional(),
 });
 
+// Schema for package/download response
+type PackageDownloadResponse = {
+  metadata: {
+    Name: string;
+    Version: string | undefined;
+  }
+  data: {
+    content: string | null;
+    JSProgram: string | null;
+  }
+}
+
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
@@ -253,6 +265,73 @@ export const packageRoutes = new Hono()
     } catch (error) {
       return c.json({ error: 'No package found under this regex' }, 404);
     }
+  })
+  
+  // download package endpoint
+  .get("/:ID/download", async (c) => {
+    // get ID from the request
+    const ID = c.req.param("ID");
+    // query packageDataTable to find if it exists
+    const packageEntry = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packageDataTable.ID, ID))
+      .then((res) => res[0]);
+    
+    // if package does not exist, return 404
+    if (!packageEntry) {
+      return c.json({ error: "Package not found" }, 404);
+    }
+
+    // fill in the payload with metadata and data
+    // only select Name and Verion for metadata
+    const metadata = await db
+      .select(
+        {
+          field1: packageMetadataTable.Name,
+          field2: packageMetadataTable.Version
+        }
+      )
+      .from(packageMetadataTable)
+      .where(eq(packageMetadataTable.ID, packageEntry.metadataId))
+    
+    // select only content, debloat, and JSProgram for data
+    const content = await db
+      .select(
+        {
+          field1: packageDataTable.Content,
+          field2: packageDataTable.debloat,
+          field3: packageDataTable.JSProgram
+        }
+      )
+      .from(packageDataTable)
+      .where(eq(packageDataTable.ID, packageEntry.dataId));
+
+    // do a check, if any of the fields are null, return 404
+    // {key: value} is the format of the object
+    for(const obj of [metadata, content]) {
+      for(const value in obj.values()) {
+        if (!value) {
+          return c.json({ error: "Package not found" }, 404);
+        }
+      }
+    }
+
+    // TODO: remove .git folder from content
+
+
+    // fill in payload
+    const payload: PackageDownloadResponse = {
+      metadata: {
+        Name: metadata[0].field1,
+        Version: metadata[0].field2
+      },
+      data: {
+        content: content[0].field1,
+        JSProgram: content[0].field3
+      }
+    }
+    return c.json(payload);
   })
 
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {

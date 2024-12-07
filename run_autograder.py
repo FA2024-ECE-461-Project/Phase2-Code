@@ -18,7 +18,8 @@ def check_env():
 def main():
   check_env()
   load_dotenv()  # Load environment variables from .env file
-
+  
+  SITE_URL = "http://18.188.200.155/"
   BASE_URL = 'http://dl-berlin.ecn.purdue.edu:8000'
   register_body = {
     "group": 8,
@@ -27,8 +28,8 @@ def main():
         "Jimmy Ho", "Gaurav Vermani", "Ryan Lin", "Nick Ko"
     ],
     "gh_token": os.getenv("GITHUB_TOKEN"),
-    "endpoint": "http://18.188.200.155/api",
-    "fe_endpoint": "http://18.188.200.155/" 
+    "endpoint": f"{SITE_URL}/api",
+    "fe_endpoint": SITE_URL
   }
 
   # Convert the dictionary to a JSON string
@@ -79,8 +80,6 @@ def main():
                           data=json.dumps(schedule_body))
 
   print("Response status code:", response.status_code)
-
-  print("response:", response.content)
 
   with open("autograder_run_log.txt", "wb") as file:
     file.write(response.content)

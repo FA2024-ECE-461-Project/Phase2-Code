@@ -57,9 +57,9 @@
         "Upload Ingest package 3 via Ingest": 1,
         "Upload Ingest package 4 via Ingest": 1
     },
-    "autgrader_run_log": "data/8/run/phase2/autograder_07-12-22-14.log",
-    "end_time": "2024-12-07 22:14:30.768158",
-    "run_time": "30.405774 seconds",
-    "start_time": "2024-12-07 22:14:00.362384",
-    "system_run_log": "data/8/run/phase2/autograder_07-12-22-14.sysout.log"
+    "autgrader_run_log": "data/8/run/phase2/autograder_07-12-03-10.log",
+    "end_time": "2024-12-07 03:10:57.994293",
+    "run_time": "30.541794 seconds",
+    "start_time": "2024-12-07 03:10:27.452499",
+    "system_run_log": "data/8/run/phase2/autograder_07-12-03-10.sysout.log"
 }

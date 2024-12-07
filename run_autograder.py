@@ -28,8 +28,8 @@ def main():
         "Jimmy Ho", "Gaurav Vermani", "Ryan Lin", "Nick Ko"
     ],
     "gh_token": os.getenv("GITHUB_TOKEN"),
-    "endpoint": f"{SITE_URL}/api",
-    "fe_endpoint": SITE_URL
+    "endpoint": f"http://localhost:3000",
+    "fe_endpoint": f"http://localhost:5173",
   }
 
   # Convert the dictionary to a JSON string

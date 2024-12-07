@@ -14,6 +14,9 @@ Assume this repo is cloned, and the `bun` JavaScript runtime is installed on loc
 5. session 2 should supply you an address you can open up with the browser, then you can look at the website hosted locally.
 6. (Optional) run `bunx drizzle-kit studio` in the terminal session that's in the root directory of the project to see what's in the database
 
+## Download from s3
+- This helper will be written in ``server/packageUtils.ts`` and should be able to use elsewhere in this codebase
+
 ## Notes on Team 7's code
 *It's very different, and it does take time to be familiarized* &emsp; --Nick Ko
 
@@ -26,5 +29,5 @@ Assume this repo is cloned, and the `bun` JavaScript runtime is installed on loc
 4. Functions that clone and remove repositories are all in `server\packageScore\src\index.ts`, namely `cloneRepository` and `removeRepo`
 
 ## CD Notes:
-- Don't know why sometimes our session times out from time to time
-  - might be ``npm install``s, considering doing all npm installs in *Build* step then ``scp`` package.json, package-lock.json, node_modules/ to EC2 instance.
+-  We just use the GitHub machine to build our frontend/dist and server.js for backend, then scp them onto our EC2 instance
+- Our reverseproxy Caddy will be restarted after we restart our app (running ``bun server.js``)

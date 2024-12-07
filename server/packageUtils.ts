@@ -41,48 +41,16 @@ export function generatePackageId(Name: string, Version: string): string {
   return `${Name}@${Version}`;
 }
 
-export async function getPackageDataFromUrl(
-  URL: string,
+export async function getPackageNameVersion(
+  owner: string,
+  repo: string,
 ): Promise<{ Name: string | null; Version: string | null }> {
   // Initialize name and version to null
   let Name: string | null = null;
   let Version: string | null = null;
 
-  // Classify the URL
-  const urlType = classifyURL(URL);
-
-  let githubUrl = URL; // Default to the input URL
-
-  if (urlType === UrlType.NPM) {
-    // It's an NPM URL
-    const packageName = extractNpmPackageName(URL);
-    if (packageName) {
-      const repoUrl = await getNpmPackageGitHubUrl(packageName);
-      if (repoUrl) {
-        githubUrl = repoUrl;
-      } else {
-        // Cannot get GitHub URL from NPM package
-        return { Name: null, Version: null };
-      }
-    } else {
-      // Cannot extract package name from NPM URL
-      return { Name: null, Version: null };
-    }
-  } else if (urlType !== UrlType.GitHub) {
-    // Other URL type, cannot process
-    return { Name: null, Version: null };
-  }
-
-  // Now we have the GitHub URL, parse it to get owner and repo
-  const { owner, repo } = parseGitHubUrl(githubUrl);
-  if (!owner || !repo) {
-    return { Name: null, Version: null };
-  }
-
-  // Get the GitHub token
-  const token = getToken();
   const headers = {
-    Authorization: `token ${token}`,
+    Authorization: `token ${process.env.GITHUB_TOKEN}`,
     Accept: "application/vnd.github.v3+json",
   };
 
@@ -195,50 +163,50 @@ export function removeDotGitFolderFromZip(buffer: Buffer): string {
   return newZip.toBuffer().toString('base64');
 }
 
-export async function downloadGitHubZip(
-  githubUrl: string,
-  outputDir: string,
-  fileName: string
-): Promise<boolean> {
-  try {
+// export async function downloadGitHubZip(
+//   githubUrl: string,
+//   outputDir: string,
+//   fileName: string
+// ): Promise<boolean> {
+//   try {
 
-    // Make an HTTP GET request to fetch the ZIP file
+//     // Make an HTTP GET request to fetch the ZIP file
 
-    const match = githubUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/);
-    if (!match) {
-      throw new Error("Invalid GitHub repository URL format.");
-    }
-    const [_, owner, repo] = match;
-    // Construct the ZIP URL
-    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/master.zip`;
+//     const match = githubUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/);
+//     if (!match) {
+//       throw new Error("Invalid GitHub repository URL format.");
+//     }
+//     const [_, owner, repo] = match;
+//     // Construct the ZIP URL
+//     const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/master.zip`;
 
-    const Zipresponse = await axios.get(zipUrl, {
-      headers: {
-        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, // Add your GitHub token in the environment
-      },
-      responseType: 'arraybuffer', // Ensures the response data is in binary format
-    });
+//     const Zipresponse = await axios.get(zipUrl, {
+//       headers: {
+//         Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, // Add your GitHub token in the environment
+//       },
+//       responseType: 'arraybuffer', // Ensures the response data is in binary format
+//     });
 
-    // Create the output directory if it doesn't exist
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
+//     // Create the output directory if it doesn't exist
+//     if (!fs.existsSync(outputDir)) {
+//       fs.mkdirSync(outputDir, { recursive: true });
+//     }
 
-    // Define the output file path
-    const outputPath = path.join(outputDir, fileName);
+//     // Define the output file path
+//     const outputPath = path.join(outputDir, fileName);
 
-    // Write the file to disk
-    fs.writeFileSync(outputPath, Zipresponse.data);
+//     // Write the file to disk
+//     fs.writeFileSync(outputPath, Zipresponse.data);
 
-    console.log(`File saved to: ${outputPath}`);
-    return true;
-  } catch (error) {
-    console.error(
-      `Error downloading the file: ${(error as Error).message}`
-    );
-    return false;
-  }
-}
+//     console.log(`File saved to: ${outputPath}`);
+//     return true;
+//   } catch (error) {
+//     console.error(
+//       `Error downloading the file: ${(error as Error).message}`
+//     );
+//     return false;
+//   }
+// }
 
 export const uploadToS3viaFile = async (
   filePath: string,
@@ -299,3 +267,81 @@ export const getPackageJsonUrl = (zipContent: string): string | null => {
     return null;
   }
 };
+
+// 1. Convert an NPM URL to a GitHub URL
+export async function npmUrlToGitHubUrl(url: string): Promise<string | null> {
+  const urlType = classifyURL(url);
+
+  if (urlType === UrlType.NPM) {
+    const packageName = extractNpmPackageName(url);
+    if (!packageName) return null;
+
+    const repoUrl = await getNpmPackageGitHubUrl(packageName);
+    return repoUrl || null;
+  }
+
+  // If it's already a GitHub URL, just return it
+  if (urlType === UrlType.GitHub) {
+    return url;
+  }
+
+  // For other URL types, we cannot convert
+  return null;
+}
+
+// 2. Get owner, repo, and default branch from a GitHub URL
+export async function getOwnerRepoAndDefaultBranchFromGithubUrl(githubUrl: string): Promise<{ owner: string; repo: string; defaultBranch: string } | null> {
+  const { owner, repo } = parseGitHubUrl(githubUrl);
+  if (!owner || !repo) return null;
+
+  const token = getToken();
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: "application/vnd.github.v3+json",
+  };
+
+  try {
+    const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+    const data = response.data;
+    const defaultBranch = data.default_branch;
+    return { owner, repo, defaultBranch };
+  } catch (error) {
+    console.error("Error fetching repository data:", (error as Error).message);
+    return null;
+  }
+}
+
+// 3. Download the zip file from GitHub
+export async function downloadGitHubZip(
+  owner: string,
+  repo: string,
+  branch: string,
+  outputDir: string,
+  fileName: string
+): Promise<boolean> {
+  try {
+    // Construct the ZIP URL using the provided branch
+    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.zip`;
+
+    const response = await axios.get(zipUrl, {
+      headers: {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      },
+      responseType: 'arraybuffer',
+    });
+
+    // Ensure output directory exists
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    const outputPath = path.join(outputDir, fileName);
+    fs.writeFileSync(outputPath, response.data);
+
+    console.log(`File saved to: ${outputPath}`);
+    return true;
+  } catch (error) {
+    console.error(`Error downloading the file: ${(error as Error).message}`);
+    return false;
+  }
+}

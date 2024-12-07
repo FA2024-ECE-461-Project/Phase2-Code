@@ -17,7 +17,7 @@ import {
   updateRequestValidation,
 } from "../sharedSchema";
 import {
-  getPackageDataFromUrl,
+  getPackageNameVersion,
   downloadGitHubZip,
   omitId,
   uploadToS3viaFile,
@@ -25,6 +25,8 @@ import {
   removeDotGitFolderFromZip,
   uploadToS3viaBuffer,
   getPackageJsonUrl,
+  npmUrlToGitHubUrl,
+  getOwnerRepoAndDefaultBranchFromGithubUrl,
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
@@ -81,7 +83,15 @@ export const packageRoutes = new Hono()
     let s3Key: string | undefined;
 
     if (newPackage.URL) {
-      const packageData = await getPackageDataFromUrl(newPackage.URL!);
+      const packageURL = await npmUrlToGitHubUrl(newPackage.URL!);
+      const packageDetails = await getOwnerRepoAndDefaultBranchFromGithubUrl(packageURL!);
+      if (!packageDetails) {
+        c.status(400);
+        return c.json({ error: "Invalid URL" });
+      }
+      const { owner, repo, defaultBranch } = packageDetails;
+      const packageData = await getPackageNameVersion(owner, repo);
+
       if (!packageData) {
         c.status(400);
         return c.json({ error: "Invalid URL" });
@@ -95,7 +105,7 @@ export const packageRoutes = new Hono()
       // Get the github zip file using url
       // print the url
       console.log(newPackage.URL);
-      const githubZip = await downloadGitHubZip(newPackage.URL, "./downloads", `${Name}-${Version}.zip`);
+      const githubZip = await downloadGitHubZip(owner, repo, defaultBranch, "./downloads", `${Name}-${Version}.zip`);
       if (!githubZip) {
         c.status(400);
         return c.json({ error: "Failed to download the package from the URL" });

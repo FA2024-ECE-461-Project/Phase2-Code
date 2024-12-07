@@ -7,9 +7,10 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
 import { eq, and, sql } from "drizzle-orm";
 import {
-  packages as packagesTable,
   packageMetadata as packageMetadataTable,
   packageData as packageDataTable,
+  packageRating as packageRatingTable,
+  packages as packagesTable,
 } from "../db/schemas/packageSchemas";
 import {
   uploadRequestValidation,
@@ -17,13 +18,16 @@ import {
 } from "../sharedSchema";
 import {
   getPackageDataFromUrl,
-  generatePackageId,
+  downloadGitHubZip,
   omitId,
-  uploadToS3,
+  uploadToS3viaFile,
   extractMetadataFromZip,
   removeDotGitFolderFromZip,
+  uploadToS3viaBuffer,
+  getPackageJsonUrl,
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
+import { readFileSync } from "fs";
 import fs from "fs";
 import path from "path";
 import { s3 } from "../packageUtils";
@@ -48,16 +52,14 @@ export type PackageDownloadResponseType = {
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
-    const packages = await db.select().from(packagesTable).limit(10);
+    const packages = await db.select().from(packageMetadataTable);
     return c.json({ packages: packages });
   })
-
+  
+  // If the payload is invalid, it will automatically return an error response with a 400 status code.
   .post("/", zValidator("json", uploadRequestValidation), async (c) => {
-    // Validates the request body using the schema provided in the zValidator.
-    // If the payload is invalid, it will automatically return an error response with a 400 status code.
     const newPackage = await c.req.valid("json");
 
-    // console.log(newPackage);
     // Check if content or url is provided
     if (!newPackage.Content && !newPackage.URL) {
       c.status(400);
@@ -73,8 +75,10 @@ export const packageRoutes = new Hono()
     }
 
     // Initialize metadata
-    let metadata: { Name: string; Version: string } | undefined;
+    let metadata: { Name: string; Version: string} | undefined;
     let s3Url: string | undefined;
+    let githubUrl: string | null = null;
+    let s3Key: string | undefined;
 
     if (newPackage.URL) {
       const packageData = await getPackageDataFromUrl(newPackage.URL!);
@@ -85,11 +89,31 @@ export const packageRoutes = new Hono()
 
       // If the version is not provided, set it to 1.0.0
       const Version = packageData.Version || "1.0.0";
-
       // If the name is not provided, set it to "Default Name"
       const Name = packageData.Name || newPackage.Name || "Default-Name";
+      
+      // Get the github zip file using url
+      // print the url
+      console.log(newPackage.URL);
+      const githubZip = await downloadGitHubZip(newPackage.URL, "./downloads", `${Name}-${Version}.zip`);
+      if (!githubZip) {
+        c.status(400);
+        return c.json({ error: "Failed to download the package from the URL" });
+      }
 
-      metadata = { Name, Version };
+      // Upload the zip file to S3
+      const fileContent = readFileSync(`./downloads/${Name}-${Version}.zip`);
+      s3Key = `packages/${Name}-${Version}.zip`;
+      const uploadResult = await uploadToS3viaBuffer(
+        fileContent,
+        s3Key,
+        "application/zip",
+      );
+
+      // Set metadata
+      // s3Url = uploadResult.url;
+      metadata = { Name, Version};
+
     } else if (newPackage.Content) {
       // Handle Content-based package upload
       let fileBuffer: Buffer;
@@ -106,18 +130,9 @@ export const packageRoutes = new Hono()
         return c.json({ error: (error as Error).message }, 400);
       }
 
-      // Execute JSProgram if provided
-      // if (newPackage.JSProgram) {
-      //   const executionResult = await executeJSProgram(newPackage.JSProgram);
-      //   if (!executionResult.success) {
-      //     return c.json({ error: 'JSProgram execution failed', details: executionResult.message }, 400);
-      //   }
-      //   console.log(`JSProgram Output: ${executionResult.message}`);
-      // }
-
       // Upload the zip file to S3
-      const s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
-      const uploadResult = await uploadToS3(
+      s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
+      const uploadResult = await uploadToS3viaBuffer(
         fileBuffer,
         s3Key,
         "application/zip",
@@ -133,13 +148,11 @@ export const packageRoutes = new Hono()
         );
       }
 
+      //get the github url
+      githubUrl = getPackageJsonUrl(newPackage.Content);
       s3Url = uploadResult.url;
-
-      // Since uploaded to S3, consider setting Content to null to avoid redundancy
-      // Or keep it as is based on your requirements
-      // For this example, we'll set it to null
     }
-    console.log(metadata);
+
     // Handle debloating
     // If debloat is enabled, debloat the content
     if (newPackage.debloat && newPackage.Content) {
@@ -147,63 +160,94 @@ export const packageRoutes = new Hono()
       // This is a placeholder for the actual debloating logic
     }
 
-    // Create meta data id with a UUID
-    const dataId = uuidv4();
+    // Create package id with a UUID
+    const packageId = uuidv4();
+
+    // Prepare the data to be inserted into the database
     const data = {
-      ID: dataId,
-      Content: newPackage.Content,
-      URL: newPackage.URL || s3Url,
+      ID: packageId,
+      S3: s3Key,
+      URL: newPackage.URL || githubUrl,
       JSProgram: newPackage.JSProgram || null,
       debloat: newPackage.debloat || false,
     };
 
-    // Create meta data id with a UUID
-    const metaDataId = uuidv4();
+    // Prepare the metadata to be inserted into the database
     const metaData = {
-      ID: metaDataId,
+      ID: packageId,
       Name: metadata?.Name!, // Use the name from metadata
       Version: metadata?.Version!, // Use the version from metadata
     };
 
-    // Generate a package ID using the metadata name and version
-    // Create a package object with the metadata and data
-    const packageId = generatePackageId(metaData.Name, metaData.Version);
-    const packageObject = {
-      ID: packageId,
-      metadataId: metaData.ID,
-      dataId: data.ID,
-    };
+    //
 
-    // Check if a package with the same name and version already exists
-    // if the package have the same name but different version, should be appended to database
-    // But I am not sure what does it mean by "appended to database"
-    // Right now it's checking if the package with the same name and version already exists
-    // Same name and different version should be added to the database
-    try {
-      const existingSameNamePackage = await db
-        .select()
-        .from(packageMetadataTable)
-        .where(
-          and(
-            eq(packageMetadataTable.Name, metaData.Name),
-            eq(packageMetadataTable.Version, metaData.Version),
-          ),
-        ) //If a package with the same name and same version already exists
-        .then((res) => res[0]);
+    //If a package with the same name and same version already exists
+    const existingSameNamePackage = await db
+      .select()
+      .from(packageMetadataTable)
+      .where(
+        and(
+          eq(packageMetadataTable.Name, metaData.Name),
+          eq(packageMetadataTable.Version, metaData.Version),
+        ),
+      )
+      .then((res) => res[0]);
 
-      if (existingSameNamePackage) {
-        // Package already exists, return 409 Conflict
-        c.status(409);
-        return c.json({ error: "Package already exists" });
-      }
-    } catch (error) {
-      // Handle any errors during the check
-      console.error("Error checking for existing package:", error);
-      c.status(500);
-      return c.json({ error: "Internal server error" });
+    if (existingSameNamePackage) {
+      // Package already exists, return 409 Conflict
+      c.status(409);
+      return c.json({ error: "Package already exists" });
     }
 
+    // Rate the package
+    // const rating = await processUrl(newPackage.URL!);
+    // prepare the rating data to be inserted into the database
+    // const ratingData = {
+    //   ID: packageId,
+    //   URL: newPackage.URL,
+    //   NetScore: rating.NetScore,
+    //   NetScore_Latency: rating.NetScore_Latency,
+    //   RampUp: rating.RampUp,
+    //   RampUp_Latency: rating.RampUp_Latency,
+    //   Correctness: rating.Correctness,
+    //   Correctness_Latency: rating.Correctness_Latency,
+    //   BusFactor: rating.BusFactor,
+    //   BusFactor_Latency: rating.BusFactor_Latency,
+    // };
+    const ratingData = {
+      ID: packageId,
+      URL: newPackage.URL || "", 
+      NetScore: '-1',
+      NetScore_Latency: '-1',
+      RampUp: '-1',
+      RampUp_Latency: '-1',
+      Correctness: '-1',
+      Correctness_Latency: '-1',
+      BusFactor: '-1',
+      BusFactor_Latency: '-1',
+      ResponsiveMaintainer: '-1',
+      ResponsiveMaintainer_Latency: '-1',
+      License: '-1',
+      License_Latency: '-1',
+      PR_Code_Reviews: '-1',
+      PR_Code_Reviews_Latency: '-1',
+      DependencyMetric: '-1',
+      DependencyMetric_Latency: '-1',
+    };
+    
+    // Insert the rating to database
+    await db
+      .insert(packageRatingTable)
+      .values(ratingData)
+      .returning()
+      .then((res) => res[0]);
     // Insert the new package into the database
+    // Insert ID into the packages table
+    await db
+      .insert(packagesTable)
+      .values({ ID: packageId })
+      .returning()
+      .then((res) => res[0]);
     // Insert into the packageMetadata table
     const metaDataResult = await db
       .insert(packageMetadataTable)
@@ -218,19 +262,12 @@ export const packageRoutes = new Hono()
       .returning()
       .then((res) => res[0]);
 
-    // Insert into the packages table
-    const packageResult = await db
-      .insert(packagesTable)
-      .values(packageObject)
-      .returning()
-      .then((res) => res[0]);
 
     // Return the new package with a status code of 201
     // Omit 'id' field from dataResult
     const dataWithoutId = omitId(dataResult);
     c.status(201);
     return c.json({
-      package: packageResult, // temp, need to remove
       metadata: metaDataResult,
       data: dataWithoutId,
     });
@@ -289,34 +326,45 @@ export const packageRoutes = new Hono()
     type MetaDataAndPackageDataEntry = {
       Name: string;
       Version: string | undefined;
-      Content: string;
-      JSProgram: string;
+      S3: string | null;
+      JSProgram: string | null;
     };
-    let metaDataAndPackageDataEntry: MetaDataAndPackageDataEntry = await db
-      .select({
-        Name: packageMetadataTable.Name,
-        Version: packageMetadataTable.Version,
-        Content: packageDataTable.Content,
-        JSProgram: packageDataTable.JSProgram,
-      })
+
+    const packageID = await db
+      .select()
       .from(packagesTable)
       .where(eq(packagesTable.ID, ID))
-      .innerJoin(
-        packageMetadataTable,
-        eq(packagesTable.metadataId, packageMetadataTable.ID),
-      )
-      .innerJoin(
-        packageDataTable,
-        eq(packagesTable.dataId, packageDataTable.ID),
-      )
-      .then((res) => res[0]); // once we have the entry (a list), get only the first one
+      .then((res) => res[0]);
+
+    if (!packageID) {
+      return c.json({ error: `no package with ID ${ID} found` }, 404);
+    }
+
+    const packageData = await db
+      .select()
+      .from(packageDataTable)
+      .where(eq(packageDataTable.ID, ID))
+      .then((res) => res[0]);
+
+    const packageMetadata = await db
+      .select()
+      .from(packageMetadataTable)
+      .where(eq(packageMetadataTable.ID, ID))
+      .then((res) => res[0]);
+
+    const metaDataAndPackageDataEntry: MetaDataAndPackageDataEntry = {
+      Name: packageMetadata.Name,
+      Version: packageMetadata.Version,
+      S3: packageData.S3,
+      JSProgram: packageData.JSProgram,
+    };
 
     //when no package matches with ID from request
     if (!metaDataAndPackageDataEntry) {
       return c.json({ error: `no package with ID ${ID} found` }, 404);
     }
 
-    if (metaDataAndPackageDataEntry.Content === null) {
+    if (metaDataAndPackageDataEntry.S3 === null) {
       console.log(
         "no zipfile content found in " +
           metaDataAndPackageDataEntry.Name +
@@ -327,8 +375,8 @@ export const packageRoutes = new Hono()
     }
 
     // remove .git folder from the zip file
-    const contentBuffer = Buffer.from(metaDataAndPackageDataEntry.Content);
-    metaDataAndPackageDataEntry.Content = removeDotGitFolderFromZip(contentBuffer);
+    const contentBuffer = Buffer.from(metaDataAndPackageDataEntry.S3);
+    metaDataAndPackageDataEntry.S3 = removeDotGitFolderFromZip(contentBuffer);
 
     // fill in payload
     const payload: PackageDownloadResponseType = {
@@ -337,7 +385,7 @@ export const packageRoutes = new Hono()
         Version: metaDataAndPackageDataEntry.Version,
       },
       data: {
-        content: metaDataAndPackageDataEntry.Content,
+        content: metaDataAndPackageDataEntry.S3,
         JSProgram: metaDataAndPackageDataEntry.JSProgram
           ? metaDataAndPackageDataEntry.JSProgram
           : "",
@@ -346,72 +394,72 @@ export const packageRoutes = new Hono()
     return c.json(payload);
   })
 
-  .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
-    const ID = c.req.param("ID");
-    const body = await c.req.json();
+  // .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
+  //   const ID = c.req.param("ID");
+  //   const body = await c.req.json();
 
-    // Validate incoming data
-    const { metadata, data } = body;
-    if (!metadata && !data) {
-      c.status(400);
-      return c.json({
-        error: "Invalid input: Must provide metadata or data to update.",
-      });
-    }
+  //   // Validate incoming data
+  //   const { metadata, data } = body;
+  //   if (!metadata && !data) {
+  //     c.status(400);
+  //     return c.json({
+  //       error: "Invalid input: Must provide metadata or data to update.",
+  //     });
+  //   }
 
-    // Fetch the existing package from the database
-    const packageResult = await db
-      .select()
-      .from(packagesTable)
-      .where(eq(packagesTable.ID, ID))
-      .then((res) => res[0]);
+  //   // Fetch the existing package from the database
+  //   const packageResult = await db
+  //     .select()
+  //     .from(packagesTable)
+  //     .where(eq(packagesTable.ID, ID))
+  //     .then((res) => res[0]);
 
-    if (!packageResult) {
-      c.status(404);
-      return c.json({ error: "Package not found" });
-    }
+  //   if (!packageResult) {
+  //     c.status(404);
+  //     return c.json({ error: "Package not found" });
+  //   }
 
-    // Update metadata if provided
-    if (metadata) {
-      const { ID, ...metadataToUpdate } = metadata;
-      await db
-        .update(packageMetadataTable)
-        .set(metadataToUpdate)
-        .where(eq(packageMetadataTable.ID, packageResult.metadataId));
-    }
+  //   // Update metadata if provided
+  //   if (metadata) {
+  //     const { ID, ...metadataToUpdate } = metadata;
+  //     await db
+  //       .update(packageMetadataTable)
+  //       .set(metadataToUpdate)
+  //       .where(eq(packageMetadataTable.ID, packageResult.metadataId));
+  //   }
 
-    // Update data if provided
-    if (data) {
-      const { ID, ...dataToUpdate } = data;
-      await db
-        .update(packageDataTable)
-        .set(dataToUpdate)
-        .where(eq(packageDataTable.ID, packageResult.dataId));
-    }
+  //   // Update data if provided
+  //   if (data) {
+  //     const { ID, ...dataToUpdate } = data;
+  //     await db
+  //       .update(packageDataTable)
+  //       .set(dataToUpdate)
+  //       .where(eq(packageDataTable.ID, packageResult.dataId));
+  //   }
 
-    // Fetch updated package details
-    const updatedMetadata = await db
-      .select()
-      .from(packageMetadataTable)
-      .where(eq(packageMetadataTable.ID, packageResult.metadataId))
-      .then((res) => res[0]);
+  //   // Fetch updated package details
+  //   const updatedMetadata = await db
+  //     .select()
+  //     .from(packageMetadataTable)
+  //     .where(eq(packageMetadataTable.ID, packageResult.metadataId))
+  //     .then((res) => res[0]);
 
-    const updatedData = await db
-      .select()
-      .from(packageDataTable)
-      .where(eq(packageDataTable.ID, packageResult.dataId))
-      .then((res) => res[0]);
+  //   const updatedData = await db
+  //     .select()
+  //     .from(packageDataTable)
+  //     .where(eq(packageDataTable.ID, packageResult.dataId))
+  //     .then((res) => res[0]);
 
-    // Omit 'id' field from updated data result
-    const dataWithoutId = omitId(updatedData);
+  //   // Omit 'id' field from updated data result
+  //   const dataWithoutId = omitId(updatedData);
 
-    // Return updated package
-    c.status(200);
-    return c.json({
-      metadata: updatedMetadata,
-      data: dataWithoutId,
-    });
-  })
+  //   // Return updated package
+  //   c.status(200);
+  //   return c.json({
+  //     metadata: updatedMetadata,
+  //     data: dataWithoutId,
+  //   });
+  // })
 
   // Get rating of a package
   .get("/:ID/rate", async (c) => {
@@ -440,7 +488,7 @@ export const packageRoutes = new Hono()
     const packageData = await db
       .select()
       .from(packageDataTable)
-      .where(eq(packageDataTable.ID, packageResult.dataId))
+      .where(eq(packageDataTable.ID, packageResult.ID))
       .then((res) => res[0]);
 
     // Get the URL from the package data
@@ -460,70 +508,70 @@ export const packageRoutes = new Hono()
     return c.json(rating);
   })
 
-  .get("/:ID", async (c) => {
-    const ID = c.req.param("ID");
+  // .get("/:ID", async (c) => {
+  //   const ID = c.req.param("ID");
 
-    if (!ID) {
-      return c.json({ error: "Package ID is required" }, 400);
-    }
+  //   if (!ID) {
+  //     return c.json({ error: "Package ID is required" }, 400);
+  //   }
 
-    // Fetch the package from the database
-    const packageResult = await db
-      .select()
-      .from(packagesTable)
-      .where(eq(packagesTable.ID, ID))
-      .then((res) => res[0]);
+  //   // Fetch the package from the database
+  //   const packageResult = await db
+  //     .select()
+  //     .from(packagesTable)
+  //     .where(eq(packagesTable.ID, ID))
+  //     .then((res) => res[0]);
 
-    if (!packageResult) {
-      return c.json({ error: "Package not found" }, 404);
-    }
+  //   if (!packageResult) {
+  //     return c.json({ error: "Package not found" }, 404);
+  //   }
 
-    // Fetch package data
-    const packageData = await db
-      .select()
-      .from(packageDataTable)
-      .where(eq(packageDataTable.ID, packageResult.dataId))
-      .then((res) => res[0]);
+  //   // Fetch package data
+  //   const packageData = await db
+  //     .select()
+  //     .from(packageDataTable)
+  //     .where(eq(packageDataTable.ID, packageResult.dataId))
+  //     .then((res) => res[0]);
 
-    if (!packageData) {
-      return c.json({ error: "Package data not found" }, 404);
-    }
+  //   if (!packageData) {
+  //     return c.json({ error: "Package data not found" }, 404);
+  //   }
 
-    if (packageData.URL) {
-      // If the package is stored in S3, redirect the user to the S3 URL
-      // Optionally, generate a pre-signed URL for secure download
-      const s3Params = {
-        Bucket: process.env.S3_BUCKET_NAME!,
-        Key: `packages/${packageResult.ID}.zip`, // Adjust the key as per your naming convention
-        Expires: 60 * 5, // 5 minutes
-      };
+  //   if (packageData.URL) {
+  //     // If the package is stored in S3, redirect the user to the S3 URL
+  //     // Optionally, generate a pre-signed URL for secure download
+  //     const s3Params = {
+  //       Bucket: process.env.S3_BUCKET_NAME!,
+  //       Key: `packages/${packageResult.ID}.zip`, // Adjust the key as per your naming convention
+  //       Expires: 60 * 5, // 5 minutes
+  //     };
 
-      try {
-        const downloadUrl = s3.getSignedUrl("getObject", s3Params);
-        return c.redirect(downloadUrl, 302);
-      } catch (error) {
-        console.error(
-          `Error generating S3 download URL: ${(error as Error).message}`,
-        );
-        return c.json({ error: "Failed to generate download URL" }, 500);
-      }
-    }
+  //     try {
+  //       const downloadUrl = s3.getSignedUrl("getObject", s3Params);
+  //       return c.redirect(downloadUrl, 302);
+  //     } catch (error) {
+  //       console.error(
+  //         `Error generating S3 download URL: ${(error as Error).message}`,
+  //       );
+  //       return c.json({ error: "Failed to generate download URL" }, 500);
+  //     }
+  //   }
 
-    if (packageData.Content) {
-      // If the package content is stored in the database (not recommended for large files)
-      const zipBuffer = Buffer.from(packageData.Content, "base64");
+  //   if (packageData.Content) {
+  //     // If the package content is stored in the database (not recommended for large files)
+  //     const zipBuffer = Buffer.from(packageData.Content, "base64");
 
-      // Set headers for file download
-      c.res.headers.set("Content-Type", "application/zip");
-      c.res.headers.set(
-        "Content-Disposition",
-        `attachment; filename="${ID}.zip"`,
-      );
+  //     // Set headers for file download
+  //     c.res.headers.set("Content-Type", "application/zip");
+  //     c.res.headers.set(
+  //       "Content-Disposition",
+  //       `attachment; filename="${ID}.zip"`,
+  //     );
 
-      // Return the zip file as a buffer
+  //     // Return the zip file as a buffer
 
-      return c.body(zipBuffer);
-    }
+  //     return c.body(zipBuffer);
+  //   }
 
-    return c.json({ error: "Package content not found" }, 404);
-  });
+  //   return c.json({ error: "Package content not found" }, 404);
+  // });

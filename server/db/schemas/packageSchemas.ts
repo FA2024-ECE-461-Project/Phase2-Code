@@ -2,12 +2,17 @@ import { pgTable, varchar, text, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import { Name } from "drizzle-orm";
+import { S3 } from "aws-sdk";
 
 // Packages Table with References
 export const packages = pgTable(
   "packages",
   {
-    ID: varchar("id", { length: 255 }).primaryKey()
+    ID: varchar("id", { length: 255 }).primaryKey(),
+    Name: varchar("name", { length: 255 }).notNull(),
+    Version: varchar("version", { length: 20 }).notNull(),
+    S3: text("S3_Path"), // Optional field for direct package content
   }
 );
 

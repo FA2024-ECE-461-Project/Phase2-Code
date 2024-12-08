@@ -40,8 +40,8 @@ const postPackageMetadataRequestSchema = z.object({
 
 type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchema>;
 type ResponseSchema = {
-  Version: string;
   Name: string;
+  Version: string;
   ID: string;
 }
 export const metadataRoutes = new Hono()

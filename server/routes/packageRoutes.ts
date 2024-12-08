@@ -127,7 +127,7 @@ export const packageRoutes = new Hono()
 
       // Set metadata
       s3Url = uploadResult.url;
-      metadata = { Name, Version, Url: newPackage.URL };
+      metadata = { Name, Version, URL: newPackage.URL };
 
     } else if (newPackage.Content) {
       // Handle Content-based package upload

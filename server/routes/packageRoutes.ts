@@ -703,70 +703,70 @@ export const packageRoutes = new Hono()
     return c.json(rating);
   });
 
-// .get("/:ID", async (c) => {
-//   const ID = c.req.param("ID");
+  // .get("/:ID", async (c) => {
+  //   const ID = c.req.param("ID");
 
-//   if (!ID) {
-//     return c.json({ error: "Package ID is required" }, 400);
-//   }
+  //   if (!ID) {
+  //     return c.json({ error: "Package ID is required" }, 400);
+  //   }
 
-//   // Fetch the package from the database
-//   const packageResult = await db
-//     .select()
-//     .from(packagesTable)
-//     .where(eq(packagesTable.ID, ID))
-//     .then((res) => res[0]);
+  //   // Fetch the package from the database
+  //   const packageResult = await db
+  //     .select()
+  //     .from(packagesTable)
+  //     .where(eq(packagesTable.ID, ID))
+  //     .then((res) => res[0]);
 
-//   if (!packageResult) {
-//     return c.json({ error: "Package not found" }, 404);
-//   }
+  //   if (!packageResult) {
+  //     return c.json({ error: "Package not found" }, 404);
+  //   }
 
-//   // Fetch package data
-//   const packageData = await db
-//     .select()
-//     .from(packageDataTable)
-//     .where(eq(packageDataTable.ID, packageResult.dataId))
-//     .then((res) => res[0]);
+  //   // Fetch package data
+  //   const packageData = await db
+  //     .select()
+  //     .from(packageDataTable)
+  //     .where(eq(packageDataTable.ID, packageResult.dataId))
+  //     .then((res) => res[0]);
 
-//   if (!packageData) {
-//     return c.json({ error: "Package data not found" }, 404);
-//   }
+  //   if (!packageData) {
+  //     return c.json({ error: "Package data not found" }, 404);
+  //   }
 
-//   if (packageData.URL) {
-//     // If the package is stored in S3, redirect the user to the S3 URL
-//     // Optionally, generate a pre-signed URL for secure download
-//     const s3Params = {
-//       Bucket: process.env.S3_BUCKET_NAME!,
-//       Key: `packages/${packageResult.ID}.zip`, // Adjust the key as per your naming convention
-//       Expires: 60 * 5, // 5 minutes
-//     };
+  //   if (packageData.URL) {
+  //     // If the package is stored in S3, redirect the user to the S3 URL
+  //     // Optionally, generate a pre-signed URL for secure download
+  //     const s3Params = {
+  //       Bucket: process.env.S3_BUCKET_NAME!,
+  //       Key: `packages/${packageResult.ID}.zip`, // Adjust the key as per your naming convention
+  //       Expires: 60 * 5, // 5 minutes
+  //     };
 
-//     try {
-//       const downloadUrl = s3.getSignedUrl("getObject", s3Params);
-//       return c.redirect(downloadUrl, 302);
-//     } catch (error) {
-//       console.error(
-//         `Error generating S3 download URL: ${(error as Error).message}`,
-//       );
-//       return c.json({ error: "Failed to generate download URL" }, 500);
-//     }
-//   }
+  //     try {
+  //       const downloadUrl = s3.getSignedUrl("getObject", s3Params);
+  //       return c.redirect(downloadUrl, 302);
+  //     } catch (error) {
+  //       console.error(
+  //         `Error generating S3 download URL: ${(error as Error).message}`,
+  //       );
+  //       return c.json({ error: "Failed to generate download URL" }, 500);
+  //     }
+  //   }
 
-//   if (packageData.Content) {
-//     // If the package content is stored in the database (not recommended for large files)
-//     const zipBuffer = Buffer.from(packageData.Content, "base64");
+  //   if (packageData.Content) {
+  //     // If the package content is stored in the database (not recommended for large files)
+  //     const zipBuffer = Buffer.from(packageData.Content, "base64");
 
-//     // Set headers for file download
-//     c.res.headers.set("Content-Type", "application/zip");
-//     c.res.headers.set(
-//       "Content-Disposition",
-//       `attachment; filename="${ID}.zip"`,
-//     );
+  //     // Set headers for file download
+  //     c.res.headers.set("Content-Type", "application/zip");
+  //     c.res.headers.set(
+  //       "Content-Disposition",
+  //       `attachment; filename="${ID}.zip"`,
+  //     );
 
-//     // Return the zip file as a buffer
+  //     // Return the zip file as a buffer
 
-//     return c.body(zipBuffer);
-//   }
+  //     return c.body(zipBuffer);
+  //   }
 
-//   return c.json({ error: "Package content not found" }, 404);
-// });
+  //   return c.json({ error: "Package content not found" }, 404);
+  // });

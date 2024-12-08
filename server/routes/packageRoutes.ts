@@ -200,8 +200,6 @@ export const packageRoutes = new Hono()
       S3: s3Key,
     };
 
-    //
-
     //If a package with the same name and same version already exists
     const existingSameNamePackage = await db
       .select()
@@ -584,11 +582,8 @@ export const packageRoutes = new Hono()
     //   throw new Error('Invalid URL');
     // }
     console.log(URL);
-    // Need to implement the logic to get the rating from the URL
-    // const rating = await processSingleUrl(URL!);
-
-    /* Team 7 has shitty function naming: they call processUrl in processSingleUrl 
-                                                            -- Nick Ko, 12/03/2023 */
+    
+    // Uncomment the following line to rate the package
     // const rating = await processUrl(URL!);
     // Return the rating
     const rating = {

@@ -148,8 +148,8 @@ export const metadataRoutes = new Hono()
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
-        packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));
-      }
+          packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));
+        }
       
       console.log("after filter/query:", packages);
       // deal with offset

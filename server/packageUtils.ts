@@ -14,6 +14,7 @@ import axios from "axios";
 import * as dotenv from "dotenv";
 import AWS from 'aws-sdk';
 import AdmZip from 'adm-zip';
+import { string } from "zod";
 import { bool } from "aws-sdk/clients/signer";
 
 dotenv.config();
@@ -344,4 +345,30 @@ export async function downloadGitHubZip(
     console.error(`Error downloading the file: ${(error as Error).message}`);
     return false;
   }
+}
+
+export async function downloadZipFromS3ToWorkingDirectory(key: string): Promise<string> {
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME!, // Ensure this environment variable is set
+    Key: key, // e.g., 'packages/Default-Name-1.0.0.zip'
+  };
+  try {
+    const data = await s3.getObject(params).promise();
+    const filePath = path.join(process.cwd(), path.basename(key));
+    fs.writeFileSync(filePath, data.Body as Buffer);
+    console.log('File downloaded successfully to:', filePath);
+    return filePath;
+  } catch(error) {
+    console.error('Error downloading file:', error);
+    throw error;
+  }
+}
+
+export function removeDownloadedFile(filePath: string): boolean{
+  fs.unlinkSync(filePath);
+  if(!fs.existsSync(filePath)){
+    console.log('File removed successfully:', filePath);
+    return true;
+  }
+  return false;
 }

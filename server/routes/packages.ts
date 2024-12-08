@@ -42,6 +42,7 @@ type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchem
 type ResponseSchema = {
   Version: string;
   Name: string;
+  Name: string;
   ID: string;
 }
 export const metadataRoutes = new Hono()
@@ -93,8 +94,9 @@ export const metadataRoutes = new Hono()
         } else {
           packages = await db
             .select({
+              Version: packageMetadataTable.Version,
               Name: packageMetadataTable.Name,
-              Version: packageMetadataTable.Version
+              ID: packageMetadataTable.ID
             })
             .from(packageMetadataTable)
             .where(eq(packageMetadataTable.Name, Name))
@@ -113,16 +115,18 @@ export const metadataRoutes = new Hono()
       if (Name === "*") {
         packages = await db
           .select({
+            Version: packageMetadataTable.Version,
             Name: packageMetadataTable.Name,
-            Version: packageMetadataTable.Version
+            ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
           .limit(pageLimit);
       } else if (versionType == "exact") {
         packages = await db
           .select({
+            Version: packageMetadataTable.Version,
             Name: packageMetadataTable.Name,
-            Version: packageMetadataTable
+            ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
           .where(
@@ -136,8 +140,9 @@ export const metadataRoutes = new Hono()
         const [start, end] = Version.split("-");
         packages = await db
           .select({
+            Version: packageMetadataTable.Version,
             Name: packageMetadataTable.Name,
-            Version: packageMetadataTable.Version
+            ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
           .where(
@@ -154,8 +159,9 @@ export const metadataRoutes = new Hono()
       } else if (versionType == "caret") {
         packages = await db
           .select({
+            Version: packageMetadataTable.Version,
             Name: packageMetadataTable.Name,
-            Version: packageMetadataTable.Version
+            ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
@@ -166,8 +172,9 @@ export const metadataRoutes = new Hono()
       } else if (versionType == "tilde") {
         packages = await db
           .select({
+            Version: packageMetadataTable.Version,
             Name: packageMetadataTable.Name,
-            Version: packageMetadataTable
+            ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))

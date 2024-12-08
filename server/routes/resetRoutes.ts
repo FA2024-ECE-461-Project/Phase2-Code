@@ -1,17 +1,17 @@
 import { Hono } from "hono";
 import {
-  packages as packagesTable,
   packageMetadata as packageMetadataTable,
   packageData as packageDataTable,
+  packageRating as packageRatingTable,
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 
 export const resetRoutes = new Hono().delete("/", async (c) => {
   try {
     // Perform the reset: Clear all related tables
-    await db.delete(packagesTable);
     await db.delete(packageMetadataTable);
     await db.delete(packageDataTable);
+    await db.delete(packageRatingTable);
 
     // Return a success response
     return c.json({ message: "All data successfully reset." }, 200);

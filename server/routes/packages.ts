@@ -45,8 +45,10 @@ export const metadataRoutes = new Hono()
   // Get the pacakages from the database in the packages table with pagination of 10
   .get("/", async (c) => {
     const packages = await db.select().from(packageMetadataTable).limit(10);
+    console.log("packages:", packages);
 
-    return c.json({ packages: packages });
+    //omit the ID field
+    return c.json(packages);
   })
 
   /* 
@@ -77,7 +79,10 @@ export const metadataRoutes = new Hono()
       if (!Version) {
         if(Name === "*") {
           packages = await db
-            .select()
+            .select({
+              Name: packageMetadataTable.Name,
+              Version: packageMetadataTable.Version
+            })
             .from(packageMetadataTable)
             .limit(pageLimit);
         } else {
@@ -91,7 +96,7 @@ export const metadataRoutes = new Hono()
           const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
           packages = packages.slice(sliceIdx);
         }
-        return c.json({ packages: packages });
+        return c.json(packages);
       }
 
       const versionType = getVersionType(Version);
@@ -134,7 +139,8 @@ export const metadataRoutes = new Hono()
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
-        packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));        console.log("after filter:", packages);
+        packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));        
+        console.log("after filter:", packages);
 
       } else if (versionType == "tilde") {
         packages = await db
@@ -151,8 +157,16 @@ export const metadataRoutes = new Hono()
         const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
         packages = packages.slice(sliceIdx);
       }
+
+      const packagesList = packages.map(pkg => ({
+        Name: pkg.Name,
+        Version: pkg.Version
+      }));
+
+      //print the packages
+      console.log("packages:", packagesList);
       // return packages
-      return c.json({ packages: packages });
+      return c.json(packagesList);
     },
   );
 

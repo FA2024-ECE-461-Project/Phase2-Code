@@ -100,9 +100,14 @@ export async function getClosedPRs(
   });
   return response.data.length;
 }
+export function classifyURL(url: string | null | undefined): UrlType {
+  if (!url || typeof url !== "string") {
+    logger.error("Invalid URL provided", { url });
+    throw new TypeError("Invalid URL: URL must be a non-empty string");
+  }
 
-export function classifyURL(url: string): UrlType {
   logger.debug("Classifying URL", { url });
+
   if (url.includes("github.com")) {
     return UrlType.GitHub;
   } else if (url.includes("npmjs.com") || url.startsWith("npm:")) {

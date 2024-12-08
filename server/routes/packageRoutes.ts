@@ -80,7 +80,7 @@ export const packageRoutes = new Hono()
     }
 
     // Initialize metadata
-    let metadata: { Name: string; Version: string} | undefined;
+    let metadata: { Name: string; Version: string; Url: string} | undefined;
     let s3Url: string | undefined;
     let githubUrl: string | null = null;
     let s3Key: string | undefined;
@@ -125,7 +125,7 @@ export const packageRoutes = new Hono()
 
       // Set metadata
       // s3Url = uploadResult.url;
-      metadata = { Name, Version};
+      metadata = { Name, Version, Url: newPackage.URL };
 
     } else if (newPackage.Content) {
       // Handle Content-based package upload
@@ -138,7 +138,7 @@ export const packageRoutes = new Hono()
 
       // Extract metadata from the zip file
       try {
-        metadata = extractMetadataFromZip(fileBuffer);
+        metadata= extractMetadataFromZip(fileBuffer);
       } catch (error) {
         return c.json({ error: (error as Error).message }, 400);
       }
@@ -162,7 +162,7 @@ export const packageRoutes = new Hono()
       }
 
       //get the github url
-      githubUrl = getPackageJsonUrl(newPackage.Content);
+      //githubUrl = getPackageJsonUrl(newPackage.Content);
       s3Url = uploadResult.url;
     }
 
@@ -180,7 +180,7 @@ export const packageRoutes = new Hono()
     const data = {
       ID: packageId,
       S3: s3Key,
-      URL: newPackage.URL || githubUrl,
+      URL: newPackage.URL || metadata?.Url,
       JSProgram: newPackage.JSProgram || null,
       debloat: newPackage.debloat || false,
     };
@@ -235,7 +235,7 @@ export const packageRoutes = new Hono()
     // };
     const ratingData = {
       ID: packageId,
-      URL: newPackage.URL || "", 
+      URL: newPackage.URL || metadata?.Url!, 
       NetScore: '-1',
       NetScore_Latency: '-1',
       RampUp: '-1',

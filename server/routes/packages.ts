@@ -39,6 +39,12 @@ const postPackageMetadataRequestSchema = z.object({
 });
 
 type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchema>;
+type ResponseSchema = {
+  Name: string;
+  Version: string;
+  ID: string;
+};
+} 
 
 export const metadataRoutes = new Hono()
   // get packages
@@ -74,20 +80,25 @@ export const metadataRoutes = new Hono()
       // set nextOffset
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
-      let packages: PostPackageMetadataRequest[] = [];
+      let packages: ResponseSchema[] = [];
 
       if (!Version) {
         if(Name === "*") {
           packages = await db
             .select({
               Name: packageMetadataTable.Name,
-              Version: packageMetadataTable.Version
+              Version: packageMetadataTable.Version,
+              ID: packageMetadataTable.ID
             })
             .from(packageMetadataTable)
             .limit(pageLimit);
         } else {
           packages = await db
-            .select()
+            .select({
+              Name: packageMetadataTable.Name,
+              Version: packageMetadataTable.Version,
+              ID: packageMetadataTable.ID
+            })
             .from(packageMetadataTable)
             .where(eq(packageMetadataTable.Name, Name))
             .limit(pageLimit);
@@ -104,12 +115,20 @@ export const metadataRoutes = new Hono()
       // different selection strategy
       if (Name === "*") {
         packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .limit(pageLimit);
       } else if (versionType == "exact") {
         packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .where(
             and(
@@ -118,55 +137,29 @@ export const metadataRoutes = new Hono()
             ),
           )
           .limit(pageLimit);
-      } else if (versionType == "range") {
-        const [start, end] = Version.split("-");
+        packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));        
+      } else { // should be range, caret, or tilde
         packages = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(
-            and(
-              eq(packageMetadataTable.Name, Name),
-              and(
-                gte(packageMetadataTable.Version, start),
-                lt(packageMetadataTable.Version, end),
-              ),
-            ),
-          )
-          .limit(pageLimit);
-      } else if (versionType == "caret") {
-        packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
         packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));        
-        console.log("after filter:", packages);
+      }         
 
-      } else if (versionType == "tilde") {
-        packages = await db
-          .select()
-          .from(packageMetadataTable)
-          .where(eq(packageMetadataTable.Name, Name))
-          .limit(pageLimit);
-          packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));
-        }
-      
-      console.log("after filter/query:", packages);
+      console.log("after filter: ", packages);
       // deal with offset
       if (offset) {
         const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
         packages = packages.slice(sliceIdx);
       }
 
-      const packagesList = packages.map(pkg => ({
-        Name: pkg.Name,
-        Version: pkg.Version
-      }));
-
-      //print the packages
-      console.log("packages:", packagesList);
-      // return packages
-      return c.json(packagesList);
+      console.log("after slice: ", packages);
+      return c.json(packages);
     },
   );
 

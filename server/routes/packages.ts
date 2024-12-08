@@ -107,7 +107,7 @@ export const metadataRoutes = new Hono()
           packages = packages.slice(sliceIdx);
         }
 
-        log.info("no Version provided, returning", packages);
+        // log.info("no Version provided, returning", packages);
         return c.json(packages);
       }
 
@@ -192,8 +192,7 @@ export const metadataRoutes = new Hono()
       }
 
       //print the packages
-      console.log("packages:", packages);
-      // return packages
+      // console.log("packages:", packages);
       return c.json(packages);
     },
   );

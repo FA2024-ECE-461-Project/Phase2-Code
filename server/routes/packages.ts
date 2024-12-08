@@ -52,6 +52,7 @@ export const metadataRoutes = new Hono()
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
   .get("/", async (c) => {
+    log.info("GET /packages triggered");
     const packages = await db.select().from(packageMetadataTable).limit(10);
     console.log("packages:", packages);
     //omit the ID field
@@ -74,6 +75,7 @@ export const metadataRoutes = new Hono()
     zValidator("json", postPackageMetadataRequestSchema),
     async (c) => {
       // assume we get {name: "package-name", version: "x.y.z"} as request body
+      log.info("POST /packages triggered");
       const { Name, Version } = c.req.valid("json");
       const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
 

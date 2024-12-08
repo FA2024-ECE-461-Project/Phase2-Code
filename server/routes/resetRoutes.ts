@@ -7,6 +7,7 @@ import {
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import AWS from "aws-sdk";
+import log from "../logger";
 
 // Initialize S3 client
 const s3 = new AWS.S3({
@@ -63,6 +64,7 @@ const emptyS3Bucket = async (): Promise<{
 
 // Example Hono route that resets both DB and S3
 export const resetRoutes = new Hono().delete("/", async (c) => {
+  log.info("DELETE / triggered");
   try {
     // Clear database tables
     await db.delete(packageMetadataTable);

@@ -57,12 +57,14 @@ export type PackageDownloadResponseType = {
 export const packageRoutes = new Hono()
   // get all packages
   .get("/", async (c) => {
+    log.info("GET /package triggered");
     const packages = await db.select().from(packageMetadataTable);
     return c.json({ packages: packages });
   })
   
   // If the payload is invalid, it will automatically return an error response with a 400 status code.
   .post("/", zValidator("json", uploadRequestValidation), async (c) => {
+    log.info("POST /package triggered");
     const newPackage = await c.req.valid("json");
     console.log("Starting [post/] endpoint... ");
     console.log("Body: ", newPackage);
@@ -295,6 +297,7 @@ export const packageRoutes = new Hono()
   })
 
   .post("/byRegEx", zValidator("json", PackageRegEx), async (c) => {
+    log.info("POST /package/byRegEx triggered");
     const body = c.req.valid("json");
     const regex = body.RegEx;
     console.log("Executing query with regex:", regex);
@@ -390,6 +393,7 @@ export const packageRoutes = new Hono()
 
   // download package endpoint
   .get("/:ID", async (c) => {
+    log.info("GET /package/:ID triggered");
     // get ID from the request
     const ID = c.req.param("ID");
     // if no ID is provided, return an error
@@ -482,6 +486,7 @@ export const packageRoutes = new Hono()
   })
 
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
+    log.info("POST /package/:ID triggered");
     console.log("Starting [post/:ID] endpoint... ");
     
     const IDFromParam = c.req.param("ID"); // This might be an older version's ID
@@ -617,7 +622,8 @@ export const packageRoutes = new Hono()
   })
 
   // Get rating of a package
-  .get("/:ID/rate", async (c) => {    
+  .get("/:ID/rate", async (c) => {
+    log.info("GET /package/:ID/rate triggered");
     const ID = c.req.param("ID");
     // Print the ID to the console
     // if no ID is provided, return an error

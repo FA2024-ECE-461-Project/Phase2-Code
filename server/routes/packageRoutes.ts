@@ -28,6 +28,7 @@ import {
   getPackageJsonUrl,
   npmUrlToGitHubUrl,
   getOwnerRepoAndDefaultBranchFromGithubUrl,
+  removeDownloadedFile
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
@@ -473,6 +474,9 @@ export const packageRoutes = new Hono()
           : "",
       },
     };
+    console.log("before return, ", filePath);
+    // remove the downloaded file
+    console.log("is removed?", removeDownloadedFile(filePath));
     return c.json(payload);
   })
 
@@ -547,7 +551,7 @@ export const packageRoutes = new Hono()
   .get("/:ID/rate", async (c) => {
     const ID = c.req.param("ID");
     // Print the ID to the console
-    console.log(`Package ID: ${ID}`);
+    console.log(`Rating Package ID: ${ID}`);
     // if no ID is provided, return an error
     // Not sure why this is not working when no ID is provided
     if (!ID) {
@@ -584,8 +588,26 @@ export const packageRoutes = new Hono()
 
     /* Team 7 has shitty function naming: they call processUrl in processSingleUrl 
                                                             -- Nick Ko, 12/03/2023 */
-    const rating = await processUrl(URL!);
+    // const rating = await processUrl(URL!);
     // Return the rating
+    const rating = {
+      NetScore: '-1',
+      NetScore_Latency: '-1',
+      RampUp: '-1',
+      RampUp_Latency: '-1',
+      Correctness: '-1',
+      Correctness_Latency: '-1',
+      BusFactor: '-1',
+      BusFactor_Latency: '-1',
+      ResponsiveMaintainer: '-1',
+      ResponsiveMaintainer_Latency: '-1',
+      License: '-1',
+      License_Latency: '-1',
+      PR_Code_Reviews: '-1',
+      PR_Code_Reviews_Latency: '-1',
+      DependencyMetric: '-1',
+      DependencyMetric_Latency: '-1',
+    }
     c.status(200);
     return c.json(rating);
   })

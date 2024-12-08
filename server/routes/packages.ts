@@ -7,9 +7,6 @@ import { db } from "../db";
 import * as semver from "semver";
 import { eq, and, gte, lt, sql } from "drizzle-orm";
 
-import * as logger from ".logger";
-import { log } from "../logger";
-
 // regex for version checking
 const exactRegex = /^\d+\.\d+\.\d+$/;
 const rangeRegex = /^\d+\.\d+\.\d+-\d+\.\d+\.\d+$/;
@@ -53,7 +50,6 @@ export const metadataRoutes = new Hono()
   .get("/", async (c) => {
     const packages = await db.select().from(packageMetadataTable).limit(10);
     console.log("packages:", packages);
-    log.info("packages:", packages);
     //omit the ID field
     return c.json(packages);
   })
@@ -78,7 +74,6 @@ export const metadataRoutes = new Hono()
       const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
       const pageLimit = 10; // change this line when there is a spec on page limit
       
-      log.info("receive", Name, Version, offset);
       // set nextOffset
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
@@ -109,7 +104,6 @@ export const metadataRoutes = new Hono()
           const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
           packages = packages.slice(sliceIdx);
         }
-        log.info("no Version, returning", packages);
         return c.json(packages);
       }
 
@@ -194,7 +188,6 @@ export const metadataRoutes = new Hono()
       }
 
       //print the packages
-      log.info("returning", packages);
       console.log("packages:", packages);
       // return packages
       return c.json(packages);

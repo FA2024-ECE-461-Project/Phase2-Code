@@ -5,7 +5,7 @@ import { z } from "zod";
 import { exec, execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import {
   packageMetadata as packageMetadataTable,
   packageData as packageDataTable,
@@ -483,12 +483,13 @@ export const packageRoutes = new Hono()
 
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
     console.log("Starting [post/:ID] endpoint... ");
-    const ID = c.req.param("ID");
+    
+    const IDFromParam = c.req.param("ID"); // This might be an older version's ID
     const body = c.req.valid("json");
-
-    console.log(`[post/:ID] Updating Package ID: ${ID}`);
+  
+    console.log(`[post/:ID] Potentially creating a new package version for package line ID: ${IDFromParam}`);
     console.log("[post/:ID] Body: ", body);
-
+  
     const { metadata, data } = body;
     const databody: {
       S3?: string | undefined;
@@ -496,102 +497,94 @@ export const packageRoutes = new Hono()
       JSProgram?: string | undefined;
       debloat?: boolean | undefined;
     } = {};
-
-
+  
     if (!metadata.ID) {
-      console.log("Invalid input: Must provide metadata ID to update.");
+      console.log("Invalid input: Must provide metadata ID to create a new version.");
       c.status(400);
       return c.json({
-        error: "Invalid input: Must provide metadata or data to update.",
+        error: "Invalid input: Must provide metadata ID.",
       });
     }
-
-    // Fetch the existing package from the database
-    const packageResult = await db
+  
+    // 1. Fetch the latest version of this package line using the provided metadata.ID
+    const latestPackage = await db
       .select()
       .from(packagesTable)
-      .where(eq(packagesTable.ID, ID))
+      .where(eq(packagesTable.ID, metadata.ID))
+      .orderBy(desc(packagesTable.Version))
+      .limit(1)
       .then((res) => res[0]);
-
-    if (!packageResult) {
-      console.log("Package not found");
+  
+    if (!latestPackage) {
+      console.log("Base package not found for ID:", metadata.ID);
       c.status(404);
       return c.json({ error: "Package not found" });
     }
-
-    // Check is the package version is more recent
-    const isMoreRecent = isMoreRecentVersion(metadata.Version, packageResult.Version);
+  
+    // 2. Check if the new version is more recent than the latest known version
+    const isMoreRecent = isMoreRecentVersion(metadata.Version, latestPackage.Version);
     if (!isMoreRecent) {
       c.status(409);
       return c.json({
-        error: "Version provided is older than the existing version",
+        error: "Version provided is older than or equal to the existing latest version",
       });
     }
-
-    // update the package content on s3
+  
+    // 3. If we have package content, upload it to S3
     let s3Key: string | undefined;
     if (data.Content) {
       const fileBuffer = Buffer.from(data.Content, "base64");
       s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
-      const uploadResult = await uploadToS3viaBuffer(
-        fileBuffer,
-        s3Key,
-        "application/zip",
-      );
-
+      const uploadResult = await uploadToS3viaBuffer(fileBuffer, s3Key, "application/zip");
+  
       if (!uploadResult.success || !uploadResult.url) {
-        return c.json(
-          {
-            error: "Failed to upload package to S3",
-            details: uploadResult.error,
-          },
-          500,
-        );
+        c.status(500);
+        return c.json({
+          error: "Failed to upload package to S3",
+          details: uploadResult.error,
+        });
       }
     }
-
-    // Fill in the data object with the provided data
+  
+    // 4. Prepare data object for insertion
     databody.S3 = s3Key;
     databody.URL = data?.URL;
     databody.JSProgram = data?.JSProgram;
     databody.debloat = data?.debloat;
-
-    //prepare the data for packageTable
-    const packagesTableData = {
-      ID: packageResult.ID,
+  
+    // 5. Insert the new version into packagesTable
+    // Assuming (ID, Version) uniquely identifies a version of the package
+    await db.insert(packagesTable).values({
+      ID: metadata.ID,
       Name: metadata.Name,
       Version: metadata.Version,
       S3: databody.S3,
-    };
-    
-    // Update metadata if provided
-    if (metadata) {
-      const { ID, ...metadataToUpdate } = metadata;
-      await db
-        .update(packageMetadataTable)
-        .set(metadataToUpdate)
-        .where(eq(packageMetadataTable.ID, packageResult.ID));
-    }
-
-    // Update data if provided
-    if (databody) {
-      const { ...dataToUpdate } = databody;
-      await db
-        .update(packageDataTable)
-        .set(dataToUpdate)
-        .where(eq(packageDataTable.ID, packageResult.ID));
-
-      await db
-        .update(packagesTable)
-        .set(packagesTableData)
-        .where(eq(packagesTable.ID, packageResult.ID));
-    }
-
-    // Return updated package
+    });
+  
+    // 6. Insert the new metadata row for this version
+    // Remove ID from metadata to insert separately if needed
+    const { ID, ...metadataToInsert } = metadata;
+    const { Version, ...metadataWithoutVersion } = metadataToInsert;
+    await db.insert(packageMetadataTable).values({
+      ID: metadata.ID,
+      Version: metadata.Version,
+      ...metadataWithoutVersion,
+    });
+  
+    // 7. Insert the new data row for this version
+    await db.insert(packageDataTable).values({
+      ID: metadata.ID,
+      S3: databody.S3,
+      URL: databody.URL,
+      JSProgram: databody.JSProgram,
+      debloat: databody.debloat,
+    });
+  
+    // Return the newly created version info
     c.status(200);
     return c.json(body);
   })
-
+  
   // Get rating of a package
   .get("/:ID/rate", async (c) => {    
     const ID = c.req.param("ID");

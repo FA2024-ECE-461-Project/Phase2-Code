@@ -81,7 +81,7 @@ export const packageRoutes = new Hono()
     }
 
     // Initialize metadata
-    let metadata: { Name: string; Version: string} | undefined;
+    let metadata: { Name: string; Version: string, URL: string} | undefined;
     let s3Url: string | undefined;
     let githubUrl: string | null = null;
     let s3Key: string | undefined;
@@ -126,7 +126,7 @@ export const packageRoutes = new Hono()
 
       // Set metadata
       // s3Url = uploadResult.url;
-      metadata = { Name, Version};
+      metadata = { Name, Version, URL: newPackage.URL };
 
     } else if (newPackage.Content) {
       // Handle Content-based package upload
@@ -163,7 +163,7 @@ export const packageRoutes = new Hono()
       }
 
       //get the github url
-      githubUrl = getPackageJsonUrl(newPackage.Content);
+      //githubUrl = getPackageJsonUrl(newPackage.Content);
       s3Url = uploadResult.url;
     }
 
@@ -181,7 +181,7 @@ export const packageRoutes = new Hono()
     const data = {
       ID: packageId,
       S3: s3Key,
-      URL: newPackage.URL || githubUrl,
+      URL: newPackage.URL || metadata?.URL || "",
       JSProgram: newPackage.JSProgram || null,
       debloat: newPackage.debloat || false,
     };
@@ -236,7 +236,7 @@ export const packageRoutes = new Hono()
     // };
     const ratingData = {
       ID: packageId,
-      URL: newPackage.URL || "", 
+      URL: newPackage.URL || metadata?.URL || "", 
       NetScore: '-1',
       NetScore_Latency: '-1',
       RampUp: '-1',

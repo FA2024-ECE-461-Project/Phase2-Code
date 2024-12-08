@@ -14,8 +14,9 @@ import axios from "axios";
 import * as dotenv from "dotenv";
 import AWS from 'aws-sdk';
 import AdmZip from 'adm-zip';
-import { string } from "zod";
-import { bool } from "aws-sdk/clients/signer";
+// Removed unused imports
+// import { string } from "zod";
+// import { bool } from "aws-sdk/clients/signer";
 
 dotenv.config();
 
@@ -89,7 +90,11 @@ export async function getPackageNameVersion(
   return { Name, Version };
 }
 
-export async function uploadToS3viaBuffer(buffer: Buffer, key: string, contentType: string): Promise<{ success: boolean; url?: string; error?: string }> {
+export async function uploadToS3viaBuffer(
+  buffer: Buffer,
+  key: string,
+  contentType: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
   const params = {
     Bucket: process.env.S3_BUCKET_NAME!, // Ensure this environment variable is set
     Key: key, // e.g., 'packages/Default-Name-1.0.0.zip'
@@ -115,7 +120,6 @@ export async function uploadToS3viaBuffer(buffer: Buffer, key: string, contentTy
   }
 }
 
-
 export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string, URL: string } {
   const zip = new AdmZip(buffer);
   const zipEntries = zip.getEntries();
@@ -135,7 +139,7 @@ export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version:
 
   const packageJsonStr = packageJsonEntry.getData().toString('utf-8');
 
-  let packageJson: { name?: string; version?: string; repository?: {url?: string} };
+  let packageJson: { name?: string; version?: string; repository?: { url?: string } };
   try {
     packageJson = JSON.parse(packageJsonStr);
   } catch (error) {
@@ -161,10 +165,11 @@ export function removeDotGitFolderFromZip(buffer: Buffer): string {
   newEntries.forEach(entry => {
     newZip.addFile(entry.entryName, entry.getData());
   });
-  // encode new zip file to base64 string
+  // Encode new zip file to base64 string
   return newZip.toBuffer().toString('base64');
 }
 
+// Uncomment and correct the function if needed
 // export async function downloadGitHubZip(
 //   githubUrl: string,
 //   outputDir: string,
@@ -257,10 +262,10 @@ export const getPackageJsonUrl = (zipContent: string): string | null => {
     const packageJson = JSON.parse(packageJsonContent);
 
     // Extract the URL field
-    let url = packageJson?.repository.url || null;
+    let url = packageJson?.repository?.url || null;
 
     // Remove 'git+' prefix if present
-    if (url.startsWith("git+")) {
+    if (url && url.startsWith("git+")) {
       url = url.slice(4); // Remove the first 4 characters ('git+')
     }
     return url;
@@ -320,7 +325,7 @@ export async function downloadGitHubZip(
   branch: string,
   outputDir: string,
   fileName: string
-): Promise<boolean> {
+): Promise<string | null> { // Changed return type
   try {
     // Construct the ZIP URL using the provided branch
     const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.zip`;
@@ -341,10 +346,10 @@ export async function downloadGitHubZip(
     fs.writeFileSync(outputPath, response.data);
 
     console.log(`File saved to: ${outputPath}`);
-    return true;
+    return outputPath; // Return the path instead of boolean
   } catch (error) {
     console.error(`Error downloading the file: ${(error as Error).message}`);
-    return false;
+    return null; // Return null on failure
   }
 }
 
@@ -366,12 +371,17 @@ export async function downloadZipFromS3ToWorkingDirectory(key: string): Promise<
 }
 
 export function removeDownloadedFile(filePath: string): boolean{
-  fs.unlinkSync(filePath);
-  if(!fs.existsSync(filePath)){
-    console.log('File removed successfully:', filePath);
-    return true;
+  try {
+    fs.unlinkSync(filePath);
+    if(!fs.existsSync(filePath)){
+      console.log('File removed successfully:', filePath);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error(`Error removing file ${filePath}: ${(error as Error).message}`);
+    return false;
   }
-  return false;
 }
 
 
@@ -392,4 +402,56 @@ export function isMoreRecentVersion(newVersion: string, latestVersion: string): 
 
   // If all parts are equal
   return false;
+}
+
+
+export function extractZip(zipPath: string, extractToDir: string): void {
+  try {
+    // Initialize AdmZip with the ZIP file
+    const zip = new AdmZip(zipPath);
+    
+    // Ensure the extraction directory exists
+    if (!fs.existsSync(extractToDir)) {
+      fs.mkdirSync(extractToDir, { recursive: true });
+      console.log(`Created extraction directory: ${extractToDir}`);
+    }
+    
+    // Extract all contents to the specified directory
+    zip.extractAllTo(extractToDir, true);
+    console.log(`Extracted ZIP file ${zipPath} to ${extractToDir}`);
+  } catch (error) {
+    console.error(`Failed to extract ZIP file ${zipPath}: ${(error as Error).message}`);
+    throw new Error(`Failed to extract ZIP file: ${(error as Error).message}`);
+  }
+}
+
+// errors.ts
+
+export class FailedDependencyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FailedDependencyError";
+  }
+}
+
+export class InvalidInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidInputError";
+  }
+}
+
+export async function removeFileFromS3(objectKey: string): Promise<void> {
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME!,
+    Key: objectKey,
+  };
+
+  try {
+    await s3.deleteObject(params).promise();
+    console.log(`File removed from S3: ${objectKey}`);
+  } catch (error) {
+    console.error(`Failed to remove file from S3: ${(error as Error).message}`);
+    throw new Error("Failed to remove file from S3.");
+  }
 }

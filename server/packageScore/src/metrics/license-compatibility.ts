@@ -66,7 +66,7 @@ export async function get_license_compatibility(
 ): Promise<LicenseResult> {
   const startTime = Date.now();
   logger.info("Starting license compatibility check", { repoPath });
-
+  console.log("Starting license compatibility check", { repoPath });
   try {
     const license = await getLicense(repoPath);
     const compatible = license ? checkLicenseCompatibility(license) : false;
@@ -76,6 +76,13 @@ export async function get_license_compatibility(
     const latency = endTime - startTime;
 
     logger.info("License compatibility check complete", {
+      repoPath,
+      score,
+      latency,
+      compatible,
+      licenseFound: !!license,
+    });
+    console.log("License compatibility check complete", {
       repoPath,
       score,
       latency,
@@ -108,7 +115,7 @@ export async function getLicense(repoPath: string): Promise<string | null> {
     );
     return licenseContent;
   }
-
+  
   // If no LICENSE file, check README.md
   logger.debug("No license file found, checking README.md", { repoPath });
   const readmePath = path.join(repoPath, "README.md");

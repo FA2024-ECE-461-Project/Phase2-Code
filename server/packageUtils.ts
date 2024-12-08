@@ -363,3 +363,12 @@ export async function downloadZipFromS3ToWorkingDirectory(key: string): Promise<
     throw error;
   }
 }
+
+export function removeDownloadedFile(filePath: string): boolean{
+  fs.unlinkSync(filePath);
+  if(!fs.existsSync(filePath)){
+    console.log('File removed successfully:', filePath);
+    return true;
+  }
+  return false;
+}

@@ -31,18 +31,18 @@
         "Total": "0 / 22 (1 hidden)"
     },
     "Regex Tests Group": {
-        "Exact Match Name Regex Test": 0,
-        "Extra Chars Name Regex Test": 0,
-        "Random String Regex Test": 0,
-        "Total": "0 / 6 (3 hidden)"
+        "Exact Match Name Regex Test": 1,
+        "Extra Chars Name Regex Test": 1,
+        "Random String Regex Test": 1,
+        "Total": "3 / 6 (3 hidden)"
     },
     "Setup and Reset Test Group": {
         "Check No Packages after Reset": 0,
-        "System Reset Test": 0,
-        "System Tracks Test": 0,
-        "Total": "0 / 5 "
+        "System Reset Test": 1,
+        "System Tracks Test": 1,
+        "Total": "2 / 5 "
     },
-    "Total": "0 / 69 ",
+    "Total": "5 / 69 ",
     "Update Package Test Group": {
         "Total": "0 / 9 (9 hidden)"
     },
@@ -57,9 +57,9 @@
         "Upload Ingest package 3 via Ingest": 0,
         "Upload Ingest package 4 via Ingest": 0
     },
-    "autgrader_run_log": "data/8/run/phase2/autograder_07-12-21-31.log",
-    "end_time": "2024-12-07 21:32:05.512833",
-    "run_time": "27.720012 seconds",
-    "start_time": "2024-12-07 21:31:37.792821",
-    "system_run_log": "data/8/run/phase2/autograder_07-12-21-31.sysout.log"
+    "autgrader_run_log": "data/8/run/phase2/autograder_07-12-23-05.log",
+    "end_time": "2024-12-07 23:22:25.645674",
+    "run_time": "1042.068018 seconds",
+    "start_time": "2024-12-07 23:05:03.577656",
+    "system_run_log": "data/8/run/phase2/autograder_07-12-23-05.sysout.log"
 }

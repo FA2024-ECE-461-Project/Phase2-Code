@@ -364,6 +364,7 @@ export const packageRoutes = new Hono()
             }
           }
         }
+        removeDownloadedFile(path);
       } catch (error) {
         console.error(`Error processing zip for package ID ${pkg.ID}:`, error);
       }

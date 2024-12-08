@@ -42,24 +42,24 @@
         "System Tracks Test": 1,
         "Total": "2 / 5 "
     },
-    "Total": "13 / 69 ",
+    "Total": "15 / 69 ",
     "Update Package Test Group": {
         "Total": "1 / 9 (9 hidden)"
     },
     "Upload Packages Test Group": {
         "Get Package Query Test": 0,
-        "Total": "5 / 9 ",
+        "Total": "7 / 9 ",
         "Upload Content package 1 via Content": 1,
         "Upload Content package 2 via Content": 1,
         "Upload Content package 3 via Content": 1,
         "Upload Ingest package 1 via Ingest": 1,
-        "Upload Ingest package 2 via Ingest": 0,
+        "Upload Ingest package 2 via Ingest": 1,
         "Upload Ingest package 3 via Ingest": 1,
-        "Upload Ingest package 4 via Ingest": 0
+        "Upload Ingest package 4 via Ingest": 1
     },
-    "autgrader_run_log": "data/8/run/phase2/autograder_08-12-00-03.log",
-    "end_time": "2024-12-08 00:04:27.363486",
-    "run_time": "32.68861 seconds",
-    "start_time": "2024-12-08 00:03:54.674876",
-    "system_run_log": "data/8/run/phase2/autograder_08-12-00-03.sysout.log"
+    "autgrader_run_log": "data/8/run/phase2/autograder_08-12-00-37.log",
+    "end_time": "2024-12-08 00:38:29.581917",
+    "run_time": "32.895192 seconds",
+    "start_time": "2024-12-08 00:37:56.686725",
+    "system_run_log": "data/8/run/phase2/autograder_08-12-00-37.sysout.log"
 }

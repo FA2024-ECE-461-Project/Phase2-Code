@@ -50,7 +50,7 @@ function Index() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.data.packages.map((packages) => (
+          {data.data.map((packages) => (
             <TableRow key={packages.ID}>
               <TableCell className="font-medium">{packages.Name}</TableCell>
               <TableCell>{packages.Version}</TableCell>
@@ -62,7 +62,7 @@ function Index() {
           <TableRow>
             <TableCell colSpan={2}>Total Packages</TableCell>
             <TableCell className="text-right">
-              {data.data.packages.length}
+              {data.data.length}
             </TableCell>
           </TableRow>
         </TableFooter>

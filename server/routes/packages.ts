@@ -39,7 +39,11 @@ const postPackageMetadataRequestSchema = z.object({
 });
 
 type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchema>;
-
+type ResponseSchema = {
+  Name: string;
+  Version: string;
+  ID: string;
+}
 export const metadataRoutes = new Hono()
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
@@ -74,20 +78,25 @@ export const metadataRoutes = new Hono()
       // set nextOffset
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
-      let packages: PostPackageMetadataRequest[] = [];
+      let packages: ResponseSchema[] = [];
 
       if (!Version) {
         if(Name === "*") {
           packages = await db
             .select({
               Name: packageMetadataTable.Name,
-              Version: packageMetadataTable.Version
+              Version: packageMetadataTable.Version,
+              ID: packageMetadataTable.ID
             })
             .from(packageMetadataTable)
             .limit(pageLimit);
         } else {
           packages = await db
-            .select()
+            .select({
+              Name: packageMetadataTable.Name,
+              Version: packageMetadataTable.Version,
+              ID: packageMetadataTable.ID
+            })
             .from(packageMetadataTable)
             .where(eq(packageMetadataTable.Name, Name))
             .limit(pageLimit);
@@ -104,12 +113,20 @@ export const metadataRoutes = new Hono()
       // different selection strategy
       if (Name === "*") {
         packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .limit(pageLimit);
       } else if (versionType == "exact") {
         packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .where(
             and(
@@ -121,7 +138,11 @@ export const metadataRoutes = new Hono()
       } else if (versionType == "range") {
         const [start, end] = Version.split("-");
         packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .where(
             and(
@@ -135,7 +156,11 @@ export const metadataRoutes = new Hono()
           .limit(pageLimit);
       } else if (versionType == "caret") {
         packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
@@ -144,7 +169,11 @@ export const metadataRoutes = new Hono()
 
       } else if (versionType == "tilde") {
         packages = await db
-          .select()
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID
+          })
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);

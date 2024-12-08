@@ -1,111 +1,44 @@
-import { classifyURL, extractNpmPackageName, getNpmPackageGitHubUrl, parseGitHubUrl, UrlType, getToken } from "./server/urlUtils";
-import axios from "axios";
-import * as dotenv from "dotenv";
 import fs from 'fs';
 import path from 'path';
+import AWS from 'aws-sdk';
 
-dotenv.config();
+export const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Ensure these are set in your environment
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION,
+  });
 
-// 1. Convert an NPM URL to a GitHub URL
-export async function npmUrlToGitHubUrl(url: string): Promise<string | null> {
-  const urlType = classifyURL(url);
-
-  if (urlType === UrlType.NPM) {
-    const packageName = extractNpmPackageName(url);
-    if (!packageName) return null;
-
-    const repoUrl = await getNpmPackageGitHubUrl(packageName);
-    return repoUrl || null;
-  }
-
-  // If it's already a GitHub URL, just return it
-  if (urlType === UrlType.GitHub) {
-    return url;
-  }
-
-  // For other URL types, we cannot convert
-  return null;
-}
-
-// 2. Get owner, repo, and default branch from a GitHub URL
-export async function getOwnerRepoAndDefaultBranchFromGithubUrl(githubUrl: string): Promise<{ owner: string; repo: string; defaultBranch: string } | null> {
-  const { owner, repo } = parseGitHubUrl(githubUrl);
-  if (!owner || !repo) return null;
-
-  const token = getToken();
-  const headers = {
-    Authorization: `token ${token}`,
-    Accept: "application/vnd.github.v3+json",
+export async function downloadZipFromS3(
+  key: string,
+  destinationDir: string
+): Promise<string> {
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME!, // Ensure this environment variable is set
+    Key: key, // e.g., 'packages/Default-Name-1.0.0.zip'
   };
 
   try {
-    const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers });
-    const data = response.data;
-    const defaultBranch = data.default_branch;
-    return { owner, repo, defaultBranch };
+    const data = await s3.getObject(params).promise();
+
+    // Ensure the directory exists
+    if (!fs.existsSync(destinationDir)) {
+      fs.mkdirSync(destinationDir, { recursive: true });
+    }
+
+    // Construct the file path using the specified directory
+    const filePath = path.join(destinationDir, path.basename(key));
+    fs.writeFileSync(filePath, data.Body as Buffer);
+
+    console.log("File downloaded successfully to:", filePath);
+    return filePath;
   } catch (error) {
-    console.error("Error fetching repository data:", (error as Error).message);
-    return null;
+    console.error("Error downloading file:", error);
+    throw error;
   }
 }
 
-// 3. Download the zip file from GitHub
-export async function downloadGitHubZip(
-  owner: string,
-  repo: string,
-  branch: string,
-  outputDir: string,
-  fileName: string
-): Promise<boolean> {
-  try {
-    // Construct the ZIP URL using the provided branch
-    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${branch}.zip`;
+// Example usage:
+// await downloadZipFromS3("packages/easy-math-module-2.0.3.zip", "./downloads");
 
-    const response = await axios.get(zipUrl, {
-      headers: {
-        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-      },
-      responseType: 'arraybuffer',
-    });
-
-    // Ensure output directory exists
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-
-    const outputPath = path.join(outputDir, fileName);
-    fs.writeFileSync(outputPath, response.data);
-
-    console.log(`File saved to: ${outputPath}`);
-    return true;
-  } catch (error) {
-    console.error(`Error downloading the file: ${(error as Error).message}`);
-    return false;
-  }
-}
-
-(async () => {
-    const npmUrl = "https://www.npmjs.com/package/lodash"; // Example NPM URL
-  
-    // 1. Convert NPM URL to GitHub URL
-    const githubUrl = await npmUrlToGitHubUrl(npmUrl);
-    if (!githubUrl) {
-      console.error("Could not convert NPM URL to GitHub URL.");
-      return;
-    }
-  
-    // 2. Get owner, repo, and default branch
-    const repoInfo = await getOwnerRepoAndDefaultBranchFromGithubUrl(githubUrl);
-    if (!repoInfo) {
-      console.error("Could not retrieve repository info.");
-      return;
-    }
-  
-    const { owner, repo, defaultBranch } = repoInfo;
-  
-    // 3. Download the ZIP file from the default branch
-    const success = await downloadGitHubZip(owner, repo, defaultBranch, "./downloads", "repo.zip");
-    if (!success) {
-      console.error("Failed to download repository ZIP.");
-    }
-  })();
+//test downloadZipFromS3ToWorkingDirectory
+downloadZipFromS3("packages/cross-fetch-4.0.0.zip", "./packages");

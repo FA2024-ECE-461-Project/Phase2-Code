@@ -6,122 +6,53 @@ import {
   packages as packagesTable,
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
+import AWS from "aws-sdk";
 
-import {
-  S3Client,
-  ListObjectsV2Command,
-  DeleteObjectsCommand,
-  ListObjectVersionsCommand,
-  DeleteObjectCommand,
-  DeleteObjectRequest,
-} from "@aws-sdk/client-s3";
-
-// Initialize S3 client (ensure environment variables are set)
-const s3Client = new S3Client({ 
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!, 
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
+// Initialize S3 client
+const s3 = new AWS.S3({
+  region: process.env.AWS_REGION, // e.g., 'us-west-2'
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-async function emptyBucket(bucketName: string) {
-  const s3Client = new S3Client({ region: "us-east-1" }); // Change region as needed
+// Specify your S3 bucket name
+const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 
-  // Delete all objects from the bucket for unversioned buckets.
-  let isTruncated = true;
-  let continuationToken: string | undefined = undefined;
-  
-  while (isTruncated) {
-    const listResponse = await s3Client.send(new ListObjectsV2Command({
-      Bucket: bucketName,
-    }));
-    
-    const objects = listResponse.Contents;
-    if (objects && objects.length > 0) {
-      const deleteParams = {
-        Bucket: bucketName,
-        Delete: {
-          Objects: objects.map((obj) => ({ Key: obj.Key! }))
-        },
-      };
-      await s3Client.send(new DeleteObjectsCommand(deleteParams));
-    }
-
-    isTruncated = listResponse.IsTruncated ?? false;
-    continuationToken = listResponse.NextContinuationToken;
-  }
-
-  // // Delete all object versions for versioned buckets.
-  // let versionIsTruncated = true;
-  // let keyMarker: string | undefined = undefined;
-  // let versionIdMarker: string | undefined = undefined;
-  
-  // while (versionIsTruncated) {
-  //   const versionListResponse = await s3Client.send(new ListObjectVersionsCommand({
-  //     Bucket: bucketName,
-  //     KeyMarker: keyMarker,
-  //     VersionIdMarker: versionIdMarker,
-  //   }));
-
-  //   const versions = versionListResponse.Versions ?? [];
-  //   const deleteMarkers = versionListResponse.DeleteMarkers ?? [];
-  //   const objectsToDelete = [...versions, ...deleteMarkers].map((v) => ({
-  //     Key: v.Key!,
-  //     VersionId: v.VersionId,
-  //   }));
-
-  //   if (objectsToDelete.length > 0) {
-  //     // Delete each version individually because DeleteObjects doesn't support multiple versions directly
-  //     for (const obj of objectsToDelete) {
-  //       const deleteObjParams: DeleteObjectRequest = {
-  //         Bucket: bucketName,
-  //         Key: obj.Key,
-  //         VersionId: obj.VersionId
-  //       };
-  //       await s3Client.send(new DeleteObjectCommand(deleteObjParams));
-  //     }
-  //   }
-
-  //   versionIsTruncated = versionListResponse.IsTruncated ?? false;
-  //   keyMarker = versionListResponse.NextKeyMarker;
-  //   versionIdMarker = versionListResponse.NextVersionIdMarker;
-  // }
-
-  console.log(`All objects deleted from bucket ${bucketName}.`);
-}
-
-async function deleteAllFilesFromS3() {
+// Helper function to delete all objects in the bucket
+const emptyS3Bucket = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    const bucketName = process.env.S3_BUCKET_NAME!;
-    
-    // List all objects in the bucket
-    const listResponse = await s3Client.send(new ListObjectsV2Command({
-      Bucket: bucketName,
-    }));
-    
-    const contents = listResponse.Contents;
-    if (!contents || contents.length === 0) {
-      console.log("No files found in S3 bucket.");
-      return;
+    let isTruncated = true;
+    let continuationToken: string | undefined;
+
+    while (isTruncated) {
+      const listParams: AWS.S3.ListObjectsV2Request = {
+        Bucket: BUCKET_NAME,
+        ContinuationToken: continuationToken,
+      };
+
+      const listData = await s3.listObjectsV2(listParams).promise();
+      const objectsToDelete = (listData.Contents || []).map((object) => ({ Key: object.Key! }));
+
+      if (objectsToDelete.length > 0) {
+        const deleteParams: AWS.S3.DeleteObjectsRequest = {
+          Bucket: BUCKET_NAME,
+          Delete: { Objects: objectsToDelete, Quiet: true },
+        };
+
+        await s3.deleteObjects(deleteParams).promise();
+        console.log(`Deleted ${objectsToDelete.length} objects from S3 bucket.`);
+      }
+
+      isTruncated = listData.IsTruncated || false;
+      continuationToken = listData.NextContinuationToken;
     }
-    
-    // Prepare the objects to be deleted
-    const objectsToDelete = contents.map((object) => ({ Key: object.Key! }));
-    
-    // Delete all objects
-    await s3Client.send(new DeleteObjectsCommand({
-      Bucket: bucketName,
-      Delete: {
-        Objects: objectsToDelete,
-      },
-    }));
-    
-    console.log(`All files have been deleted from the bucket ${bucketName}.`);
+
+    return { success: true };
   } catch (error) {
-    console.error("Error deleting files from S3:", error);
+    console.error("Error emptying S3 bucket:", error);
+    return { success: false, error: (error as Error).message };
   }
-}
+};
 
 // Example Hono route that resets both DB and S3
 export const resetRoutes = new Hono().delete("/", async (c) => {
@@ -133,7 +64,18 @@ export const resetRoutes = new Hono().delete("/", async (c) => {
     await db.delete(packagesTable);
 
     // Delete all S3 objects
-    // await emptyBucket(process.env.S3_BUCKET_NAME!);
+    const s3ResetResult = await emptyS3Bucket();
+
+    if (!s3ResetResult.success) {
+      console.error("S3 Bucket Reset Failed:", s3ResetResult.error);
+      return c.json(
+        {
+          message: "Database reset successful, but failed to reset S3 bucket.",
+          error: s3ResetResult.error,
+        },
+        500
+      );
+    }
 
     return c.json({ message: "All data successfully reset." }, 200);
   } catch (error) {

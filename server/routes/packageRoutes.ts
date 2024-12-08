@@ -11,6 +11,7 @@ import {
   packageData as packageDataTable,
   packageRating as packageRatingTable,
   packages as packagesTable,
+  packageData,
 } from "../db/schemas/packageSchemas";
 import {
   uploadRequestValidation,
@@ -32,6 +33,8 @@ import {
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
 import { encodeBase64, downloadZipFromS3ToWorkingDirectory, downloadZipFromS3 } from "../s3Util";
+import AWS from "aws-sdk";
+import AdmZip from "adm-zip";
 
 // Schema for RegEx search of a package
 const PackageRegEx = z.object({
@@ -189,7 +192,13 @@ export const packageRoutes = new Hono()
       Version: metadata?.Version!, // Use the version from metadata
     };
 
-    //
+    //Prepare packagesTable data to be inserted into database
+    const packagesTableData = {
+      ID: packageId,
+      Name: metaData?.Name!,
+      Version: metaData?.Version!,
+      S3: s3Key,
+    };
 
     //If a package with the same name and same version already exists
     const existingSameNamePackage = await db
@@ -255,7 +264,7 @@ export const packageRoutes = new Hono()
     // Insert ID into the packages table
     await db
       .insert(packagesTable)
-      .values({ ID: packageId })
+      .values(packagesTableData)
       .returning()
       .then((res) => res[0]);
     // Insert into the packageMetadata table
@@ -299,12 +308,10 @@ export const packageRoutes = new Hono()
       return c.json({ error: "Invalid RegEx pattern" }, 400);
     }
 
-    // Ensure no SQL injection by escaping special characters
-    const sanitizedRegex = regex.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-
     // Fetch packages that match the regex
+    let nameRegExPackages = [];
     try {
-      const packages = await db
+      nameRegExPackages = await db
         .select({
           Name: packageMetadataTable.Name,
           Version: packageMetadataTable.Version,
@@ -313,14 +320,70 @@ export const packageRoutes = new Hono()
         .from(packageMetadataTable)
         .where(sql`${packageMetadataTable.Name} ~ ${regex}`);
 
-      if (packages.length === 0) {
-        return c.json({ error: "No package found under this regex" }, 404);
-      }
-
-      return c.json(packages);
     } catch (error) {
       return c.json({ error: "No package found under this regex" }, 404);
     }
+
+    // Fetch zip files from S3 for packages not in matchedPackages
+    const allPackages = await db.select({
+      Name: packagesTable.Name,
+      Version: packagesTable.Version,
+      ID: packagesTable.ID,
+      ZipFilePath: packagesTable.S3,
+    }).from(packagesTable);
+
+    const unmatchedPackages = allPackages.filter(
+      (pkg) => !nameRegExPackages.some((matched) => matched.ID === pkg.ID)
+    );
+
+    const s3 = new AWS.S3(); // Assuming AWS SDK is configured
+
+    // Regex through README files in zip packages
+    console.log("Checking README files for regex match...");
+    const matchedReadMePackages = [];
+    for (const pkg of unmatchedPackages) {
+      const { ZipFilePath } = pkg;
+
+      if (!ZipFilePath) continue;
+
+      try {
+        // Download the zip file from S3
+        const path = await downloadZipFromS3(ZipFilePath, "./regex-packages");
+
+        const zip = new AdmZip(path);
+        const zipEntries = zip.getEntries();
+
+        for (const entry of zipEntries) {
+          if (entry.entryName.toLowerCase().includes("readme")) {
+            const readMeContent = entry.getData().toString("utf-8");
+
+            // Apply regex to the README content
+            if (new RegExp(regex).test(readMeContent)) {
+              matchedReadMePackages.push(pkg);
+              break; // Exit loop once a match is found in this package
+            }
+          }
+        }
+        removeDownloadedFile(path);
+      } catch (error) {
+        console.error(`Error processing zip for package ID ${pkg.ID}:`, error);
+      }
+    }
+
+    // Remove the ZipFilePath field from each object in matchedReadMePackages
+    const cleanedMatchedReadMePackages = matchedReadMePackages.map(pkg => {
+      const { ZipFilePath, ...rest } = pkg;
+      return rest;
+    });
+
+    // Combine database and README results
+    const finalResults = [...nameRegExPackages, ...cleanedMatchedReadMePackages];
+
+    if (finalResults.length === 0) {
+      return c.json({ error: "No matching packages found" }, 404);
+    }
+
+    return c.json(finalResults);
   })
 
   // download package endpoint
@@ -519,11 +582,8 @@ export const packageRoutes = new Hono()
     //   throw new Error('Invalid URL');
     // }
     console.log(URL);
-    // Need to implement the logic to get the rating from the URL
-    // const rating = await processSingleUrl(URL!);
-
-    /* Team 7 has shitty function naming: they call processUrl in processSingleUrl 
-                                                            -- Nick Ko, 12/03/2023 */
+    
+    // Uncomment the following line to rate the package
     // const rating = await processUrl(URL!);
     // Return the rating
     const rating = {

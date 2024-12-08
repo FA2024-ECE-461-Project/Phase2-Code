@@ -59,7 +59,7 @@ function PackageSearchRegEx() {
       <Card className="w-[500px]">
         <CardHeader>
           <CardTitle>Search by RegEx</CardTitle>
-          <CardDescription>Search for Packages by RegEx</CardDescription>
+          <CardDescription>Search for a package using regular expression over package names and READMEs</CardDescription>
         </CardHeader>
         <CardContent>
           <form

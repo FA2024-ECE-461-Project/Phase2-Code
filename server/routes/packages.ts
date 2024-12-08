@@ -86,6 +86,7 @@ export const metadataRoutes = new Hono()
         if(Name === "*") {
           packages = await db
             .select({
+              Version: packageMetadataTable.Version,
               Name: packageMetadataTable.Name,
               Version: packageMetadataTable.Version,
               ID: packageMetadataTable.ID

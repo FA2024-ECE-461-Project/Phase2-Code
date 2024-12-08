@@ -27,6 +27,7 @@ import {
   getPackageJsonUrl,
   npmUrlToGitHubUrl,
   getOwnerRepoAndDefaultBranchFromGithubUrl,
+  removeDownloadedFile
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
@@ -409,6 +410,9 @@ export const packageRoutes = new Hono()
           : "",
       },
     };
+    console.log("before return, ", filePath);
+    // remove the downloaded file
+    console.log("is removed?", removeDownloadedFile(filePath));
     return c.json(payload);
   })
 

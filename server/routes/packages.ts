@@ -7,6 +7,8 @@ import { db } from "../db";
 import * as semver from "semver";
 import { eq, and, gte, lt, sql } from "drizzle-orm";
 
+import { log } from "../logger";
+
 // regex for version checking
 const exactRegex = /^\d+\.\d+\.\d+$/;
 const rangeRegex = /^\d+\.\d+\.\d+-\d+\.\d+\.\d+$/;
@@ -104,6 +106,8 @@ export const metadataRoutes = new Hono()
           const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
           packages = packages.slice(sliceIdx);
         }
+
+        log.info("no Version provided, returning", packages);
         return c.json(packages);
       }
 

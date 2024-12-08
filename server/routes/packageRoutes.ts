@@ -2,7 +2,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { log } from "../logger";
+// import { log } from "../logger";
 import { exec, execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
@@ -481,18 +481,17 @@ export const packageRoutes = new Hono()
   })
 
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
-    log.info("Starting [post/:ID] endpoint... ");
-
+    console.log("Starting [post/:ID] endpoint... ");
     const ID = c.req.param("ID");
     const body = c.req.valid("json");
 
-    log.info(`[post/:ID] Updating Package ID: ${ID}`);
-    log.info("[post/:ID] Body: ", body);
+    console.log(`[post/:ID] Updating Package ID: ${ID}`);
+    console.log("[post/:ID] Body: ", body);
 
     // Validate incoming data
     const { metadata, data } = body;
     if (!metadata.ID) {
-      log.error("Invalid input: Must provide metadata ID to update.");
+      console.log("Invalid input: Must provide metadata ID to update.");
       c.status(400);
       return c.json({
         error: "Invalid input: Must provide metadata or data to update.",
@@ -508,7 +507,7 @@ export const packageRoutes = new Hono()
       .then((res) => res[0]);
 
     if (!packageResult) {
-      log.error("Package not found");
+      console.log("Package not found");
       c.status(404);
       return c.json({ error: "Package not found" });
     }

@@ -2,7 +2,7 @@ import { log } from "./server/logger";
 
 function isMoreRecentVersion(newVersion: string, latestVersion: string): boolean {
     log.info(`Comparing versions: ${newVersion} and ${latestVersion}`);
-    // console.log(process.env.LOG_FILE);
+    console.log(process.env.SERVER_LOG_FILE);
     const newParts = newVersion.split(".").map(Number);
     const latestParts = latestVersion.split(".").map(Number);
   

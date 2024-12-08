@@ -1,44 +1,32 @@
-import fs from 'fs';
-import path from 'path';
-import AWS from 'aws-sdk';
+import { log } from "./server/logger";
 
-export const s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Ensure these are set in your environment
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION,
-  });
-
-export async function downloadZipFromS3(
-  key: string,
-  destinationDir: string
-): Promise<string> {
-  const params = {
-    Bucket: process.env.S3_BUCKET_NAME!, // Ensure this environment variable is set
-    Key: key, // e.g., 'packages/Default-Name-1.0.0.zip'
-  };
-
-  try {
-    const data = await s3.getObject(params).promise();
-
-    // Ensure the directory exists
-    if (!fs.existsSync(destinationDir)) {
-      fs.mkdirSync(destinationDir, { recursive: true });
+function isMoreRecentVersion(newVersion: string, latestVersion: string): boolean {
+    log.info(`Comparing versions: ${newVersion} and ${latestVersion}`);
+    // console.log(process.env.LOG_FILE);
+    const newParts = newVersion.split(".").map(Number);
+    const latestParts = latestVersion.split(".").map(Number);
+  
+    for (let i = 0; i < Math.max(newParts.length, latestParts.length); i++) {
+      const newPart = newParts[i] || 0; // Default to 0 if undefined
+      const latestPart = latestParts[i] || 0;
+  
+      if (newPart > latestPart) {
+        return true;
+      } else if (newPart < latestPart) {
+        return false;
+      }
     }
-
-    // Construct the file path using the specified directory
-    const filePath = path.join(destinationDir, path.basename(key));
-    fs.writeFileSync(filePath, data.Body as Buffer);
-
-    console.log("File downloaded successfully to:", filePath);
-    return filePath;
-  } catch (error) {
-    console.error("Error downloading file:", error);
-    throw error;
+  
+    // If all parts are equal
+    return false;
   }
-}
 
-// Example usage:
-// await downloadZipFromS3("packages/easy-math-module-2.0.3.zip", "./downloads");
 
-//test downloadZipFromS3ToWorkingDirectory
-downloadZipFromS3("packages/cross-fetch-4.0.0.zip", "./packages");
+const latestVersion = "1.2.3";
+const newVersion1 = "1.3.0"; // Should return true (more recent)
+const newVersion2 = "2.2.1"; // Should return false (older)
+const newVersion3 = "1.2.3"; // Should return false (same)
+
+console.log(isMoreRecentVersion(newVersion1, latestVersion)); // true
+console.log(isMoreRecentVersion(newVersion2, latestVersion)); // false
+console.log(isMoreRecentVersion(newVersion3, latestVersion)); // false

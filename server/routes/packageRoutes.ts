@@ -28,11 +28,15 @@ import {
   getPackageJsonUrl,
   npmUrlToGitHubUrl,
   getOwnerRepoAndDefaultBranchFromGithubUrl,
-  removeDownloadedFile
+  removeDownloadedFile,
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
-import { encodeBase64, downloadZipFromS3ToWorkingDirectory, downloadZipFromS3 } from "../s3Util";
+import {
+  encodeBase64,
+  downloadZipFromS3ToWorkingDirectory,
+  downloadZipFromS3,
+} from "../s3Util";
 import AWS from "aws-sdk";
 import AdmZip from "adm-zip";
 
@@ -60,7 +64,7 @@ export const packageRoutes = new Hono()
     const packages = await db.select().from(packageMetadataTable);
     return c.json({ packages: packages });
   })
-  
+
   // If the payload is invalid, it will automatically return an error response with a 400 status code.
   .post("/", zValidator("json", uploadRequestValidation), async (c) => {
     const newPackage = await c.req.valid("json");
@@ -82,14 +86,16 @@ export const packageRoutes = new Hono()
     }
 
     // Initialize metadata
-    let metadata: { Name: string; Version: string, URL: string} | undefined;
+    let metadata: { Name: string; Version: string; URL: string } | undefined;
     let s3Url: string | undefined;
     let githubUrl: string | null = null;
     let s3Key: string | undefined;
 
     if (newPackage.URL) {
       const packageURL = await npmUrlToGitHubUrl(newPackage.URL!);
-      const packageDetails = await getOwnerRepoAndDefaultBranchFromGithubUrl(packageURL!);
+      const packageDetails = await getOwnerRepoAndDefaultBranchFromGithubUrl(
+        packageURL!,
+      );
       if (!packageDetails) {
         c.status(400);
         return c.json({ error: "Invalid URL" });
@@ -106,11 +112,17 @@ export const packageRoutes = new Hono()
       const Version = packageData.Version || "1.0.0";
       // If the name is not provided, set it to "Default Name"
       const Name = packageData.Name || newPackage.Name || "Default-Name";
-      
+
       // Get the github zip file using url
       // print the url
       console.log(newPackage.URL);
-      const githubZip = await downloadGitHubZip(owner, repo, defaultBranch, "./downloads", `${Name}-${Version}.zip`);
+      const githubZip = await downloadGitHubZip(
+        owner,
+        repo,
+        defaultBranch,
+        "./downloads",
+        `${Name}-${Version}.zip`,
+      );
       if (!githubZip) {
         c.status(400);
         return c.json({ error: "Failed to download the package from the URL" });
@@ -128,7 +140,6 @@ export const packageRoutes = new Hono()
       // Set metadata
       s3Url = uploadResult.url;
       metadata = { Name, Version, URL: newPackage.URL };
-
     } else if (newPackage.Content) {
       // Handle Content-based package upload
       let fileBuffer: Buffer;
@@ -237,25 +248,25 @@ export const packageRoutes = new Hono()
     // };
     const ratingData = {
       ID: packageId,
-      URL: newPackage.URL || metadata?.URL || "", 
-      NetScore: '-1',
-      NetScore_Latency: '-1',
-      RampUp: '-1',
-      RampUp_Latency: '-1',
-      Correctness: '-1',
-      Correctness_Latency: '-1',
-      BusFactor: '-1',
-      BusFactor_Latency: '-1',
-      ResponsiveMaintainer: '-1',
-      ResponsiveMaintainer_Latency: '-1',
-      License: '-1',
-      License_Latency: '-1',
-      PR_Code_Reviews: '-1',
-      PR_Code_Reviews_Latency: '-1',
-      DependencyMetric: '-1',
-      DependencyMetric_Latency: '-1',
+      URL: newPackage.URL || metadata?.URL || "",
+      NetScore: "-1",
+      NetScore_Latency: "-1",
+      RampUp: "-1",
+      RampUp_Latency: "-1",
+      Correctness: "-1",
+      Correctness_Latency: "-1",
+      BusFactor: "-1",
+      BusFactor_Latency: "-1",
+      ResponsiveMaintainer: "-1",
+      ResponsiveMaintainer_Latency: "-1",
+      License: "-1",
+      License_Latency: "-1",
+      PR_Code_Reviews: "-1",
+      PR_Code_Reviews_Latency: "-1",
+      DependencyMetric: "-1",
+      DependencyMetric_Latency: "-1",
     };
-    
+
     // Insert the rating to database
     await db
       .insert(packageRatingTable)
@@ -282,7 +293,6 @@ export const packageRoutes = new Hono()
       .values(data)
       .returning()
       .then((res) => res[0]);
-
 
     // Return the new package with a status code of 201
     // Omit 'id' field from dataResult
@@ -321,21 +331,22 @@ export const packageRoutes = new Hono()
         })
         .from(packageMetadataTable)
         .where(sql`${packageMetadataTable.Name} ~ ${regex}`);
-
     } catch (error) {
       return c.json({ error: "No package found under this regex" }, 404);
     }
 
     // Fetch zip files from S3 for packages not in matchedPackages
-    const allPackages = await db.select({
-      Name: packagesTable.Name,
-      Version: packagesTable.Version,
-      ID: packagesTable.ID,
-      ZipFilePath: packagesTable.S3,
-    }).from(packagesTable);
+    const allPackages = await db
+      .select({
+        Name: packagesTable.Name,
+        Version: packagesTable.Version,
+        ID: packagesTable.ID,
+        ZipFilePath: packagesTable.S3,
+      })
+      .from(packagesTable);
 
     const unmatchedPackages = allPackages.filter(
-      (pkg) => !nameRegExPackages.some((matched) => matched.ID === pkg.ID)
+      (pkg) => !nameRegExPackages.some((matched) => matched.ID === pkg.ID),
     );
 
     const s3 = new AWS.S3(); // Assuming AWS SDK is configured
@@ -373,13 +384,16 @@ export const packageRoutes = new Hono()
     }
 
     // Remove the ZipFilePath field from each object in matchedReadMePackages
-    const cleanedMatchedReadMePackages = matchedReadMePackages.map(pkg => {
+    const cleanedMatchedReadMePackages = matchedReadMePackages.map((pkg) => {
       const { ZipFilePath, ...rest } = pkg;
       return rest;
     });
 
     // Combine database and README results
-    const finalResults = [...nameRegExPackages, ...cleanedMatchedReadMePackages];
+    const finalResults = [
+      ...nameRegExPackages,
+      ...cleanedMatchedReadMePackages,
+    ];
 
     if (finalResults.length === 0) {
       return c.json({ error: "No matching packages found" }, 404);
@@ -455,7 +469,7 @@ export const packageRoutes = new Hono()
     // download the package from S3
     const filePath = await downloadZipFromS3(
       metaDataAndPackageDataEntry.S3,
-      "./packages"
+      "./packages",
     );
 
     // encode the downloaded file to base64
@@ -483,13 +497,15 @@ export const packageRoutes = new Hono()
 
   .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
     console.log("Starting [post/:ID] endpoint... ");
-    
+
     const IDFromParam = c.req.param("ID"); // This might be an older version's ID
     const body = c.req.valid("json");
-  
-    console.log(`[post/:ID] Potentially creating a new package version for package line ID: ${IDFromParam}`);
+
+    console.log(
+      `[post/:ID] Potentially creating a new package version for package line ID: ${IDFromParam}`,
+    );
     console.log("[post/:ID] Body: ", body);
-  
+
     const { metadata, data } = body;
     const databody: {
       S3?: string | undefined;
@@ -497,15 +513,17 @@ export const packageRoutes = new Hono()
       JSProgram?: string | undefined;
       debloat?: boolean | undefined;
     } = {};
-  
+
     if (!metadata.ID) {
-      console.log("Invalid input: Must provide metadata ID to create a new version.");
+      console.log(
+        "Invalid input: Must provide metadata ID to create a new version.",
+      );
       c.status(400);
       return c.json({
         error: "Invalid input: Must provide metadata ID.",
       });
     }
-  
+
     // 1. Fetch the latest version of this package line using the provided metadata.ID
     const latestPackage = await db
       .select()
@@ -514,29 +532,37 @@ export const packageRoutes = new Hono()
       .orderBy(desc(packagesTable.Version))
       .limit(1)
       .then((res) => res[0]);
-  
+
     if (!latestPackage) {
       console.log("Base package not found for ID:", metadata.ID);
       c.status(404);
       return c.json({ error: "Package not found" });
     }
-  
+
     // 2. Check if the new version is more recent than the latest known version
-    const isMoreRecent = isMoreRecentVersion(metadata.Version, latestPackage.Version);
+    const isMoreRecent = isMoreRecentVersion(
+      metadata.Version,
+      latestPackage.Version,
+    );
     if (!isMoreRecent) {
       c.status(409);
       return c.json({
-        error: "Version provided is older than or equal to the existing latest version",
+        error:
+          "Version provided is older than or equal to the existing latest version",
       });
     }
-  
+
     // 3. If we have package content, upload it to S3
     let s3Key: string | undefined;
     if (data.Content) {
       const fileBuffer = Buffer.from(data.Content, "base64");
       s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
-      const uploadResult = await uploadToS3viaBuffer(fileBuffer, s3Key, "application/zip");
-  
+      const uploadResult = await uploadToS3viaBuffer(
+        fileBuffer,
+        s3Key,
+        "application/zip",
+      );
+
       if (!uploadResult.success || !uploadResult.url) {
         c.status(500);
         return c.json({
@@ -545,13 +571,13 @@ export const packageRoutes = new Hono()
         });
       }
     }
-  
+
     // 4. Prepare data object for insertion
     databody.S3 = s3Key;
     databody.URL = data?.URL;
     databody.JSProgram = data?.JSProgram;
     databody.debloat = data?.debloat;
-    
+
     //generate the new package ID
     const newPackageId = uuidv4();
 
@@ -563,7 +589,7 @@ export const packageRoutes = new Hono()
       Version: metadata.Version,
       S3: databody.S3,
     });
-  
+
     // 6. Insert the new metadata row for this version
     // Remove ID from metadata to insert separately if needed
     const { ID, ...metadataToInsert } = metadata;
@@ -573,7 +599,7 @@ export const packageRoutes = new Hono()
       Version: metadata.Version,
       ...metadataWithoutVersion,
     });
-  
+
     // 7. Insert the new data row for this version
     await db.insert(packageDataTable).values({
       ID: newPackageId,
@@ -585,39 +611,39 @@ export const packageRoutes = new Hono()
 
     const ratingData = {
       ID: newPackageId,
-      URL: databody.URL || "", 
-      NetScore: '-1',
-      NetScore_Latency: '-1',
-      RampUp: '-1',
-      RampUp_Latency: '-1',
-      Correctness: '-1',
-      Correctness_Latency: '-1',
-      BusFactor: '-1',
-      BusFactor_Latency: '-1',
-      ResponsiveMaintainer: '-1',
-      ResponsiveMaintainer_Latency: '-1',
-      License: '-1',
-      License_Latency: '-1',
-      PR_Code_Reviews: '-1',
-      PR_Code_Reviews_Latency: '-1',
-      DependencyMetric: '-1',
-      DependencyMetric_Latency: '-1',
+      URL: databody.URL || "",
+      NetScore: "-1",
+      NetScore_Latency: "-1",
+      RampUp: "-1",
+      RampUp_Latency: "-1",
+      Correctness: "-1",
+      Correctness_Latency: "-1",
+      BusFactor: "-1",
+      BusFactor_Latency: "-1",
+      ResponsiveMaintainer: "-1",
+      ResponsiveMaintainer_Latency: "-1",
+      License: "-1",
+      License_Latency: "-1",
+      PR_Code_Reviews: "-1",
+      PR_Code_Reviews_Latency: "-1",
+      DependencyMetric: "-1",
+      DependencyMetric_Latency: "-1",
     };
-    
+
     // Insert the rating to database
     await db
       .insert(packageRatingTable)
       .values(ratingData)
       .returning()
       .then((res) => res[0]);
-  
+
     // Return the newly created version info
     c.status(200);
     return c.json(body);
   })
 
   // Get rating of a package
-  .get("/:ID/rate", async (c) => {    
+  .get("/:ID/rate", async (c) => {
     const ID = c.req.param("ID");
     // Print the ID to the console
     // if no ID is provided, return an error
@@ -651,96 +677,96 @@ export const packageRoutes = new Hono()
     //   throw new Error('Invalid URL');
     // }
     console.log(URL);
-    
+
     // Uncomment the following line to rate the package
     // const rating = await processUrl(URL!);
     // Return the rating
     const rating = {
-      NetScore: '-1',
-      NetScore_Latency: '-1',
-      RampUp: '-1',
-      RampUp_Latency: '-1',
-      Correctness: '-1',
-      Correctness_Latency: '-1',
-      BusFactor: '-1',
-      BusFactor_Latency: '-1',
-      ResponsiveMaintainer: '-1',
-      ResponsiveMaintainer_Latency: '-1',
-      License: '-1',
-      License_Latency: '-1',
-      PR_Code_Reviews: '-1',
-      PR_Code_Reviews_Latency: '-1',
-      DependencyMetric: '-1',
-      DependencyMetric_Latency: '-1',
-    }
+      NetScore: "-1",
+      NetScore_Latency: "-1",
+      RampUp: "-1",
+      RampUp_Latency: "-1",
+      Correctness: "-1",
+      Correctness_Latency: "-1",
+      BusFactor: "-1",
+      BusFactor_Latency: "-1",
+      ResponsiveMaintainer: "-1",
+      ResponsiveMaintainer_Latency: "-1",
+      License: "-1",
+      License_Latency: "-1",
+      PR_Code_Reviews: "-1",
+      PR_Code_Reviews_Latency: "-1",
+      DependencyMetric: "-1",
+      DependencyMetric_Latency: "-1",
+    };
     c.status(200);
     return c.json(rating);
   });
 
-  // .get("/:ID", async (c) => {
-  //   const ID = c.req.param("ID");
+// .get("/:ID", async (c) => {
+//   const ID = c.req.param("ID");
 
-  //   if (!ID) {
-  //     return c.json({ error: "Package ID is required" }, 400);
-  //   }
+//   if (!ID) {
+//     return c.json({ error: "Package ID is required" }, 400);
+//   }
 
-  //   // Fetch the package from the database
-  //   const packageResult = await db
-  //     .select()
-  //     .from(packagesTable)
-  //     .where(eq(packagesTable.ID, ID))
-  //     .then((res) => res[0]);
+//   // Fetch the package from the database
+//   const packageResult = await db
+//     .select()
+//     .from(packagesTable)
+//     .where(eq(packagesTable.ID, ID))
+//     .then((res) => res[0]);
 
-  //   if (!packageResult) {
-  //     return c.json({ error: "Package not found" }, 404);
-  //   }
+//   if (!packageResult) {
+//     return c.json({ error: "Package not found" }, 404);
+//   }
 
-  //   // Fetch package data
-  //   const packageData = await db
-  //     .select()
-  //     .from(packageDataTable)
-  //     .where(eq(packageDataTable.ID, packageResult.dataId))
-  //     .then((res) => res[0]);
+//   // Fetch package data
+//   const packageData = await db
+//     .select()
+//     .from(packageDataTable)
+//     .where(eq(packageDataTable.ID, packageResult.dataId))
+//     .then((res) => res[0]);
 
-  //   if (!packageData) {
-  //     return c.json({ error: "Package data not found" }, 404);
-  //   }
+//   if (!packageData) {
+//     return c.json({ error: "Package data not found" }, 404);
+//   }
 
-  //   if (packageData.URL) {
-  //     // If the package is stored in S3, redirect the user to the S3 URL
-  //     // Optionally, generate a pre-signed URL for secure download
-  //     const s3Params = {
-  //       Bucket: process.env.S3_BUCKET_NAME!,
-  //       Key: `packages/${packageResult.ID}.zip`, // Adjust the key as per your naming convention
-  //       Expires: 60 * 5, // 5 minutes
-  //     };
+//   if (packageData.URL) {
+//     // If the package is stored in S3, redirect the user to the S3 URL
+//     // Optionally, generate a pre-signed URL for secure download
+//     const s3Params = {
+//       Bucket: process.env.S3_BUCKET_NAME!,
+//       Key: `packages/${packageResult.ID}.zip`, // Adjust the key as per your naming convention
+//       Expires: 60 * 5, // 5 minutes
+//     };
 
-  //     try {
-  //       const downloadUrl = s3.getSignedUrl("getObject", s3Params);
-  //       return c.redirect(downloadUrl, 302);
-  //     } catch (error) {
-  //       console.error(
-  //         `Error generating S3 download URL: ${(error as Error).message}`,
-  //       );
-  //       return c.json({ error: "Failed to generate download URL" }, 500);
-  //     }
-  //   }
+//     try {
+//       const downloadUrl = s3.getSignedUrl("getObject", s3Params);
+//       return c.redirect(downloadUrl, 302);
+//     } catch (error) {
+//       console.error(
+//         `Error generating S3 download URL: ${(error as Error).message}`,
+//       );
+//       return c.json({ error: "Failed to generate download URL" }, 500);
+//     }
+//   }
 
-  //   if (packageData.Content) {
-  //     // If the package content is stored in the database (not recommended for large files)
-  //     const zipBuffer = Buffer.from(packageData.Content, "base64");
+//   if (packageData.Content) {
+//     // If the package content is stored in the database (not recommended for large files)
+//     const zipBuffer = Buffer.from(packageData.Content, "base64");
 
-  //     // Set headers for file download
-  //     c.res.headers.set("Content-Type", "application/zip");
-  //     c.res.headers.set(
-  //       "Content-Disposition",
-  //       `attachment; filename="${ID}.zip"`,
-  //     );
+//     // Set headers for file download
+//     c.res.headers.set("Content-Type", "application/zip");
+//     c.res.headers.set(
+//       "Content-Disposition",
+//       `attachment; filename="${ID}.zip"`,
+//     );
 
-  //     // Return the zip file as a buffer
+//     // Return the zip file as a buffer
 
-  //     return c.body(zipBuffer);
-  //   }
+//     return c.body(zipBuffer);
+//   }
 
-  //   return c.json({ error: "Package content not found" }, 404);
-  // });
+//   return c.json({ error: "Package content not found" }, 404);
+// });

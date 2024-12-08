@@ -25,7 +25,6 @@ import logger from "./logger";
 import { promisify } from "util";
 import * as dotenv from "dotenv";
 
-
 dotenv.config();
 
 interface MetricsResult {
@@ -67,7 +66,7 @@ async function cloneRepository(url: string, dir: string): Promise<void> {
       dir,
       url,
       singleBranch: true,
-      depth: 1
+      depth: 1,
     });
 
     logger.info(`Repository cloned successfully: ${url}`);

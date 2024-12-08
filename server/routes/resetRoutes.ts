@@ -19,7 +19,10 @@ const s3 = new AWS.S3({
 const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 
 // Helper function to delete all objects in the bucket
-const emptyS3Bucket = async (): Promise<{ success: boolean; error?: string }> => {
+const emptyS3Bucket = async (): Promise<{
+  success: boolean;
+  error?: string;
+}> => {
   try {
     let isTruncated = true;
     let continuationToken: string | undefined;
@@ -31,7 +34,9 @@ const emptyS3Bucket = async (): Promise<{ success: boolean; error?: string }> =>
       };
 
       const listData = await s3.listObjectsV2(listParams).promise();
-      const objectsToDelete = (listData.Contents || []).map((object) => ({ Key: object.Key! }));
+      const objectsToDelete = (listData.Contents || []).map((object) => ({
+        Key: object.Key!,
+      }));
 
       if (objectsToDelete.length > 0) {
         const deleteParams: AWS.S3.DeleteObjectsRequest = {
@@ -40,7 +45,9 @@ const emptyS3Bucket = async (): Promise<{ success: boolean; error?: string }> =>
         };
 
         await s3.deleteObjects(deleteParams).promise();
-        console.log(`Deleted ${objectsToDelete.length} objects from S3 bucket.`);
+        console.log(
+          `Deleted ${objectsToDelete.length} objects from S3 bucket.`,
+        );
       }
 
       isTruncated = listData.IsTruncated || false;
@@ -73,7 +80,7 @@ export const resetRoutes = new Hono().delete("/", async (c) => {
           message: "Database reset successful, but failed to reset S3 bucket.",
           error: s3ResetResult.error,
         },
-        500
+        500,
       );
     }
 

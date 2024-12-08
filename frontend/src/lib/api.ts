@@ -4,4 +4,4 @@ import { type ApiRoutes } from "../../../server/app"; // Import the type from th
 
 const client = hc<ApiRoutes>("/");
 
-export const api = client.api;  //ensure other files can use api object to make requests to the backend
+export const api = client.api; //ensure other files can use api object to make requests to the backend

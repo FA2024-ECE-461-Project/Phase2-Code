@@ -51,8 +51,8 @@ function searchPackage() {
       })
 
       if (res.status === 200) {
-        const data: { packages: SearchPackageResponse[] } = await res.json(); // Parse the response body
-        setResult(data.packages); // Set the returned package data
+        const data: SearchPackageResponse[] = await res.json(); // Parse the response body
+        setResult(data); // Set the returned package data
         toast.success('Package Found!');
       } else if (res.status === 404) {
         toast.error('Package not found.');

@@ -2,7 +2,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-// import { log } from "../logger";
 import { exec, execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
@@ -65,6 +64,8 @@ export const packageRoutes = new Hono()
   // If the payload is invalid, it will automatically return an error response with a 400 status code.
   .post("/", zValidator("json", uploadRequestValidation), async (c) => {
     const newPackage = await c.req.valid("json");
+    console.log("Starting [post/] endpoint... ");
+    console.log("Body: ", newPackage);
 
     // Check if content or url is provided
     if (!newPackage.Content && !newPackage.URL) {
@@ -125,8 +126,8 @@ export const packageRoutes = new Hono()
       );
 
       // Set metadata
-      // s3Url = uploadResult.url;
-      metadata = { Name, Version, URL: newPackage.URL };
+      s3Url = uploadResult.url;
+      metadata = { Name, Version, Url: newPackage.URL };
 
     } else if (newPackage.Content) {
       // Handle Content-based package upload
@@ -488,8 +489,15 @@ export const packageRoutes = new Hono()
     console.log(`[post/:ID] Updating Package ID: ${ID}`);
     console.log("[post/:ID] Body: ", body);
 
-    // Validate incoming data
     const { metadata, data } = body;
+    const databody: {
+      S3?: string | undefined;
+      URL?: string | undefined;
+      JSProgram?: string | undefined;
+      debloat?: boolean | undefined;
+    } = {};
+
+
     if (!metadata.ID) {
       console.log("Invalid input: Must provide metadata ID to update.");
       c.status(400);
@@ -497,7 +505,6 @@ export const packageRoutes = new Hono()
         error: "Invalid input: Must provide metadata or data to update.",
       });
     }
-
 
     // Fetch the existing package from the database
     const packageResult = await db
@@ -521,6 +528,42 @@ export const packageRoutes = new Hono()
       });
     }
 
+    // update the package content on s3
+    let s3Key: string | undefined;
+    if (data.Content) {
+      const fileBuffer = Buffer.from(data.Content, "base64");
+      s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
+      const uploadResult = await uploadToS3viaBuffer(
+        fileBuffer,
+        s3Key,
+        "application/zip",
+      );
+
+      if (!uploadResult.success || !uploadResult.url) {
+        return c.json(
+          {
+            error: "Failed to upload package to S3",
+            details: uploadResult.error,
+          },
+          500,
+        );
+      }
+    }
+
+    // Fill in the data object with the provided data
+    databody.S3 = s3Key;
+    databody.URL = data?.URL;
+    databody.JSProgram = data?.JSProgram;
+    databody.debloat = data?.debloat;
+
+    //prepare the data for packageTable
+    const packagesTableData = {
+      ID: packageResult.ID,
+      Name: metadata.Name,
+      Version: metadata.Version,
+      S3: databody.S3,
+    };
+    
     // Update metadata if provided
     if (metadata) {
       const { ID, ...metadataToUpdate } = metadata;
@@ -531,12 +574,17 @@ export const packageRoutes = new Hono()
     }
 
     // Update data if provided
-    if (data) {
-      const { ...dataToUpdate } = data;
+    if (databody) {
+      const { ...dataToUpdate } = databody;
       await db
         .update(packageDataTable)
         .set(dataToUpdate)
         .where(eq(packageDataTable.ID, packageResult.ID));
+
+      await db
+        .update(packagesTable)
+        .set(packagesTableData)
+        .where(eq(packagesTable.ID, packageResult.ID));
     }
 
     // Return updated package

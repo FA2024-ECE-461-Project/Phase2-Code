@@ -14,7 +14,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const app = new Hono();
 
 // Add a logger middleware
-app.use("*", logger(writeLogToFile(process.env.SERVER_LOG_FILE || "server.log")));
+app.use("*", logger(writeLogToFile(process.env.SERVER_LOG_FILE || "server.log", "hono logger")));
 
 // Add a route to packages
 // Can add more routes here

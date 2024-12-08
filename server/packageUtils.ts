@@ -116,7 +116,7 @@ export async function uploadToS3viaBuffer(buffer: Buffer, key: string, contentTy
 }
 
 
-export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string } {
+export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string, Url: string } {
   const zip = new AdmZip(buffer);
   const zipEntries = zip.getEntries();
 
@@ -135,17 +135,24 @@ export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version:
 
   const packageJsonStr = packageJsonEntry.getData().toString('utf-8');
 
-  let packageJson: { name?: string; version?: string; url?: string };
+  let packageJson: { name?: string; version?: string; repository?: { url?: string } };
   try {
     packageJson = JSON.parse(packageJsonStr);
   } catch (error) {
     throw new Error('Invalid package.json format');
   }
 
+  // Extract the repository URL from package.json if it exists
+  console.log('Package JSON Name:', packageJson.name);
+  console.log('Package JSON Version:', packageJson.version);
+  console.log('Package JSON URL:', packageJson.repository?.url);
+  const url = packageJson.repository?.url || '';
+
   const Name = packageJson.name || 'Default-Name';
   const Version = packageJson.version || '1.0.0';
+  const Url = url || '';
 
-  return { Name, Version };
+  return { Name, Version, Url };
 }
 
 export function removeDotGitFolderFromZip(buffer: Buffer): string {
@@ -370,5 +377,25 @@ export function removeDownloadedFile(filePath: string): boolean{
     console.log('File removed successfully:', filePath);
     return true;
   }
+  return false;
+}
+
+
+export function isMoreRecentVersion(newVersion: string, latestVersion: string): boolean {
+  const newParts = newVersion.split(".").map(Number);
+  const latestParts = latestVersion.split(".").map(Number);
+
+  for (let i = 0; i < Math.max(newParts.length, latestParts.length); i++) {
+    const newPart = newParts[i] || 0; // Default to 0 if undefined
+    const latestPart = latestParts[i] || 0;
+
+    if (newPart > latestPart) {
+      return true;
+    } else if (newPart < latestPart) {
+      return false;
+    }
+  }
+
+  // If all parts are equal
   return false;
 }

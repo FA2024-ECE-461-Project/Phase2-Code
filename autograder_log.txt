@@ -3,13 +3,13 @@
         "Total": "0 / 3 (3 hidden)"
     },
     "Package Read Test Group": {
-        "Get Package By ID Test Package 0": 0,
-        "Get Package By ID Test Package 1": 0,
-        "Get Package By ID Test Package 2": 0,
-        "Get Package By ID Test Package 3": 0,
-        "Get Package By ID Test Package 4": 0,
-        "Get Package By ID Test Package 5": 0,
-        "Get Package By ID Test Package 6": 0,
+        "Get Package By ID Test Package 0": 1,
+        "Get Package By ID Test Package 1": 1,
+        "Get Package By ID Test Package 2": 1,
+        "Get Package By ID Test Package 3": 1,
+        "Get Package By ID Test Package 4": 1,
+        "Get Package By ID Test Package 5": 1,
+        "Get Package By ID Test Package 6": 1,
         "Get Package By Name Test Package 0": 0,
         "Get Package By Name Test Package 1": 0,
         "Get Package By Name Test Package 2": 0,
@@ -18,7 +18,7 @@
         "Get Package By Name Test Package 5": 0,
         "Get Package By Name Test Package 6": 0,
         "Invalid Package Read Test": 1,
-        "Total": "1 / 15 "
+        "Total": "8 / 15 "
     },
     "Rate packages Test Group": {
         "Get Package Rate Test Package 0": 0,
@@ -34,7 +34,7 @@
         "Exact Match Name Regex Test": 1,
         "Extra Chars Name Regex Test": 1,
         "Random String Regex Test": 1,
-        "Total": "3 / 6 (3 hidden)"
+        "Total": "3 / 3 "
     },
     "Setup and Reset Test Group": {
         "Check No Packages after Reset": 0,
@@ -42,7 +42,7 @@
         "System Tracks Test": 1,
         "Total": "2 / 5 "
     },
-    "Total": "15 / 69 ",
+    "Total": "22 / 66 ",
     "Update Package Test Group": {
         "Total": "1 / 9 (9 hidden)"
     },
@@ -57,9 +57,9 @@
         "Upload Ingest package 3 via Ingest": 1,
         "Upload Ingest package 4 via Ingest": 1
     },
-    "autgrader_run_log": "data/8/run/phase2/autograder_08-12-01-00.log",
-    "end_time": "2024-12-08 01:01:01.876361",
-    "run_time": "33.806248 seconds",
-    "start_time": "2024-12-08 01:00:28.070113",
-    "system_run_log": "data/8/run/phase2/autograder_08-12-01-00.sysout.log"
+    "autgrader_run_log": "data/8/run/phase2/autograder_08-12-01-36.log",
+    "end_time": "2024-12-08 01:37:14.048778",
+    "run_time": "31.829242 seconds",
+    "start_time": "2024-12-08 01:36:42.219536",
+    "system_run_log": "data/8/run/phase2/autograder_08-12-01-36.sysout.log"
 }

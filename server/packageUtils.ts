@@ -116,7 +116,7 @@ export async function uploadToS3viaBuffer(buffer: Buffer, key: string, contentTy
 }
 
 
-export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string } {
+export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string, Url: string } {
   const zip = new AdmZip(buffer);
   const zipEntries = zip.getEntries();
 
@@ -135,17 +135,24 @@ export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version:
 
   const packageJsonStr = packageJsonEntry.getData().toString('utf-8');
 
-  let packageJson: { name?: string; version?: string; url?: string };
+  let packageJson: { name?: string; version?: string; repository?: { url?: string } };
   try {
     packageJson = JSON.parse(packageJsonStr);
   } catch (error) {
     throw new Error('Invalid package.json format');
   }
 
+  // Extract the repository URL from package.json if it exists
+  console.log('Package JSON Name:', packageJson.name);
+  console.log('Package JSON Version:', packageJson.version);
+  console.log('Package JSON URL:', packageJson.repository?.url);
+  const url = packageJson.repository?.url || '';
+
   const Name = packageJson.name || 'Default-Name';
   const Version = packageJson.version || '1.0.0';
+  const Url = url || '';
 
-  return { Name, Version };
+  return { Name, Version, Url };
 }
 
 export function removeDotGitFolderFromZip(buffer: Buffer): string {

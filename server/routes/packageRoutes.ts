@@ -30,9 +30,7 @@ import {
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
-import fs from "fs";
-import path from "path";
-import { s3 } from "../packageUtils";
+import { encodeBase64, downloadZipFromS3ToWorkingDirectory } from "../s3Util";
 
 // Schema for RegEx search of a package
 const PackageRegEx = z.object({
@@ -332,6 +330,7 @@ export const packageRoutes = new Hono()
       return c.json({ error: "ID is required" }, 400);
     }
 
+    console.log(`Package ID: ${ID}`);
     // query packagesTable for package ID, then use this entry to reference packageMetadataTable
     type MetaDataAndPackageDataEntry = {
       Name: string;
@@ -340,6 +339,7 @@ export const packageRoutes = new Hono()
       JSProgram: string | null;
     };
 
+    // check if package exists
     const packageID = await db
       .select()
       .from(packagesTable)
@@ -350,6 +350,7 @@ export const packageRoutes = new Hono()
       return c.json({ error: `no package with ID ${ID} found` }, 404);
     }
 
+    // get metadata and package data from the database
     const packageData = await db
       .select()
       .from(packageDataTable)
@@ -384,9 +385,13 @@ export const packageRoutes = new Hono()
       return c.json({ error: "no zipfile content found" }, 404);
     }
 
-    // remove .git folder from the zip file
-    const contentBuffer = Buffer.from(metaDataAndPackageDataEntry.S3);
-    metaDataAndPackageDataEntry.S3 = removeDotGitFolderFromZip(contentBuffer);
+    // download the package from S3
+    const filePath = await downloadZipFromS3ToWorkingDirectory(
+      metaDataAndPackageDataEntry.S3,
+    );
+
+    // encode the downloaded file to base64
+    const base64Data = encodeBase64(filePath);
 
     // fill in payload
     const payload: PackageDownloadResponseType = {
@@ -395,7 +400,7 @@ export const packageRoutes = new Hono()
         Version: metaDataAndPackageDataEntry.Version,
       },
       data: {
-        content: metaDataAndPackageDataEntry.S3,
+        content: base64Data,
         JSProgram: metaDataAndPackageDataEntry.JSProgram
           ? metaDataAndPackageDataEntry.JSProgram
           : "",

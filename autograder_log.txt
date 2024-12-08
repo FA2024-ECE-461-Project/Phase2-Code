@@ -17,8 +17,8 @@
         "Get Package By Name Test Package 4": 0,
         "Get Package By Name Test Package 5": 0,
         "Get Package By Name Test Package 6": 0,
-        "Invalid Package Read Test": 0,
-        "Total": "0 / 15 "
+        "Invalid Package Read Test": 1,
+        "Total": "1 / 15 "
     },
     "Rate packages Test Group": {
         "Get Package Rate Test Package 0": 0,
@@ -28,38 +28,38 @@
         "Get Package Rate Test Package 4": 0,
         "Get Package Rate Test Package 5": 0,
         "Get Package Rate Test Package 6": 0,
-        "Total": "0 / 22 (1 hidden)"
+        "Total": "1 / 22 (1 hidden)"
     },
     "Regex Tests Group": {
-        "Exact Match Name Regex Test": 0,
-        "Extra Chars Name Regex Test": 0,
-        "Random String Regex Test": 0,
-        "Total": "0 / 6 (3 hidden)"
+        "Exact Match Name Regex Test": 1,
+        "Extra Chars Name Regex Test": 1,
+        "Random String Regex Test": 1,
+        "Total": "3 / 6 (3 hidden)"
     },
     "Setup and Reset Test Group": {
         "Check No Packages after Reset": 0,
-        "System Reset Test": 0,
-        "System Tracks Test": 0,
-        "Total": "0 / 5 "
+        "System Reset Test": 1,
+        "System Tracks Test": 1,
+        "Total": "2 / 5 "
     },
-    "Total": "0 / 69 ",
+    "Total": "15 / 69 ",
     "Update Package Test Group": {
-        "Total": "0 / 9 (9 hidden)"
+        "Total": "1 / 9 (9 hidden)"
     },
     "Upload Packages Test Group": {
         "Get Package Query Test": 0,
-        "Total": "0 / 9 ",
-        "Upload Content package 1 via Content": 0,
-        "Upload Content package 2 via Content": 0,
-        "Upload Content package 3 via Content": 0,
-        "Upload Ingest package 1 via Ingest": 0,
-        "Upload Ingest package 2 via Ingest": 0,
-        "Upload Ingest package 3 via Ingest": 0,
-        "Upload Ingest package 4 via Ingest": 0
+        "Total": "7 / 9 ",
+        "Upload Content package 1 via Content": 1,
+        "Upload Content package 2 via Content": 1,
+        "Upload Content package 3 via Content": 1,
+        "Upload Ingest package 1 via Ingest": 1,
+        "Upload Ingest package 2 via Ingest": 1,
+        "Upload Ingest package 3 via Ingest": 1,
+        "Upload Ingest package 4 via Ingest": 1
     },
-    "autgrader_run_log": "data/8/run/phase2/autograder_07-12-21-31.log",
-    "end_time": "2024-12-07 21:32:05.512833",
-    "run_time": "27.720012 seconds",
-    "start_time": "2024-12-07 21:31:37.792821",
-    "system_run_log": "data/8/run/phase2/autograder_07-12-21-31.sysout.log"
+    "autgrader_run_log": "data/8/run/phase2/autograder_08-12-00-37.log",
+    "end_time": "2024-12-08 00:38:29.581917",
+    "run_time": "32.895192 seconds",
+    "start_time": "2024-12-08 00:37:56.686725",
+    "system_run_log": "data/8/run/phase2/autograder_08-12-00-37.sysout.log"
 }

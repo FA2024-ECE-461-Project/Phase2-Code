@@ -551,11 +551,14 @@ export const packageRoutes = new Hono()
     databody.URL = data?.URL;
     databody.JSProgram = data?.JSProgram;
     databody.debloat = data?.debloat;
-  
+    
+    //generate the new package ID
+    const newPackageId = uuidv4();
+
     // 5. Insert the new version into packagesTable
     // Assuming (ID, Version) uniquely identifies a version of the package
     await db.insert(packagesTable).values({
-      ID: metadata.ID,
+      ID: newPackageId,
       Name: metadata.Name,
       Version: metadata.Version,
       S3: databody.S3,
@@ -566,25 +569,53 @@ export const packageRoutes = new Hono()
     const { ID, ...metadataToInsert } = metadata;
     const { Version, ...metadataWithoutVersion } = metadataToInsert;
     await db.insert(packageMetadataTable).values({
-      ID: metadata.ID,
+      ID: newPackageId,
       Version: metadata.Version,
       ...metadataWithoutVersion,
     });
   
     // 7. Insert the new data row for this version
     await db.insert(packageDataTable).values({
-      ID: metadata.ID,
+      ID: newPackageId,
       S3: databody.S3,
       URL: databody.URL,
       JSProgram: databody.JSProgram,
       debloat: databody.debloat,
     });
+
+    const ratingData = {
+      ID: newPackageId,
+      URL: databody.URL || "", 
+      NetScore: '-1',
+      NetScore_Latency: '-1',
+      RampUp: '-1',
+      RampUp_Latency: '-1',
+      Correctness: '-1',
+      Correctness_Latency: '-1',
+      BusFactor: '-1',
+      BusFactor_Latency: '-1',
+      ResponsiveMaintainer: '-1',
+      ResponsiveMaintainer_Latency: '-1',
+      License: '-1',
+      License_Latency: '-1',
+      PR_Code_Reviews: '-1',
+      PR_Code_Reviews_Latency: '-1',
+      DependencyMetric: '-1',
+      DependencyMetric_Latency: '-1',
+    };
+    
+    // Insert the rating to database
+    await db
+      .insert(packageRatingTable)
+      .values(ratingData)
+      .returning()
+      .then((res) => res[0]);
   
     // Return the newly created version info
     c.status(200);
     return c.json(body);
   })
-  
+
   // Get rating of a package
   .get("/:ID/rate", async (c) => {    
     const ID = c.req.param("ID");

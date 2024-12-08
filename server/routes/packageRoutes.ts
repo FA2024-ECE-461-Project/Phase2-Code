@@ -30,7 +30,7 @@ import {
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
-import { encodeBase64, downloadZipFromS3ToWorkingDirectory } from "../s3Util";
+import { encodeBase64, downloadZipFromS3ToWorkingDirectory, downloadZipFromS3 } from "../s3Util";
 
 // Schema for RegEx search of a package
 const PackageRegEx = z.object({
@@ -42,6 +42,7 @@ export type PackageDownloadResponseType = {
   metadata: {
     Name: string;
     Version: string | undefined;
+    ID: string;
   };
   data: {
     content: string;
@@ -386,8 +387,9 @@ export const packageRoutes = new Hono()
     }
 
     // download the package from S3
-    const filePath = await downloadZipFromS3ToWorkingDirectory(
+    const filePath = await downloadZipFromS3(
       metaDataAndPackageDataEntry.S3,
+      "./packages"
     );
 
     // encode the downloaded file to base64
@@ -398,6 +400,7 @@ export const packageRoutes = new Hono()
       metadata: {
         Name: metaDataAndPackageDataEntry.Name,
         Version: metaDataAndPackageDataEntry.Version,
+        ID: ID,
       },
       data: {
         content: base64Data,

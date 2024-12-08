@@ -2,6 +2,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
+import { log } from "../logger";
 import { exec, execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
@@ -21,7 +22,7 @@ import {
   getPackageNameVersion,
   downloadGitHubZip,
   omitId,
-  uploadToS3viaFile,
+  isMoreRecentVersion,
   extractMetadataFromZip,
   removeDotGitFolderFromZip,
   uploadToS3viaBuffer,
@@ -395,7 +396,7 @@ export const packageRoutes = new Hono()
       return c.json({ error: "ID is required" }, 400);
     }
 
-    console.log(`Package ID: ${ID}`);
+    // console.log(`Package ID: ${ID}`);
     // query packagesTable for package ID, then use this entry to reference packageMetadataTable
     type MetaDataAndPackageDataEntry = {
       Name: string;
@@ -479,78 +480,75 @@ export const packageRoutes = new Hono()
     return c.json(payload);
   })
 
-  // .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
-  //   const ID = c.req.param("ID");
-  //   const body = await c.req.json();
+  .post("/:ID", zValidator("json", updateRequestValidation), async (c) => {
+    log.info("Starting [post/:ID] endpoint... ");
 
-  //   // Validate incoming data
-  //   const { metadata, data } = body;
-  //   if (!metadata && !data) {
-  //     c.status(400);
-  //     return c.json({
-  //       error: "Invalid input: Must provide metadata or data to update.",
-  //     });
-  //   }
+    const ID = c.req.param("ID");
+    const body = c.req.valid("json");
 
-  //   // Fetch the existing package from the database
-  //   const packageResult = await db
-  //     .select()
-  //     .from(packagesTable)
-  //     .where(eq(packagesTable.ID, ID))
-  //     .then((res) => res[0]);
+    log.info(`[post/:ID] Updating Package ID: ${ID}`);
+    log.info("[post/:ID] Body: ", body);
 
-  //   if (!packageResult) {
-  //     c.status(404);
-  //     return c.json({ error: "Package not found" });
-  //   }
+    // Validate incoming data
+    const { metadata, data } = body;
+    if (!metadata.ID) {
+      log.error("Invalid input: Must provide metadata ID to update.");
+      c.status(400);
+      return c.json({
+        error: "Invalid input: Must provide metadata or data to update.",
+      });
+    }
 
-  //   // Update metadata if provided
-  //   if (metadata) {
-  //     const { ID, ...metadataToUpdate } = metadata;
-  //     await db
-  //       .update(packageMetadataTable)
-  //       .set(metadataToUpdate)
-  //       .where(eq(packageMetadataTable.ID, packageResult.metadataId));
-  //   }
 
-  //   // Update data if provided
-  //   if (data) {
-  //     const { ID, ...dataToUpdate } = data;
-  //     await db
-  //       .update(packageDataTable)
-  //       .set(dataToUpdate)
-  //       .where(eq(packageDataTable.ID, packageResult.dataId));
-  //   }
+    // Fetch the existing package from the database
+    const packageResult = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packagesTable.ID, ID))
+      .then((res) => res[0]);
 
-  //   // Fetch updated package details
-  //   const updatedMetadata = await db
-  //     .select()
-  //     .from(packageMetadataTable)
-  //     .where(eq(packageMetadataTable.ID, packageResult.metadataId))
-  //     .then((res) => res[0]);
+    if (!packageResult) {
+      log.error("Package not found");
+      c.status(404);
+      return c.json({ error: "Package not found" });
+    }
 
-  //   const updatedData = await db
-  //     .select()
-  //     .from(packageDataTable)
-  //     .where(eq(packageDataTable.ID, packageResult.dataId))
-  //     .then((res) => res[0]);
+    // Check is the package version is more recent
+    const isMoreRecent = isMoreRecentVersion(metadata.Version, packageResult.Version);
+    if (!isMoreRecent) {
+      c.status(409);
+      return c.json({
+        error: "Version provided is older than the existing version",
+      });
+    }
 
-  //   // Omit 'id' field from updated data result
-  //   const dataWithoutId = omitId(updatedData);
+    // Update metadata if provided
+    if (metadata) {
+      const { ID, ...metadataToUpdate } = metadata;
+      await db
+        .update(packageMetadataTable)
+        .set(metadataToUpdate)
+        .where(eq(packageMetadataTable.ID, packageResult.ID));
+    }
 
-  //   // Return updated package
-  //   c.status(200);
-  //   return c.json({
-  //     metadata: updatedMetadata,
-  //     data: dataWithoutId,
-  //   });
-  // })
+    // Update data if provided
+    if (data) {
+      const { ...dataToUpdate } = data;
+      await db
+        .update(packageDataTable)
+        .set(dataToUpdate)
+        .where(eq(packageDataTable.ID, packageResult.ID));
+    }
+
+    // Return updated package
+    c.status(200);
+    return c.json(body);
+  })
 
   // Get rating of a package
-  .get("/:ID/rate", async (c) => {
+  .get("/:ID/rate", async (c) => {    
     const ID = c.req.param("ID");
     // Print the ID to the console
-    console.log(`Rating Package ID: ${ID}`);
     // if no ID is provided, return an error
     // Not sure why this is not working when no ID is provided
     if (!ID) {
@@ -606,7 +604,7 @@ export const packageRoutes = new Hono()
     }
     c.status(200);
     return c.json(rating);
-  })
+  });
 
   // .get("/:ID", async (c) => {
   //   const ID = c.req.param("ID");

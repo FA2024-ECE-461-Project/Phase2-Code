@@ -372,3 +372,23 @@ export function removeDownloadedFile(filePath: string): boolean{
   }
   return false;
 }
+
+
+export function isMoreRecentVersion(newVersion: string, latestVersion: string): boolean {
+  const newParts = newVersion.split(".").map(Number);
+  const latestParts = latestVersion.split(".").map(Number);
+
+  for (let i = 0; i < Math.max(newParts.length, latestParts.length); i++) {
+    const newPart = newParts[i] || 0; // Default to 0 if undefined
+    const latestPart = latestParts[i] || 0;
+
+    if (newPart > latestPart) {
+      return true;
+    } else if (newPart < latestPart) {
+      return false;
+    }
+  }
+
+  // If all parts are equal
+  return false;
+}

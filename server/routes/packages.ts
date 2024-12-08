@@ -40,8 +40,8 @@ const postPackageMetadataRequestSchema = z.object({
 
 type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchema>;
 type ResponseSchema = {
-  Name: string;
   Version: string;
+  Name: string;
   ID: string;
 }
 export const metadataRoutes = new Hono()
@@ -84,8 +84,8 @@ export const metadataRoutes = new Hono()
         if(Name === "*") {
           packages = await db
             .select({
-              Name: packageMetadataTable.Name,
               Version: packageMetadataTable.Version,
+              Name: packageMetadataTable.Name,
               ID: packageMetadataTable.ID
             })
             .from(packageMetadataTable)
@@ -93,8 +93,8 @@ export const metadataRoutes = new Hono()
         } else {
           packages = await db
             .select({
-              Name: packageMetadataTable.Name,
               Version: packageMetadataTable.Version,
+              Name: packageMetadataTable.Name,
               ID: packageMetadataTable.ID
             })
             .from(packageMetadataTable)
@@ -114,8 +114,8 @@ export const metadataRoutes = new Hono()
       if (Name === "*") {
         packages = await db
           .select({
-            Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
+            Name: packageMetadataTable.Name,
             ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
@@ -123,8 +123,8 @@ export const metadataRoutes = new Hono()
       } else if (versionType == "exact") {
         packages = await db
           .select({
-            Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
+            Name: packageMetadataTable.Name,
             ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
@@ -139,8 +139,8 @@ export const metadataRoutes = new Hono()
         const [start, end] = Version.split("-");
         packages = await db
           .select({
-            Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
+            Name: packageMetadataTable.Name,
             ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
@@ -157,8 +157,8 @@ export const metadataRoutes = new Hono()
       } else if (versionType == "caret") {
         packages = await db
           .select({
-            Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
+            Name: packageMetadataTable.Name,
             ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)
@@ -170,8 +170,8 @@ export const metadataRoutes = new Hono()
       } else if (versionType == "tilde") {
         packages = await db
           .select({
-            Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
+            Name: packageMetadataTable.Name,
             ID: packageMetadataTable.ID
           })
           .from(packageMetadataTable)

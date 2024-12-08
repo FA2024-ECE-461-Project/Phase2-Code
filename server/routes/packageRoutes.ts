@@ -30,11 +30,51 @@ import {
   getOwnerRepoAndDefaultBranchFromGithubUrl,
   removeDownloadedFile
 } from "../packageUtils";
-import { processUrl, processSingleUrl } from "../packageScore/src/index";
+import {  processSingleUrl, MetricsResult } from "../packageScore/src/index";
 import { readFileSync } from "fs";
 import { encodeBase64, downloadZipFromS3ToWorkingDirectory, downloadZipFromS3 } from "../s3Util";
 import AWS from "aws-sdk";
 import AdmZip from "adm-zip";
+import { S3 } from 'aws-sdk';
+
+// Initialize S3
+const s3 = new S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Ensure these are set in your environment
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+// Define a threshold for disqualification
+const THRESHOLD = 0.5; // Example value, adjust as needed
+
+// Custom error class for disqualification
+class DisqualifiedPackageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DisqualifiedPackageError';
+  }
+}
+
+// Function to determine disqualification
+function isDisqualified(rating: MetricsResult): boolean {
+  return rating.NetScore < THRESHOLD;
+}
+
+// Function to remove a cloned repository from S3 (optional based on your logic)
+async function removeFromS3(key: string): Promise<void> {
+  try {
+    await s3.deleteObject({
+      Bucket: process.env.S3_BUCKET_NAME!, // Ensure this environment variable is set
+      Key: key,
+    }).promise();
+    // logger.info(`Successfully removed ${key} from S3.`);
+    console.log(`Successfully removed ${key} from S3.`);
+  } catch (error) {
+    // logger.error(`Failed to remove ${key} from S3: ${error}`);
+    console.log(`Failed to remove ${key} from S3:`, error);
+    // Depending on your requirements, you might throw the error or handle it gracefully
+  }
+}
 
 // Schema for RegEx search of a package
 const PackageRegEx = z.object({
@@ -107,7 +147,6 @@ export const packageRoutes = new Hono()
       
       // Get the github zip file using url
       // print the url
-      console.log(newPackage.URL);
       const githubZip = await downloadGitHubZip(owner, repo, defaultBranch, "./downloads", `${Name}-${Version}.zip`);
       if (!githubZip) {
         c.status(400);
@@ -162,7 +201,8 @@ export const packageRoutes = new Hono()
       }
 
       //get the github url
-      githubUrl = getPackageJsonUrl(newPackage.Content);
+      githubUrl = getPackageJsonUrl(fileBuffer);
+
       s3Url = uploadResult.url;
     }
 
@@ -175,12 +215,12 @@ export const packageRoutes = new Hono()
 
     // Create package id with a UUID
     const packageId = uuidv4();
-
+    
     // Prepare the data to be inserted into the database
     const data = {
       ID: packageId,
       S3: s3Key,
-      URL: newPackage.URL || githubUrl,
+      URL: githubUrl || newPackage.URL,
       JSProgram: newPackage.JSProgram || null,
       debloat: newPackage.debloat || false,
     };
@@ -218,41 +258,60 @@ export const packageRoutes = new Hono()
       return c.json({ error: "Package already exists" });
     }
 
-    // Rate the package
-    // const rating = await processUrl(newPackage.URL!);
-    // prepare the rating data to be inserted into the database
-    // const ratingData = {
-    //   ID: packageId,
-    //   URL: newPackage.URL,
-    //   NetScore: rating.NetScore,
-    //   NetScore_Latency: rating.NetScore_Latency,
-    //   RampUp: rating.RampUp,
-    //   RampUp_Latency: rating.RampUp_Latency,
-    //   Correctness: rating.Correctness,
-    //   Correctness_Latency: rating.Correctness_Latency,
-    //   BusFactor: rating.BusFactor,
-    //   BusFactor_Latency: rating.BusFactor_Latency,
-    // };
+    // Perform Rating
+    let rating: MetricsResult;
+    try {
+      const urlToProcess = newPackage.URL || githubUrl;
+
+      if (!urlToProcess) {
+        throw new Error('Package URL is invalid or missing.');
+      }
+
+      console.log(`Invoking processSingleUrl for URL: ${urlToProcess}`);
+      rating = await processSingleUrl(urlToProcess);
+      console.log(`Received MetricsResult for URL: ${urlToProcess}`, rating);
+
+      if (isDisqualified(rating)) {
+        console.log(`Package disqualified based on NetScore: ${rating.NetScore}`);
+        // Remove the uploaded package from S3 if disqualified
+        if (s3Key) {
+          await removeFromS3(s3Key);
+        }
+        throw new DisqualifiedPackageError('Package disqualified based on rating metrics.');
+      }
+    } catch (error) {
+      if (error instanceof DisqualifiedPackageError) {
+        console.log(`DisqualifiedPackageError: ${error.message}`);
+        return c.json({ error: error.message }, 424);
+      } else {
+        // logger.error(`Unexpected error during rating for package:`, { error });
+        console.log(`Unexpected error during rating for package:`, error);
+        return c.json({ error: 'An unexpected error occurred during package rating.' }, 500);
+      }
+    }
+
+    // Insert Rating Data
     const ratingData = {
       ID: packageId,
-      URL: newPackage.URL || "", 
-      NetScore: '-1',
-      NetScore_Latency: '-1',
-      RampUp: '-1',
-      RampUp_Latency: '-1',
-      Correctness: '-1',
-      Correctness_Latency: '-1',
-      BusFactor: '-1',
-      BusFactor_Latency: '-1',
-      ResponsiveMaintainer: '-1',
-      ResponsiveMaintainer_Latency: '-1',
-      License: '-1',
-      License_Latency: '-1',
-      PR_Code_Reviews: '-1',
-      PR_Code_Reviews_Latency: '-1',
-      DependencyMetric: '-1',
-      DependencyMetric_Latency: '-1',
+      URL: newPackage.URL || '',
+      NetScore: rating.NetScore.toString(),
+      NetScore_Latency: rating.NetScore_Latency.toString(),
+      RampUp: rating.RampUp.toString(),
+      RampUp_Latency: rating.RampUp_Latency.toString(),
+      Correctness: rating.Correctness.toString(),
+      Correctness_Latency: rating.Correctness_Latency.toString(),
+      BusFactor: rating.BusFactor.toString(),
+      BusFactorLatency: rating.BusFactorLatency.toString(),
+      ResponsiveMaintainer: rating.ResponsiveMaintainer.toString(),
+      ResponsiveMaintainer_Latency: rating.ResponsiveMaintainer_Latency.toString(),
+      License: rating.License.toString(),
+      License_Latency: rating.License_Latency.toString(),
+      PR_Code_Reviews: rating.PR_Code_Reviews.toString(),
+      PR_Code_Reviews_Latency: rating.PR_Code_Reviews_Latency.toString(),
+      DependencyMetric: rating.DependencyMetric.toString(),
+      DependencyMetric_Latency: rating.DependencyMetric_Latency.toString(),
     };
+
     
     // Insert the rating to database
     await db
@@ -547,67 +606,84 @@ export const packageRoutes = new Hono()
   // })
 
   // Get rating of a package
-  .get("/:ID/rate", async (c) => {
-    const ID = c.req.param("ID");
-    // Print the ID to the console
-    console.log(`Rating Package ID: ${ID}`);
-    // if no ID is provided, return an error
-    // Not sure why this is not working when no ID is provided
+   .get('/:ID/rate', async (c) => {
+    const ID = c.req.param('ID');
+
     if (!ID) {
       c.status(400);
-      return c.json({ error: "ID is required" });
-    }
-    // Fetch the package from the database
-    const packageResult = await db
-      .select()
-      .from(packagesTable)
-      .where(eq(packagesTable.ID, ID))
-      .then((res) => res[0]);
-
-    if (!packageResult) {
-      c.status(404);
-      return c.json({ error: "Package not found" });
+      console.log(`GET /package/${ID}/rate: ID is missing.`);
+      return c.json({ error: 'ID is required' });
     }
 
-    // get the url from the package data
-    const packageData = await db
-      .select()
-      .from(packageDataTable)
-      .where(eq(packageDataTable.ID, packageResult.ID))
-      .then((res) => res[0]);
+    console.log(`Package ID: ${ID}`);
 
-    // Get the URL from the package data
-    const URL = packageData.URL;
-    // if (typeof URL !== 'string') {
-    //   throw new Error('Invalid URL');
-    // }
-    console.log(URL);
-    
-    // Uncomment the following line to rate the package
-    // const rating = await processUrl(URL!);
-    // Return the rating
-    const rating = {
-      NetScore: '-1',
-      NetScore_Latency: '-1',
-      RampUp: '-1',
-      RampUp_Latency: '-1',
-      Correctness: '-1',
-      Correctness_Latency: '-1',
-      BusFactor: '-1',
-      BusFactor_Latency: '-1',
-      ResponsiveMaintainer: '-1',
-      ResponsiveMaintainer_Latency: '-1',
-      License: '-1',
-      License_Latency: '-1',
-      PR_Code_Reviews: '-1',
-      PR_Code_Reviews_Latency: '-1',
-      DependencyMetric: '-1',
-      DependencyMetric_Latency: '-1',
+    try {
+      // Fetch the package from the database
+      const packageResult = await db
+        .select()
+        .from(packagesTable)
+        .where(eq(packagesTable.ID, ID))
+        .then((res) => res[0]);
+
+      if (!packageResult) {
+        c.status(404);
+        console.log(`Package not found for ID: ${ID}`);
+        return c.json({ error: 'Package not found' });
+      }
+
+      // Get the rating from the database
+      const ratingResult = await db
+        .select()
+        .from(packageRatingTable)
+        .where(eq(packageRatingTable.ID, ID))
+        .then((res) => res[0]);
+
+      console.log(`Retrieved RatingResult for ID ${ID}:`, ratingResult);
+
+      if (!ratingResult || ratingResult.NetScore === '-1') {
+        // Rating has not been computed or failed
+        c.status(424);
+        console.log(`Rating unavailable for ID ${ID}`);
+        return c.json({ error: 'Package rating is not available due to disqualified metrics or computation failure.' });
+      }
+
+      // Ensure URL is not null
+      if (!ratingResult.URL) {
+        c.status(424);
+        console.log(`Package URL missing in rating data for ID ${ID}`);
+        return c.json({ error: 'Package URL is missing in the rating data.' });
+      }
+
+      // Format the rating data
+      const formattedRating: MetricsResult = {
+        URL: ratingResult.URL,
+        NetScore: parseFloat(ratingResult.NetScore),
+        NetScore_Latency: parseFloat(ratingResult.NetScore_Latency),
+        RampUp: parseFloat(ratingResult.RampUp),
+        RampUp_Latency: parseFloat(ratingResult.RampUp_Latency),
+        Correctness: parseFloat(ratingResult.Correctness),
+        Correctness_Latency: parseFloat(ratingResult.Correctness_Latency),
+        BusFactor: parseFloat(ratingResult.BusFactor),
+        BusFactorLatency: parseFloat(ratingResult.BusFactorLatency),
+        ResponsiveMaintainer: parseFloat(ratingResult.ResponsiveMaintainer),
+        ResponsiveMaintainer_Latency: parseFloat(ratingResult.ResponsiveMaintainer_Latency),
+        License: parseFloat(ratingResult.License),
+        License_Latency: parseFloat(ratingResult.License_Latency),
+        PR_Code_Reviews: parseFloat(ratingResult.PR_Code_Reviews),
+        PR_Code_Reviews_Latency: parseFloat(ratingResult.PR_Code_Reviews_Latency),
+        DependencyMetric: parseFloat(ratingResult.DependencyMetric),
+        DependencyMetric_Latency: parseFloat(ratingResult.DependencyMetric_Latency),
+      };
+
+      console.log(`Formatted Rating for ID ${ID}:`, formattedRating);
+
+      return c.json(formattedRating);
+    } catch (error) {
+      // logger.error(`Error retrieving rating for package ID ${ID}:`, { error });
+      console.log(`Error retrieving rating for package ID ${ID}:`, error);
+      return c.json({ error: 'Failed to retrieve package rating.' }, 500);
     }
-    c.status(200);
-    return c.json(rating);
   })
-
   // .get("/:ID", async (c) => {
   //   const ID = c.req.param("ID");
 

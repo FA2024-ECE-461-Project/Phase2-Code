@@ -56,7 +56,7 @@ const COMPATIBLE_LICENSES: LicenseDefinition[] = [
 //     { name: 'ZLIB LICENSE', keywords: ['ZLIB'] },
 // ];
 
-interface LicenseResult {
+export interface LicenseResult {
   score: number;
   latency: number;
 }
@@ -122,7 +122,7 @@ export async function getLicense(repoPath: string): Promise<string | null> {
     }
     return license;
   }
-
+  
   logger.warn("No license information found in repository", { repoPath });
   return null;
 }

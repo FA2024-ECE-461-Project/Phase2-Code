@@ -1,129 +1,88 @@
-import axios from "axios";
-import {
-  getToken,
-  parseGitHubUrl,
-  get_axios_params,
-  getCommitsAndContributors,
-} from "../url";
-import logger from "../logger";
+// src/metrics/bus-factor.ts
 
-interface BusFactorResult {
-  busFactor: number;
-  normalizedScore: number;
+import logger from "../logger";
+import { getCommitsAndContributors, get_axios_params, getToken } from "../url";
+
+/**
+ * Interface representing the Bus Factor result.
+ */
+export interface BusFactorResult {
+  score: number;
   latency: number;
 }
 
-function calculateBusFactor(
-  commits: any[],
-  contributors: any[],
-): Omit<BusFactorResult, "latency"> {
-  logger.debug("Calculating bus factor", {
-    commitCount: commits.length,
-    contributorCount: contributors.length,
-  });
-
-  const commitCounts: { [key: string]: number } = {};
-
-  commits.forEach((commit) => {
-    const author = commit.commit.author.name;
-    commitCounts[author] = (commitCounts[author] || 0) + 1;
-  });
-
-  const totalCommits = commits.length;
-  const totalContributors = contributors.length;
-
-  if (totalCommits === 0 || totalContributors === 0) {
-    logger.warn("Repository has no commits or contributors", {
-      totalCommits,
-      totalContributors,
-    });
-    return { busFactor: 1, normalizedScore: 0 };
-  }
-
-  const sortedContributions = Object.values(commitCounts).sort((a, b) => b - a);
-
-  let accumulatedCommits = 0;
-  let busFactor = 0;
-
-  for (const count of sortedContributions) {
-    accumulatedCommits += count;
-    busFactor++;
-    if (accumulatedCommits > totalCommits * 0.8) break; // Increased from 0.5 to 0.8
-  }
-
-  const normalizedScore = normalizeScore(
-    busFactor,
-    totalContributors,
-    totalCommits,
-  );
-
-  logger.debug("Bus factor calculation complete", {
-    busFactor,
-    normalizedScore,
-  });
-  return { busFactor, normalizedScore };
-}
-
-function normalizeScore(
-  busFactor: number,
-  totalContributors: number,
-  totalCommits: number,
-): number {
-  logger.debug("Normalizing bus factor score", {
-    busFactor,
-    totalContributors,
-    totalCommits,
-  });
-
-  if (totalContributors === 0 || totalCommits < 20) {
-    logger.warn(
-      "Repository has too few contributors or commits for meaningful score",
-      { totalContributors, totalCommits },
-    );
-    return 0; // Penalize repos with very few commits
-  }
-
-  const contributorRatio = busFactor / totalContributors;
-  const commitThreshold = Math.min(totalCommits / 100, 1000); // Adjust based on repo size
-
-  let score = contributorRatio * (totalCommits / commitThreshold);
-
-  // Penalize projects with very few contributors
-  if (totalContributors < 3) {
-    logger.info("Applying penalty for low contributor count", {
-      totalContributors,
-    });
-    score *= 0.5;
-  }
-
-  const finalScore = Math.max(0, Math.min(1, score));
-  logger.debug("Normalized score calculated", { finalScore });
-  return finalScore;
-}
-
+/**
+ * Calculates the Bus Factor metric for a given GitHub repository.
+ * @param url GitHub repository URL.
+ * @returns An object containing the Bus Factor score and latency.
+ */
 export async function get_bus_factor(url: string): Promise<BusFactorResult> {
   const startTime = Date.now();
-  logger.info("Starting bus factor calculation", { url });
+  logger.info("Starting Bus Factor calculation", { url });
 
   try {
     const { owner, repo, headers } = get_axios_params(url, getToken());
-    logger.debug("Fetching commits and contributors", { owner, repo });
-    const { commits, contributors } = await getCommitsAndContributors(
-      owner,
-      repo,
-      headers,
-    );
-    const result = calculateBusFactor(commits, contributors);
+    logger.debug(`Parsed owner: ${owner}, repo: ${repo}`);
 
+    logger.debug("Fetching commits and contributors");
+    const { commits, contributors } = await getCommitsAndContributors(owner, repo, headers);
+    logger.debug(`Fetched ${commits.length} commits and ${contributors.length} contributors.`);
+
+    // Implement Bus Factor calculation logic
+    const busFactorScore = calculateBusFactor(commits, contributors);
     const latency = Date.now() - startTime;
-    logger.info("Bus factor calculation complete", { url, latency, ...result });
 
-    return { ...result, latency };
-  } catch (error) {
-    logger.error("Error calculating bus factor", {
-      url,
-      error: (error as Error).message,
-    });
-    return { busFactor: 1, normalizedScore: 0, latency: 0 };
+    logger.info("Bus Factor calculation complete", { url, score: busFactorScore, latency });
+    return { score: busFactorScore, latency };
+  } catch (error: any) {
+    logger.error(`Error calculating Bus Factor: ${error.message}`);
+    return { score: 0, latency: Date.now() - startTime };
   }
+}
+
+/**
+ * Calculates the Bus Factor score based on the number of contributors.
+ * A higher number of contributors typically indicates a lower Bus Factor.
+ * @param commits Array of commit objects.
+ * @param contributors Array of contributor objects.
+ * @returns Bus Factor score between 0 and 1.
+ */
+export function calculateBusFactor(commits: any[], contributors: any[]): number {
+  logger.debug("Calculating Bus Factor score");
+
+  const totalContributors = contributors.length;
+  if (totalContributors === 0) {
+    logger.warn("No contributors found. Assigning Bus Factor score of 0.");
+    return 0;
+  }
+
+  // For simplicity, let's define Bus Factor as the ratio of top contributors
+  // contributing to 50% of the commits.
+
+  // Sort contributors by number of commits
+  const sortedContributors = contributors
+    .map((contributor) => ({
+      login: contributor.login,
+      contributions: contributor.contributions,
+    }))
+    .sort((a, b) => b.contributions - a.contributions);
+
+  const totalCommits = commits.length;
+  let cumulativeCommits = 0;
+  let busFactorCount = 0;
+
+  for (const contributor of sortedContributors) {
+    cumulativeCommits += contributor.contributions;
+    busFactorCount++;
+    if (cumulativeCommits / totalCommits >= 0.5) {
+      break;
+    }
+  }
+
+  // Normalize Bus Factor score between 0 and 1
+  // Higher busFactorCount indicates a healthier Bus Factor
+  const normalizedScore = Math.min(busFactorCount / totalContributors, 1);
+  logger.debug(`Bus Factor Count: ${busFactorCount}, Total Contributors: ${totalContributors}, Normalized Score: ${normalizedScore}`);
+
+  return normalizedScore;
 }

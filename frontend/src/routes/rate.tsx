@@ -32,7 +32,7 @@ interface MetricsResult {
   Correctness: number;
   Correctness_Latency: number;
   BusFactor: number;
-  BusFactor_Latency: number;
+  BusFactorLatency: number;
   ResponsiveMaintainer: number;
   ResponsiveMaintainer_Latency: number;
   License: number;
@@ -147,7 +147,7 @@ function ratePackage() {
                 </div>
                 <div>
                   <strong>BusFactor Latency:</strong>{" "}
-                  {packageRating.BusFactor_Latency}
+                  {packageRating.BusFactorLatency}
                 </div>
                 <div>
                   <strong>ResponsiveMaintainer:</strong>{" "}

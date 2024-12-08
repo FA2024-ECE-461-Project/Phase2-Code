@@ -3,35 +3,20 @@ import logger from "../logger"; // Adjust the import path accordingly
 import { get_axios_params, getToken } from "../url"; // Adjust the import path accordingly
 import semver from "semver";
 
-interface DependencyResult {
+export interface DependencyResult {
   score: number;
   latency: number;
 }
 
 /**
  * Determines if a version string is pinned to at least a major and minor version.
+ * Recognizes exact versions, caret (^), and tilde (~) prefixed versions.
  * @param version The version string from package.json.
  * @returns True if the version is pinned, false otherwise.
  */
 function isVersionPinned(version: string): boolean {
-  try {
-    const range = new semver.Range(version);
-    const [semverSet] = range.set;
-
-    // Check if the range is pinned to at least major and minor
-    return semverSet.every((comparator) => {
-      return (
-        comparator.operator === "" &&
-        comparator.semver.major !== null &&
-        comparator.semver.minor !== null
-      );
-    });
-  } catch (error) {
-    logger.warn(`Invalid semver version: ${version}`, {
-      error: (error as Error).message,
-    });
-    return false;
-  }
+  const regex = /^(\^|~)?\d+\.\d+\.\d+(-[\w\d]+)?$/;
+  return regex.test(version);
 }
 
 /**
@@ -43,12 +28,14 @@ function calculatePinningScore(dependencies: {
   [key: string]: string;
 }): number {
   const totalDependencies = Object.keys(dependencies).length;
+
   if (totalDependencies === 0) {
     return 1.0;
   }
 
-  const pinnedDependencies =
-    Object.values(dependencies).filter(isVersionPinned).length;
+  const pinnedDependencies = Object.values(dependencies).filter(isVersionPinned)
+    .length;
+
   return pinnedDependencies / totalDependencies;
 }
 
@@ -68,15 +55,14 @@ async function _getDependencyPinningFractionFromPackageJson(
     const packageJsonUrl = `https://api.github.com/repos/${owner}/${repo}/contents/package.json`;
     const packageResponse = await axios.get(packageJsonUrl, { headers });
 
-    // Decode package.json content from base64
     if (packageResponse.data.content) {
       const packageContent = Buffer.from(
         packageResponse.data.content,
         "base64",
       ).toString("utf-8");
+
       const packageJson = JSON.parse(packageContent);
 
-      // Combine all dependencies
       const allDependencies: { [key: string]: string } = {
         ...packageJson.dependencies,
         ...packageJson.devDependencies,
@@ -84,9 +70,7 @@ async function _getDependencyPinningFractionFromPackageJson(
         ...packageJson.optionalDependencies,
       };
 
-      // Calculate pinning score
-      const pinningScore = calculatePinningScore(allDependencies);
-      return pinningScore;
+      return calculatePinningScore(allDependencies);
     }
 
     logger.error(`package.json content not found for ${owner}/${repo}.`);
@@ -109,27 +93,21 @@ export async function getDependencyPinningFraction(
   url: string,
 ): Promise<DependencyResult> {
   const startTime = Date.now();
-  logger.info("Starting Dependency Pinning calculation", { url });
 
   try {
-    const token = getToken(); // Fetch token internally
+    const token = getToken();
     const { owner, repo, headers } = get_axios_params(url, token);
+
+    const sanitizedRepo = repo.endsWith(".git") ? repo.slice(0, -4) : repo;
+
     const pinningScore = await _getDependencyPinningFractionFromPackageJson(
       owner,
-      repo,
+      sanitizedRepo,
       headers,
     );
     const latency = Date.now() - startTime;
 
-    // Ensure pinningScore is a number
-    const score = pinningScore ?? 0;
-
-    logger.info("Dependency Pinning calculation complete", {
-      url,
-      score,
-      latency,
-    });
-    return { score, latency };
+    return { score: pinningScore ?? 0, latency };
   } catch (error: any) {
     const latency = Date.now() - startTime;
     logger.error(

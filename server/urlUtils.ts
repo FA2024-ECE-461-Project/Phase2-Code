@@ -92,15 +92,28 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } {
   return match ? { owner: match[1], repo: match[2] } : { owner: "", repo: "" };
 }
 
-export function get_axios_params(
-  url: string,
-  token: string,
-): { owner: string; repo: string; headers: Headers } {
-  const { owner, repo } = parseGitHubUrl(url);
+function get_axios_params(url: string, token: string) {
+  const regex = /github\.com[:/](?<owner>[^/]+)\/(?<repo>[^.]+)(\.git)?$/;
+  const match = url.match(regex);
+
+  if (!match || !match.groups) {
+    throw new Error("Invalid GitHub repository URL.");
+  }
+
+  const owner = match.groups.owner;
+  let repo = match.groups.repo;
+
+  // Remove the .git suffix if present
+  if (repo.endsWith(".git")) {
+    repo = repo.slice(0, -4);
+  }
+
   const headers = {
     Authorization: `token ${token}`,
     Accept: "application/vnd.github.v3+json",
   };
-  console.log("Generated axios parameters", { owner, repo });
+
   return { owner, repo, headers };
 }
+
+

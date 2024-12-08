@@ -236,33 +236,57 @@ export const uploadToS3viaFile = async (
 };
 
 
-export const getPackageJsonUrl = (zipContent: string): string | null => {
+export const getPackageJsonUrl = (zipContent: Buffer): string | null => {
   try {
-    // Load the ZIP content
+    console.log("Initializing AdmZip with uploaded content.");
     const zip = new AdmZip(zipContent);
 
-    zip.extractAllTo("downloads", true);
-    // Find all entries in the ZIP file
+    // Log all ZIP entries
     const entries = zip.getEntries();
+    console.log("Zip Entries:");
+    entries.forEach(entry => {
+      console.log(`- ${entry.entryName}`);
+    });
 
-    // Locate the package.json file
+    // Locate the package.json file without extracting to disk
     const packageJsonEntry = entries.find(entry => entry.entryName.endsWith("package.json"));
     if (!packageJsonEntry) {
       throw new Error("package.json not found in the ZIP file.");
     }
 
-    // Read the content of package.json
+    console.log("Found package.json in the ZIP. Reading its content.");
     const packageJsonContent = packageJsonEntry.getData().toString("utf8");
     const packageJson = JSON.parse(packageJsonContent);
 
-    // Extract the URL field
-    let url = packageJson?.repository.url || null;
+    // Extract the repository URL
+    let url: string | null = packageJson?.repository?.url || null;
 
-    // Remove 'git+' prefix if present
-    if (url.startsWith("git+")) {
-      url = url.slice(4); // Remove the first 4 characters ('git+')
+    if (url) {
+      console.log(`Original repository URL: ${url}`);
+
+      // Remove 'git+' prefix if present
+      if (url.startsWith("git+")) {
+        url = url.slice(4);
+        console.log(`Removed 'git+' prefix: ${url}`);
+      }
+
+      // Parse the URL to manipulate it
+      const parsedUrl = new URL(url);
+
+      // Check if the URL contains user info (username)
+      if (parsedUrl.username) {
+        console.log(`Detected embedded username: ${parsedUrl.username}`);
+        // Remove the username for a standard repository URL
+        parsedUrl.username = '';
+        console.log(`Sanitized repository URL: ${parsedUrl.toString()}`);
+        url = parsedUrl.toString();
+      }
+
+      return url;
+    } else {
+      console.warn("Repository URL not found in package.json.");
+      return null;
     }
-    return url;
   } catch (error) {
     console.error("Error processing ZIP file:", (error as Error).message);
     return null;

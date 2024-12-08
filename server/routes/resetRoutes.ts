@@ -7,7 +7,7 @@ import {
 } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import AWS from "aws-sdk";
-import log from "../logger";
+import { log } from "../logger";
 
 // Initialize S3 client
 const s3 = new AWS.S3({

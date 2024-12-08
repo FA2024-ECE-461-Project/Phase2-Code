@@ -1,7 +1,7 @@
 import { Logger } from "tslog";
 import { appendFileSync, existsSync, truncateSync, PathLike } from "fs";
 
-const LOG_LEVELS = {
+const SERVER_LOG_LEVEL = {
   SILENT: 0,
   INFO: 1,
   DEBUG: 2,
@@ -10,9 +10,6 @@ const LOG_LEVELS = {
 const logFilePath = process.env.SERVER_LOG_FILE as PathLike;
 
 function checkLogFilePath() {
-    console.log(logFilePath);
-    console.log(existsSync(logFilePath));
-    console.log(process.env.SERVER_LOG_FILE);
   if (!logFilePath || !existsSync(logFilePath)) {
     console.error("LOG_FILE does not exist or is not set");
     process.exit(1);
@@ -20,11 +17,11 @@ function checkLogFilePath() {
 }
 
 function setLogLevel() {
-  switch (process.env.LOG_LEVEL) {
-    case String(LOG_LEVELS.INFO):
+  switch (process.env.SERVER_LOG_LEVEL) {
+    case String(SERVER_LOG_LEVEL.INFO):
       log.settings.minLevel = 3; // information messages
       break;
-    case String(LOG_LEVELS.DEBUG):
+    case String(SERVER_LOG_LEVEL.DEBUG):
       log.settings.minLevel = 2; // debug messages
       break;
     default:

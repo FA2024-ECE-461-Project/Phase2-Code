@@ -1,11 +1,18 @@
-import axios from "axios";
-import {
-  getToken,
-  parseGitHubUrl,
-  get_axios_params,
-  getCommitsAndContributors,
-} from "../url";
-import logger from "../logger";
+import { Octokit } from "@octokit/rest";
+
+interface Commit {
+  hash: string;
+  authorName: string;
+  authorEmail: string;
+  date: string;
+  message: string;
+}
+
+interface Contributor {
+  name: string;
+  email: string;
+  commitCount: number;
+}
 
 interface BusFactorResult {
   busFactor: number;
@@ -14,29 +21,23 @@ interface BusFactorResult {
 }
 
 function calculateBusFactor(
-  commits: any[],
-  contributors: any[],
+  commits: Commit[],
+  contributors: Contributor[],
 ): Omit<BusFactorResult, "latency"> {
-  logger.debug("Calculating bus factor", {
-    commitCount: commits.length,
-    contributorCount: contributors.length,
-  });
+
 
   const commitCounts: { [key: string]: number } = {};
 
   commits.forEach((commit) => {
-    const author = commit.commit.author.name;
-    commitCounts[author] = (commitCounts[author] || 0) + 1;
+    const authorKey = `${commit.authorName} <${commit.authorEmail}>`; // Unique key
+    commitCounts[authorKey] = (commitCounts[authorKey] || 0) + 1;
   });
 
   const totalCommits = commits.length;
   const totalContributors = contributors.length;
 
+
   if (totalCommits === 0 || totalContributors === 0) {
-    logger.warn("Repository has no commits or contributors", {
-      totalCommits,
-      totalContributors,
-    });
     return { busFactor: 1, normalizedScore: 0 };
   }
 
@@ -48,8 +49,9 @@ function calculateBusFactor(
   for (const count of sortedContributions) {
     accumulatedCommits += count;
     busFactor++;
-    if (accumulatedCommits > totalCommits * 0.8) break; // Increased from 0.5 to 0.8
+    if (accumulatedCommits > totalCommits * 0.8) break; // Adjust threshold as needed
   }
+
 
   const normalizedScore = normalizeScore(
     busFactor,
@@ -57,10 +59,7 @@ function calculateBusFactor(
     totalCommits,
   );
 
-  logger.debug("Bus factor calculation complete", {
-    busFactor,
-    normalizedScore,
-  });
+
   return { busFactor, normalizedScore };
 }
 
@@ -69,17 +68,8 @@ function normalizeScore(
   totalContributors: number,
   totalCommits: number,
 ): number {
-  logger.debug("Normalizing bus factor score", {
-    busFactor,
-    totalContributors,
-    totalCommits,
-  });
 
   if (totalContributors === 0 || totalCommits < 20) {
-    logger.warn(
-      "Repository has too few contributors or commits for meaningful score",
-      { totalContributors, totalCommits },
-    );
     return 0; // Penalize repos with very few commits
   }
 
@@ -88,42 +78,83 @@ function normalizeScore(
 
   let score = contributorRatio * (totalCommits / commitThreshold);
 
+
+  // Normalize score to be within [0,1]
+  score = score / 100; // Adjust scaling as needed
+
   // Penalize projects with very few contributors
   if (totalContributors < 3) {
-    logger.info("Applying penalty for low contributor count", {
+    console.info("Applying penalty for low contributor count", {
       totalContributors,
     });
     score *= 0.5;
   }
 
   const finalScore = Math.max(0, Math.min(1, score));
-  logger.debug("Normalized score calculated", { finalScore });
+
   return finalScore;
 }
 
-export async function get_bus_factor(url: string): Promise<BusFactorResult> {
+export async function get_bus_factor(owner: string, repo: string): Promise<BusFactorResult> {
+  const octokit = new Octokit({
+    auth: process.env.GITHUB_TOKEN,
+  });
+
   const startTime = Date.now();
-  logger.info("Starting bus factor calculation", { url });
 
   try {
-    const { owner, repo, headers } = get_axios_params(url, getToken());
-    logger.debug("Fetching commits and contributors", { owner, repo });
-    const { commits, contributors } = await getCommitsAndContributors(
-      owner,
-      repo,
-      headers,
-    );
-    const result = calculateBusFactor(commits, contributors);
+    let commits: Commit[] = [];
+    let page = 1;
+    const per_page = 100;
+
+    while (true) {
+      const response = await octokit.repos.listCommits({
+        owner,
+        repo,
+        per_page,
+        page,
+      });
+
+      if (response.data.length === 0) break;
+
+      const fetchedCommits: Commit[] = response.data.map(commit => ({
+        hash: commit.sha,
+        authorName: commit.commit.author?.name || "Unknown",
+        authorEmail: commit.commit.author?.email || "unknown@example.com",
+        date: commit.commit.author?.date || "",
+        message: commit.commit.message,
+      }));
+
+      commits = commits.concat(fetchedCommits);
+      page++;
+    }
+
+
+    // Extract contributors
+    const contributorMap: { [key: string]: Contributor } = {};
+
+    commits.forEach((commit) => {
+      const key = `${commit.authorName} <${commit.authorEmail}>`; // Unique key
+      if (!contributorMap[key]) {
+        contributorMap[key] = {
+          name: commit.authorName,
+          email: commit.authorEmail,
+          commitCount: 1,
+        };
+      } else {
+        contributorMap[key].commitCount += 1;
+      }
+    });
+
+    const contributors: Contributor[] = Object.values(contributorMap);
+
+    // Calculate Bus Factor
+    const busFactorResult = calculateBusFactor(commits, contributors);
 
     const latency = Date.now() - startTime;
-    logger.info("Bus factor calculation complete", { url, latency, ...result });
 
-    return { ...result, latency };
+    return { ...busFactorResult, latency };
   } catch (error) {
-    logger.error("Error calculating bus factor", {
-      url,
-      error: (error as Error).message,
-    });
     return { busFactor: 1, normalizedScore: 0, latency: 0 };
   }
 }

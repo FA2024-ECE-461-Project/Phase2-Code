@@ -45,17 +45,6 @@ const COMPATIBLE_LICENSES: LicenseDefinition[] = [
   { name: "Zlib", pattern: /\bZLIB\b/i }, // match ZLIB
 ];
 
-//old const COMPATIBLE_LICENSES = [
-//     { name: 'GNU LESSER GENERAL PUBLIC LICENSE V2.1', keywords: ['LGPL', 'GNU LESSER GENERAL PUBLIC LICENSE', '2.1'] },
-//     { name: 'GNU GENERAL PUBLIC LICENSE V2', keywords: ['GPL', 'GNU GENERAL PUBLIC LICENSE', '2'] },
-//     { name: 'GNU GENERAL PUBLIC LICENSE V3', keywords: ['GPL', 'GNU GENERAL PUBLIC LICENSE', '3'] },
-//     { name: 'MIT LICENSE', keywords: ['MIT'] },
-//     { name: 'BSD 2-CLAUSE LICENSE', keywords: ['BSD', '2-CLAUSE'] },
-//     { name: 'BSD 3-CLAUSE LICENSE', keywords: ['BSD', '3-CLAUSE'] },
-//     { name: 'APACHE LICENSE 2.0', keywords: ['APACHE', '2.0'] },
-//     { name: 'ZLIB LICENSE', keywords: ['ZLIB'] },
-// ];
-
 interface LicenseResult {
   score: number;
   latency: number;
@@ -69,7 +58,11 @@ export async function get_license_compatibility(
 
   try {
     const license = await getLicense(repoPath);
+    logger.debug("Extracted License Text:", { license });
+
     const compatible = license ? checkLicenseCompatibility(license) : false;
+    logger.debug(`Is Compatible: ${compatible}`);
+
     const score = compatible ? 1 : 0;
 
     const endTime = Date.now();
@@ -95,66 +88,86 @@ export async function get_license_compatibility(
 
 export async function getLicense(repoPath: string): Promise<string | null> {
   logger.debug("Searching for license file", { repoPath });
-  // Check for LICENSE file first
-  const files = fs.readdirSync(repoPath);
-  const licenseFile = files.find((file) =>
-    file.toLowerCase().startsWith("license"),
-  );
-  if (licenseFile) {
-    logger.debug("License file found", { licenseFile });
-    const licenseContent = fs.readFileSync(
-      path.join(repoPath, licenseFile),
-      "utf-8",
-    );
+
+  // Use recursive search to find LICENSE files and README.md
+  const licenseFiles = findFiles(repoPath, /^LICENSE/i);
+  if (licenseFiles.length > 0) {
+    const licenseFilePath = licenseFiles[0];
+    logger.debug("License file found", { licenseFilePath });
+
+    const licenseContent = fs.readFileSync(licenseFilePath, "utf-8");
+    logger.debug(`License content from ${licenseFilePath}`, { licenseContent });
     return licenseContent;
   }
 
-  // If no LICENSE file, check README.md
-  logger.debug("No license file found, checking README.md", { repoPath });
-  const readmePath = path.join(repoPath, "README.md");
-  if (fs.existsSync(readmePath)) {
-    const readmeContent = fs.readFileSync(readmePath, "utf-8");
+  // If no LICENSE file, search for README.md files and extract license info
+  const readmeFiles = findFiles(repoPath, /^README\.md$/i);
+  if (readmeFiles.length > 0) {
+    const readmeFilePath = readmeFiles[0];
+    logger.debug("README.md file found", { readmeFilePath });
+
+    const readmeContent = fs.readFileSync(readmeFilePath, "utf-8");
+    logger.debug(`README.md content from ${readmeFilePath}`, { readmeContent });
+
     const license = extractLicenseFromReadme(readmeContent);
     if (license) {
-      logger.debug("License information found in README.md");
+      logger.debug("License information extracted from README.md", { license });
+      return license;
     } else {
       logger.warn("No license information found in README.md");
     }
-    return license;
   }
 
   logger.warn("No license information found in repository", { repoPath });
   return null;
 }
 
+// Helper function to recursively find files matching a pattern
+function findFiles(dir: string, pattern: RegExp): string[] {
+  let results: string[] = [];
+  const list = fs.readdirSync(dir);
+  list.forEach((file) => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(findFiles(filePath, pattern));
+    } else {
+      if (pattern.test(file)) {
+        results.push(filePath);
+      }
+    }
+  });
+  return results;
+}
+
 function extractLicenseFromReadme(readmeContent: string): string | null {
   const licenseRegex = /#+\s*Licen[cs]e\s*([\s\S]*?)(?=#+|$)/i;
   const match = readmeContent.match(licenseRegex);
   if (match) {
-    logger.debug("License information extracted from README.md");
+    logger.debug("License information extracted from README.md", { licenseSection: match[1].trim() });
     return match[1].trim();
   }
   logger.debug("No license information found in README.md");
   return null;
 }
 
-// export function checkLicenseCompatibility(licenseText: string): boolean {
-//     if(!licenseText) return false;
-//     const upperCaseLicense = licenseText.toUpperCase(); // Convert to uppercase for case-insensitive comparison
-
-//     return COMPATIBLE_LICENSES.some(license => {
-//         return license.keywords.every(keyword => upperCaseLicense.includes(keyword.toUpperCase()));
-//     });
-// }
-
 export function checkLicenseCompatibility(licenseText: string): boolean {
   if (!licenseText) return false; // If no license text, return false
 
-  return COMPATIBLE_LICENSES.some((license) => {
+  logger.debug("Checking license compatibility for license text", { licenseText });
+
+  const compatibilityResult = COMPATIBLE_LICENSES.some((license) => {
     if ("patterns" in license) {
       // Check if license has multiple patterns
-      return license.patterns.some((pattern) => pattern.test(licenseText)); // Check if any pattern matches
+      const match = license.patterns.some((pattern) => pattern.test(licenseText));
+      logger.debug(`Checking against ${license.name} with multiple patterns: ${match}`, { licenseName: license.name });
+      return match; // Check if any pattern matches
     }
-    return license.pattern.test(licenseText); // Check if the pattern matches
+    const match = license.pattern.test(licenseText);
+    logger.debug(`Checking against ${license.name}: ${match}`, { licenseName: license.name });
+    return match; // Check if the pattern matches
   });
+
+  logger.debug(`License compatibility result: ${compatibilityResult}`);
+  return compatibilityResult;
 }

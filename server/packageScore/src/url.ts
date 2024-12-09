@@ -156,22 +156,86 @@ export async function getNpmPackageGitHubUrl(
 }
 
 export function parseGitHubUrl(url: string): { owner: string; repo: string } {
-  logger.debug("Parsing GitHub URL", { url });
-  const match = url.match(/github.com\/([^/]+)\/([^/]+)/);
-  return match ? { owner: match[1], repo: match[2] } : { owner: "", repo: "" };
+  // Remove 'git+' prefix if present
+  if (url.startsWith('git+')) {
+    url = url.slice(4);
+  }
+
+  // Remove trailing '.git' suffix if present
+  if (url.endsWith('.git')) {
+    url = url.slice(0, -4);
+  }
+
+  // Regular expression to match GitHub HTTPS URLs
+  const httpsRegex = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)$/i;
+  let match = url.match(httpsRegex);
+  if (match) {
+    return { owner: match[1], repo: match[2] };
+  }
+
+  // Regular expression to match GitHub SSH URLs
+  const sshRegex = /^git@github\.com:([^\/]+)\/([^\/]+)$/i;
+  match = url.match(sshRegex);
+  if (match) {
+    return { owner: match[1], repo: match[2] };
+  }
+
+  // If URL does not match known patterns, return empty strings
+  return { owner: '', repo: '' };
 }
 
-export function get_axios_params(
-  url: string,
-  token: string,
-): { owner: string; repo: string; headers: any } {
-  const { owner, repo } = parseGitHubUrl(url);
-  const headers = {
-    Authorization: `token ${token}`,
-    Accept: "application/vnd.github.v3+json",
-  };
-  logger.debug("Generated axios parameters", { owner, repo });
-  return { owner, repo, headers };
+interface AxiosParams {
+  owner: string;
+  repo: string;
+  headers: { [key: string]: string };
+}
+
+export function get_axios_params(repoUrl: string, token: string): AxiosParams {
+  try {
+    let owner = '';
+    let repo = '';
+
+    // Remove the '.git' suffix if present
+    if (repoUrl.endsWith('.git')) {
+      repoUrl = repoUrl.slice(0, -4);
+    }
+
+    // Handle SSH URLs (e.g., git@github.com:owner/repo)
+    if (repoUrl.startsWith('git@')) {
+      const sshRegex = /git@[^:]+:([^/]+)\/(.+)/;
+      const match = repoUrl.match(sshRegex);
+      if (match) {
+        owner = match[1];
+        repo = match[2];
+      }
+    } else {
+      // Handle HTTPS URLs
+      const parsedUrl = new URL(repoUrl);
+      const pathname = parsedUrl.pathname; // e.g., /owner/repo
+      const pathParts = pathname.split('/').filter(part => part.length > 0);
+      if (pathParts.length >= 2) {
+        owner = pathParts[0];
+        repo = pathParts[1];
+      }
+    }
+
+    if (!owner || !repo) {
+      throw new Error(`Unable to parse owner and repo from URL: ${repoUrl}`);
+    }
+
+    // Construct headers for GitHub API
+    const headers = {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+    };
+
+    logger.debug(`Parsed GitHub URL. Owner: ${owner}, Repo: ${repo}`);
+
+    return { owner, repo, headers };
+  } catch (error: any) {
+    logger.error(`Error parsing GitHub URL: ${repoUrl}`, { error: error.message });
+    throw new Error(`Invalid GitHub URL: ${repoUrl}`);
+  }
 }
 
 export async function getReadmeContent(
@@ -495,6 +559,7 @@ export async function getCodeReviewLines(
 
     if (Pulls.data.length == 0) {
       logger.warn("No pull requests found", { owner, repo });
+      console.log("No pull requests found");
       return 0;
     }
 

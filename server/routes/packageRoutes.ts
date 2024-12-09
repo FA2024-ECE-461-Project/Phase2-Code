@@ -456,7 +456,7 @@ export const packageRoutes = new Hono()
         return c.json({ error: "Failed to calculate the cost of the package" }, 500);
       }
       removeDownloadedFile(path);
-      return c.json({ [id]: { totalcost: cost} });
+      return c.json({ [id]: { totalCost: cost} });
     }
     else if (dependency === "true") {
       // Calculate the cost of the package
@@ -479,7 +479,7 @@ export const packageRoutes = new Hono()
       if (cost === -1) {
         return c.json({ error: "Failed to calculate the cost of the package" }, 500);
       }
-      return c.json({ [id]: { totalcost: cost} });
+      return c.json({ [id]: { totalCost: cost} });
     }
   })
 

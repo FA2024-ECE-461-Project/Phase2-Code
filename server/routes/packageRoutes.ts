@@ -33,6 +33,7 @@ import {
   removeDownloadedFile,
   removeFileFromS3,
   FailedDependencyError,
+  parseGitHubUrl1,
   InvalidInputError,
 } from "../packageUtils";
 import { processUrl, processSingleUrl, MetricsResult } from "../packageScore/src/index";
@@ -42,6 +43,7 @@ import AWS from "aws-sdk";
 import AdmZip from "adm-zip";
 import fs from "fs";
 import path from "path";
+import { OwnerOverride } from "@aws-sdk/client-s3";
 
 // ... [Other imports remain unchanged]
 
@@ -168,7 +170,8 @@ export const packageRoutes = new Hono()
         throw new Error("Failed to extract metadata from the package");
       }
       // Rate the package
-      const metrics = await processUrl(metadata.URL, extractedDir);
+      const { owner, repo } = parseGitHubUrl1(metadata.URL);
+      const metrics = await processUrl(metadata.URL, extractedDir, owner, repo);
 
       // Define your score threshold
       const SCORE_THRESHOLD = 0.5; // Adjust based on your criteria
@@ -182,7 +185,7 @@ export const packageRoutes = new Hono()
       }
 
       // If rating passes, proceed to upload
-      s3Key = 'packages/${metadata.Name}-${metadata.Version}.zip';
+      s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
 
 
       if (zipBuffer && s3Key) {

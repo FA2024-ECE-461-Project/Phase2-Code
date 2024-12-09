@@ -156,21 +156,47 @@ export async function getNpmPackageGitHubUrl(
 }
 
 export function parseGitHubUrl(url: string): { owner: string; repo: string } {
-  logger.debug("Parsing GitHub URL", { url });
-  const match = url.match(/github.com\/([^/]+)\/([^/]+)/);
-  return match ? { owner: match[1], repo: match[2] } : { owner: "", repo: "" };
+  // Remove 'git+' prefix if present
+  if (url.startsWith('git+')) {
+    url = url.slice(4);
+  }
+
+  // Remove trailing '.git' suffix if present
+  if (url.endsWith('.git')) {
+    url = url.slice(0, -4);
+  }
+
+  // Regular expression to match GitHub HTTPS URLs
+  const httpsRegex = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)$/i;
+  let match = url.match(httpsRegex);
+  if (match) {
+    return { owner: match[1], repo: match[2] };
+  }
+
+  // Regular expression to match GitHub SSH URLs
+  const sshRegex = /^git@github\.com:([^\/]+)\/([^\/]+)$/i;
+  match = url.match(sshRegex);
+  if (match) {
+    return { owner: match[1], repo: match[2] };
+  }
+
+  // If URL does not match known patterns, return empty strings
+  return { owner: '', repo: '' };
 }
 
-export function get_axios_params(
-  url: string,
-  token: string,
-): { owner: string; repo: string; headers: any } {
+export function get_axios_params(url: string, token: string): { owner: string; repo: string; headers: any } {
   const { owner, repo } = parseGitHubUrl(url);
+
+  if (!owner || !repo) {
+    logger.error("Invalid GitHub URL. Unable to parse owner and repo.", { url });
+    return { owner: '', repo: '', headers: {} };
+  }
+
   const headers = {
     Authorization: `token ${token}`,
     Accept: "application/vnd.github.v3+json",
   };
-  logger.debug("Generated axios parameters", { owner, repo });
+
   return { owner, repo, headers };
 }
 

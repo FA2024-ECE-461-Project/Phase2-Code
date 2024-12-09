@@ -36,7 +36,7 @@ export interface MetricsResult {
   DependencyMetric_Latency: number;
 }
 
-export async function processUrl(url: string, extractedDir: string): Promise<MetricsResult> {
+export async function processUrl(url: string, extractedDir: string, owner: string, repo: string): Promise<MetricsResult> {
   try {
     const startTime = Date.now();
 
@@ -50,7 +50,7 @@ export async function processUrl(url: string, extractedDir: string): Promise<Met
       DependencyResult,
     ] = await Promise.all([
       getCorrectnessMetric(extractedDir),
-      get_bus_factor(extractedDir),
+      get_bus_factor(owner, repo),
       get_license_compatibility(extractedDir),
       get_ramp_up_time_metric(extractedDir),
       calculateResponsiveness(extractedDir),

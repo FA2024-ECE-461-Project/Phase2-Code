@@ -18,10 +18,12 @@ export async function getCorrectnessMetric(
 ): Promise<CorrectnessResult> {
   const startTime = Date.now();
   logger.info("Starting correctness metric calculation", { url: gitHubUrl });
+  console.log("Correctness metric calculation started", { gitHubUrl });
 
   try {
     const token = getToken();
     const { owner, repo, headers } = get_axios_params(gitHubUrl, token);
+    console.log("Axios parameters", { owner, repo, headers });
 
     logger.debug("Fetching issues and pull requests data", { owner, repo });
     // Fetch data for issues and pull requests concurrently
@@ -31,6 +33,13 @@ export async function getCorrectnessMetric(
       getOpenPRs(owner, repo, headers),
       getClosedPRs(owner, repo, headers),
     ]);
+
+    console.log("Fetched data", {
+      openIssues,
+      closedIssues,
+      openPRs,
+      closedPRs,
+    });
 
     const totalIssues = openIssues + closedIssues;
     const totalPRs = openPRs + closedPRs;
@@ -51,6 +60,7 @@ export async function getCorrectnessMetric(
       totalPRs,
       closedPRs,
     );
+    console.log("Correctness score calculated", { correctnessScore });
 
     const latency = Date.now() - startTime;
 
@@ -68,6 +78,10 @@ export async function getCorrectnessMetric(
     logger.error("Error calculating correctness metric", {
       url: gitHubUrl,
       error: (error as Error).message,
+    });
+    console.error("Error in correctness metric calculation", {
+      gitHubUrl,
+      error: error,
     });
     return {
       score: 0,
@@ -91,6 +105,7 @@ function calculateCorrectnessScore(
 
   if (totalIssues + totalPRs === 0) {
     logger.warn("No issues or PRs found for repository");
+    console.warn("No issues or PRs found, returning score of 0");
     return 0; // If there are no issues or PRs, return 0
   }
 
@@ -112,7 +127,7 @@ function calculateCorrectnessScore(
 
   const clampedScore = Math.min(Math.max(finalScore, 0), 1); // Ensure score is between 0 and 1
 
-  logger.debug("Correctness score calculated", {
+  console.log("Detailed score breakdown", {
     issueResolutionRate,
     prMergeRate,
     weightedScore,

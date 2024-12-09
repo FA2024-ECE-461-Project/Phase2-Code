@@ -455,3 +455,24 @@ export async function removeFileFromS3(objectKey: string): Promise<void> {
     throw new Error("Failed to remove file from S3.");
   }
 }
+
+
+export function parseGitHubUrl1(url: string): { owner: string, repo: string }{
+  // Remove 'git+' prefix if present
+  const cleanUrl = url.replace(/^git\+/, '');
+
+  try {
+    const urlObj = new URL(cleanUrl);
+    const pathParts = urlObj.pathname.split('/').filter(part => part.trim() !== '');
+
+    if (pathParts.length >= 2) {
+      const owner = pathParts[0];
+      const repo = pathParts[1].replace(/\.git$/, ''); // Remove .git suffix if present
+      return { owner, repo };
+    }
+  } catch (error) {
+    console.error("Error parsing GitHub URL:", error);
+
+  }
+
+}

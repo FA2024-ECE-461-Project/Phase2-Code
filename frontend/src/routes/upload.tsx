@@ -94,19 +94,22 @@ function uploadPackage() {
   });
 
   // Handler for file input change
-  const handleFileChange = (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // Remove the 'data:*/*;base64,' prefix if present
-      const result = reader.result as string;
-      const base64String = result.includes(",") ? result.split(",")[1] : result;
-      field.handleChange(base64String);
+  const handleFileChange =
+    (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Remove the 'data:*/*;base64,' prefix if present
+          const result = reader.result as string;
+          const base64String = result.includes(",")
+            ? result.split(",")[1]
+            : result;
+          field.handleChange(base64String);
+        };
+        reader.readAsDataURL(file);
+      }
     };
-    reader.readAsDataURL(file);
-  }
-};
 
   return (
     <div className="flex flex-col items-center justify-center p-4">

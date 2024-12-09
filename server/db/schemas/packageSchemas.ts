@@ -6,15 +6,12 @@ import { Name } from "drizzle-orm";
 import { S3 } from "aws-sdk";
 
 // Packages Table with References
-export const packages = pgTable(
-  "packages",
-  {
-    ID: varchar("id", { length: 255 }).primaryKey(),
-    Name: varchar("name", { length: 255 }).notNull(),
-    Version: varchar("version", { length: 20 }).notNull(),
-    S3: text("S3_Path"), // Optional field for direct package content
-  }
-);
+export const packages = pgTable("packages", {
+  ID: varchar("id", { length: 255 }).primaryKey(),
+  Name: varchar("name", { length: 255 }).notNull(),
+  Version: varchar("version", { length: 20 }).notNull(),
+  S3: text("S3_Path"), // Optional field for direct package content
+});
 
 export const packageMetadata = pgTable(
   "package_metadata",
@@ -67,13 +64,19 @@ export const packageRating = pgTable(
     BusFactor: varchar("bus_factor", { length: 255 }),
     BusFactor_Latency: varchar("bus_factor_latency", { length: 255 }),
     ResponsiveMaintainer: varchar("responsive_maintainer", { length: 255 }),
-    ResponsiveMaintainer_Latency: varchar("responsive_maintainer_latency", { length: 255 }),
+    ResponsiveMaintainer_Latency: varchar("responsive_maintainer_latency", {
+      length: 255,
+    }),
     License: varchar("license", { length: 255 }),
     License_Latency: varchar("license_latency", { length: 255 }),
     PR_Code_Reviews: varchar("pr_code_reviews", { length: 255 }),
-    PR_Code_Reviews_Latency: varchar("pr_code_reviews_latency", { length: 255 }),
+    PR_Code_Reviews_Latency: varchar("pr_code_reviews_latency", {
+      length: 255,
+    }),
     DependencyMetric: varchar("dependency_metric", { length: 255 }),
-    DependencyMetric_Latency: varchar("dependency_metric_latency", { length: 255 }),
+    DependencyMetric_Latency: varchar("dependency_metric_latency", {
+      length: 255,
+    }),
   },
   (package_rate) => [
     index("package_id").on(package_rate.ID), // Index for id lookups

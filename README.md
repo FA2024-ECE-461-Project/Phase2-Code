@@ -2,7 +2,6 @@
 
 All Code required for phase 2 to work
 
-
 ## Instructions/Tips for Working on the Code Locally
 
 Assume this repo is cloned, and the `bun` JavaScript runtime is installed on local machines.
@@ -15,11 +14,12 @@ Assume this repo is cloned, and the `bun` JavaScript runtime is installed on loc
 6. (Optional) run `bunx drizzle-kit studio` in the terminal session that's in the root directory of the project to see what's in the database
 
 ## Download from s3
-- This helper will be written in ``server/packageUtils.ts`` and should be able to use elsewhere in this codebase
+
+- This helper will be written in `server/packageUtils.ts` and should be able to use elsewhere in this codebase
 
 ## Notes on Team 7's code
-*It's very different, and it does take time to be familiarized* &emsp; --Nick Ko
 
+_It's very different, and it does take time to be familiarized_ &emsp; --Nick Ko
 
 **Actual Notes**:
 
@@ -29,5 +29,6 @@ Assume this repo is cloned, and the `bun` JavaScript runtime is installed on loc
 4. Functions that clone and remove repositories are all in `server\packageScore\src\index.ts`, namely `cloneRepository` and `removeRepo`
 
 ## CD Notes:
--  We just use the GitHub machine to build our frontend/dist and server.js for backend, then scp them onto our EC2 instance
-- Our reverseproxy Caddy will be restarted after we restart our app (running ``bun server.js``)
+
+- We just use the GitHub machine to build our frontend/dist and server.js for backend, then scp them onto our EC2 instance
+- Our reverseproxy Caddy will be restarted after we restart our app (running `bun server.js`)

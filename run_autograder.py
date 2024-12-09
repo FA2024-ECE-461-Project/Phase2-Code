@@ -29,7 +29,7 @@ def main():
         "Jimmy Ho", "Gaurav Vermani", "Ryan Lin", "Nick Ko"
     ],
     "gh_token": os.getenv("GITHUB_TOKEN"),
-    "endpoint": f"{SITE_URL}api",
+    "endpoint": f"http://localhost:3000/api",
     "fe_endpoint": SITE_URL
   }
 

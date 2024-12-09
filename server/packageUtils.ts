@@ -8,12 +8,12 @@ import {
 } from "./urlUtils";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { readFileSync } from "fs";
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 import axios from "axios";
 import * as dotenv from "dotenv";
-import AWS from 'aws-sdk';
-import AdmZip from 'adm-zip';
+import AWS from "aws-sdk";
+import AdmZip from "adm-zip";
 import { string } from "zod";
 import { bool } from "aws-sdk/clients/signer";
 
@@ -89,7 +89,11 @@ export async function getPackageNameVersion(
   return { Name, Version };
 }
 
-export async function uploadToS3viaBuffer(buffer: Buffer, key: string, contentType: string): Promise<{ success: boolean; url?: string; error?: string }> {
+export async function uploadToS3viaBuffer(
+  buffer: Buffer,
+  key: string,
+  contentType: string,
+): Promise<{ success: boolean; url?: string; error?: string }> {
   const params = {
     Bucket: process.env.S3_BUCKET_NAME!, // Ensure this environment variable is set
     Key: key, // e.g., 'packages/Default-Name-1.0.0.zip'
@@ -102,7 +106,7 @@ export async function uploadToS3viaBuffer(buffer: Buffer, key: string, contentTy
     await s3.putObject(params).promise();
 
     // Generate a pre-signed URL valid for 1 hour
-    const url = s3.getSignedUrl('getObject', {
+    const url = s3.getSignedUrl("getObject", {
       Bucket: params.Bucket,
       Key: params.Key,
       Expires: 60 * 60, // 1 hour
@@ -116,37 +120,45 @@ export async function uploadToS3viaBuffer(buffer: Buffer, key: string, contentTy
 }
 
 
-export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string, URL: string } {
+export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string, Url: string } {
   const zip = new AdmZip(buffer);
   const zipEntries = zip.getEntries();
 
   // Log all entries for debugging
   console.log("Zip Entries:");
-  zipEntries.forEach(entry => {
+  zipEntries.forEach((entry) => {
     console.log(`- ${entry.entryName}`);
   });
 
   // Search for package.json in any directory within the zip
-  const packageJsonEntry = zipEntries.find(entry => entry.entryName.endsWith('package.json'));
+  const packageJsonEntry = zipEntries.find((entry) =>
+    entry.entryName.endsWith("package.json"),
+  );
 
   if (!packageJsonEntry) {
-    throw new Error('package.json not found in the zip file');
+    throw new Error("package.json not found in the zip file");
   }
 
-  const packageJsonStr = packageJsonEntry.getData().toString('utf-8');
+  const packageJsonStr = packageJsonEntry.getData().toString("utf-8");
 
-  let packageJson: { name?: string; version?: string; repository?: {url?: string} };
+  let packageJson: { name?: string; version?: string; repository?: { url?: string } };
   try {
     packageJson = JSON.parse(packageJsonStr);
   } catch (error) {
-    throw new Error('Invalid package.json format');
+    throw new Error("Invalid package.json format");
   }
+
+  // Extract the repository URL from package.json if it exists
+  console.log('Package JSON Name:', packageJson.name);
+  console.log('Package JSON Version:', packageJson.version);
+  console.log('Package JSON URL:', packageJson.repository?.url);
+  const url = packageJson.repository?.url || '';
 
   const Name = packageJson.name || 'Default-Name';
   const Version = packageJson.version || '1.0.0';
-  const URL = packageJson.repository?.url || "";
+  const Url = url || '';
 
-  return { Name, Version, URL };
+  return { Name, Version, Url };
 }
 
 export function removeDotGitFolderFromZip(buffer: Buffer): string {
@@ -154,15 +166,17 @@ export function removeDotGitFolderFromZip(buffer: Buffer): string {
   const zipEntries = zip.getEntries();
 
   // Filter out the .git folder
-  const newEntries = zipEntries.filter(entry => !entry.entryName.startsWith('.git/'));
+  const newEntries = zipEntries.filter(
+    (entry) => !entry.entryName.startsWith(".git/"),
+  );
 
   // Create a new zip file with the filtered entries
   const newZip = new AdmZip();
-  newEntries.forEach(entry => {
+  newEntries.forEach((entry) => {
     newZip.addFile(entry.entryName, entry.getData());
   });
   // encode new zip file to base64 string
-  return newZip.toBuffer().toString('base64');
+  return newZip.toBuffer().toString("base64");
 }
 
 // export async function downloadGitHubZip(
@@ -212,7 +226,7 @@ export function removeDotGitFolderFromZip(buffer: Buffer): string {
 
 export const uploadToS3viaFile = async (
   filePath: string,
-  objectKey: string
+  objectKey: string,
 ): Promise<void> => {
   try {
     // Create an S3 client
@@ -236,7 +250,6 @@ export const uploadToS3viaFile = async (
   }
 };
 
-
 export const getPackageJsonUrl = (zipContent: string): string | null => {
   try {
     // Load the ZIP content
@@ -247,7 +260,9 @@ export const getPackageJsonUrl = (zipContent: string): string | null => {
     const entries = zip.getEntries();
 
     // Locate the package.json file
-    const packageJsonEntry = entries.find(entry => entry.entryName.endsWith("package.json"));
+    const packageJsonEntry = entries.find((entry) =>
+      entry.entryName.endsWith("package.json"),
+    );
     if (!packageJsonEntry) {
       throw new Error("package.json not found in the ZIP file.");
     }
@@ -292,7 +307,9 @@ export async function npmUrlToGitHubUrl(url: string): Promise<string | null> {
 }
 
 // 2. Get owner, repo, and default branch from a GitHub URL
-export async function getOwnerRepoAndDefaultBranchFromGithubUrl(githubUrl: string): Promise<{ owner: string; repo: string; defaultBranch: string } | null> {
+export async function getOwnerRepoAndDefaultBranchFromGithubUrl(
+  githubUrl: string,
+): Promise<{ owner: string; repo: string; defaultBranch: string } | null> {
   const { owner, repo } = parseGitHubUrl(githubUrl);
   if (!owner || !repo) return null;
 
@@ -303,7 +320,10 @@ export async function getOwnerRepoAndDefaultBranchFromGithubUrl(githubUrl: strin
   };
 
   try {
-    const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+    const response = await axios.get(
+      `https://api.github.com/repos/${owner}/${repo}`,
+      { headers },
+    );
     const data = response.data;
     const defaultBranch = data.default_branch;
     return { owner, repo, defaultBranch };
@@ -319,7 +339,7 @@ export async function downloadGitHubZip(
   repo: string,
   branch: string,
   outputDir: string,
-  fileName: string
+  fileName: string,
 ): Promise<boolean> {
   try {
     // Construct the ZIP URL using the provided branch
@@ -329,7 +349,7 @@ export async function downloadGitHubZip(
       headers: {
         Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
       },
-      responseType: 'arraybuffer',
+      responseType: "arraybuffer",
     });
 
     // Ensure output directory exists
@@ -348,7 +368,9 @@ export async function downloadGitHubZip(
   }
 }
 
-export async function downloadZipFromS3ToWorkingDirectory(key: string): Promise<string> {
+export async function downloadZipFromS3ToWorkingDirectory(
+  key: string,
+): Promise<string> {
   const params = {
     Bucket: process.env.S3_BUCKET_NAME!, // Ensure this environment variable is set
     Key: key, // e.g., 'packages/Default-Name-1.0.0.zip'
@@ -357,25 +379,27 @@ export async function downloadZipFromS3ToWorkingDirectory(key: string): Promise<
     const data = await s3.getObject(params).promise();
     const filePath = path.join(process.cwd(), path.basename(key));
     fs.writeFileSync(filePath, data.Body as Buffer);
-    console.log('File downloaded successfully to:', filePath);
+    console.log("File downloaded successfully to:", filePath);
     return filePath;
-  } catch(error) {
-    console.error('Error downloading file:', error);
+  } catch (error) {
+    console.error("Error downloading file:", error);
     throw error;
   }
 }
 
-export function removeDownloadedFile(filePath: string): boolean{
+export function removeDownloadedFile(filePath: string): boolean {
   fs.unlinkSync(filePath);
-  if(!fs.existsSync(filePath)){
-    console.log('File removed successfully:', filePath);
+  if (!fs.existsSync(filePath)) {
+    console.log("File removed successfully:", filePath);
     return true;
   }
   return false;
 }
 
-
-export function isMoreRecentVersion(newVersion: string, latestVersion: string): boolean {
+export function isMoreRecentVersion(
+  newVersion: string,
+  latestVersion: string,
+): boolean {
   const newParts = newVersion.split(".").map(Number);
   const latestParts = latestVersion.split(".").map(Number);
 

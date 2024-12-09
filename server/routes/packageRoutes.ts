@@ -708,14 +708,14 @@ export const packageRoutes = new Hono()
     }
 
     // get the url from the package data
-    const packageData = await db
-      .select()
-      .from(packageDataTable)
-      .where(eq(packageDataTable.ID, packageResult.ID))
-      .then((res) => res[0]);
+    // const packageData = await db
+    //   .select()
+    //   .from(packageDataTable)
+    //   .where(eq(packageDataTable.ID, packageResult.ID))
+    //   .then((res) => res[0]);
 
     // Get the URL from the package data
-    const URL = packageData.URL;
+    // const URL = packageData.URL;
     // if (typeof URL !== 'string') {
     //   throw new Error('Invalid URL');
     // }

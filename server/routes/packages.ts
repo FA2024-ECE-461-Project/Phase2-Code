@@ -1,10 +1,12 @@
+// this route handles all operations related to the package metadata
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { packageMetadata as packageMetadataTable } from "../db/schemas/packageSchemas";
 import { db } from "../db";
 import * as semver from "semver";
-import { eq, and, gte, lt } from "drizzle-orm";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
+
 import { log } from "../logger";
 
 // regex for version checking
@@ -16,7 +18,8 @@ const versionRegex = new RegExp(
   `(${exactRegex.source})|(${rangeRegex.source})|(${caretRegex.source})|(${tildeRegex.source})`,
 );
 
-const packageQuerySchema = z.object({
+// schema for the post request body
+const postPackageMetadataRequestSchema = z.object({
   Name: z.string().refine((name) => name.length >= 3 || name === "*", {
     message: 'Name must be "*" if it\'s shorter than 3 characters',
   }),
@@ -28,7 +31,7 @@ const packageQuerySchema = z.object({
         if (version) {
           return versionRegex.test(version);
         }
-        return true; // allow empty version
+        return true; // allow Version field to be empty
       },
       {
         message:
@@ -37,184 +40,176 @@ const packageQuerySchema = z.object({
     ),
 });
 
-const postPackagesRequestSchema = z.array(packageQuerySchema);
-
-type PackageQuery = z.infer<typeof packageQuerySchema>;
+type PostPackageMetadataRequest = z.infer<
+  typeof postPackageMetadataRequestSchema
+>;
 type ResponseSchema = {
   Name: string;
   Version: string;
   ID: string;
 };
-
 export const metadataRoutes = new Hono()
+  // get packages
+  // Get the pacakages from the database in the packages table with pagination of 10
   .get("/", async (c) => {
     const packages = await db.select().from(packageMetadataTable).limit(10);
-    // Return first 10 packages without ID omission here (the spec only applies to the POST route)
+    console.log("packages:", packages);
+    //omit the ID field
     return c.json(packages);
   })
+
+  /* 
+   POST endpoint: should return list of all packages fitting the query parameters on valid JSON requests
+   zValidator to validate the request body fits the schema below: output an error when it doesn't
+   schema: {
+     Name: string (at least 1 character long),
+     Version: string,
+  }
+    @param c is a request context object that contains info about request and response
+    @return return a list of packages (if only one package, return a list with one PackageMetadata Object)
+    TODO: 1. ensure response body has an offset parameter: use the c object
+  */
   .post(
     "/",
-    zValidator("json", postPackagesRequestSchema),
+    zValidator("json", postPackageMetadataRequestSchema),
     async (c) => {
-      // Authorization check (if required by spec)
-      const authHeader = c.req.header("X-Authorization");
-      if (!authHeader) {
-        return c.text("Forbidden", 403);
-      }
-      // Implement actual auth logic as needed
+      // assume we get {name: "package-name", version: "x.y.z"} as request body
+      const { Name, Version } = c.req.valid("json");
+      const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
 
-      const queries = c.req.valid("json"); // Array of PackageQuery
-      const offsetParam = c.req.query("offset");
-      const offset = offsetParam ? parseInt(offsetParam) : 0;
-      const pageLimit = 10;
-      const nextOffset = offset + 1;
+      log.info("request has", Name, Version, offset);
 
-      log.info("Incoming queries:", queries, "Offset:", offset);
+      const pageLimit = 10; // change this line when there is a spec on page limit
 
-      // If no queries provided, return empty array
-      if (queries.length === 0) {
-        c.header("offset", nextOffset.toString());
-        return c.json([]);
-      }
+      // set nextOffset
+      const nextOffset = offset ? parseInt(offset) + 1 : 1;
+      c.header("nextOffset", nextOffset.toString());
+      let packages: ResponseSchema[] = [];
 
-      // Process each query and union results
-      let allResults: ResponseSchema[] = [];
-
-      for (const query of queries) {
-        let { Name, Version } = query;
-        let packages: ResponseSchema[] = [];
-
-        // Fetch packages based on query
-        if (!Version) {
-          // No version specified
-          if (Name === "*") {
-            packages = await db
-              .select({
-                Name: packageMetadataTable.Name,
-                Version: packageMetadataTable.Version,
-                ID: packageMetadataTable.ID,
-              })
-              .from(packageMetadataTable)
-              .limit(100); // limit large for pre-filtering
-          } else {
-            packages = await db
-              .select({
-                Name: packageMetadataTable.Name,
-                Version: packageMetadataTable.Version,
-                ID: packageMetadataTable.ID,
-              })
-              .from(packageMetadataTable)
-              .where(eq(packageMetadataTable.Name, Name))
-              .limit(100);
-          }
+      if (!Version) {
+        if (Name === "*") {
+          packages = await db
+            .select({
+              Name: packageMetadataTable.Name,
+              Version: packageMetadataTable.Version,
+              ID: packageMetadataTable.ID,
+            })
+            .from(packageMetadataTable)
+            .limit(pageLimit);
         } else {
-          // Version specified
-          const versionType = getVersionType(Version);
-
-          if (Name === "*") {
-            // If Name is "*", we fetch all packages and then filter by version
-            packages = await db
-              .select({
-                Name: packageMetadataTable.Name,
-                Version: packageMetadataTable.Version,
-                ID: packageMetadataTable.ID,
-              })
-              .from(packageMetadataTable)
-              .limit(100);
-            packages = packages.filter(
-              (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
-            );
-          } else if (versionType == "exact") {
-            packages = await db
-              .select({
-                Name: packageMetadataTable.Name,
-                Version: packageMetadataTable.Version,
-                ID: packageMetadataTable.ID,
-              })
-              .from(packageMetadataTable)
-              .where(
-                and(
-                  eq(packageMetadataTable.Name, Name),
-                  eq(packageMetadataTable.Version, Version),
-                ),
-              )
-              .limit(100);
-          } else if (versionType == "range") {
-            const [start, end] = Version.split("-");
-            packages = await db
-              .select({
-                Name: packageMetadataTable.Name,
-                Version: packageMetadataTable.Version,
-                ID: packageMetadataTable.ID,
-              })
-              .from(packageMetadataTable)
-              .where(
-                and(
-                  eq(packageMetadataTable.Name, Name),
-                  and(
-                    gte(packageMetadataTable.Version, start),
-                    lt(packageMetadataTable.Version, end),
-                  ),
-                ),
-              )
-              .limit(100);
-            packages = packages.filter(
-              (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
-            );
-          } else if (versionType == "caret") {
-            packages = await db
-              .select({
-                Name: packageMetadataTable.Name,
-                Version: packageMetadataTable.Version,
-                ID: packageMetadataTable.ID,
-              })
-              .from(packageMetadataTable)
-              .where(eq(packageMetadataTable.Name, Name))
-              .limit(100);
-            packages = packages.filter(
-              (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
-            );
-          } else if (versionType == "tilde") {
-            packages = await db
-              .select({
-                Name: packageMetadataTable.Name,
-                Version: packageMetadataTable.Version,
-                ID: packageMetadataTable.ID,
-              })
-              .from(packageMetadataTable)
-              .where(eq(packageMetadataTable.Name, Name))
-              .limit(100);
-            packages = packages.filter(
-              (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
-            );
-          }
+          packages = await db
+            .select({
+              Name: packageMetadataTable.Name,
+              Version: packageMetadataTable.Version,
+              ID: packageMetadataTable.ID,
+            })
+            .from(packageMetadataTable)
+            .where(eq(packageMetadataTable.Name, Name))
+            .limit(pageLimit);
+        }
+        if (offset) {
+          const sliceIdx =
+            parseInt(offset) * pageLimit > packages.length
+              ? parseInt(offset)
+              : parseInt(offset) * pageLimit;
+          packages = packages.slice(sliceIdx);
         }
 
-        // Combine results (union) - remove duplicates by ID
-        // If ID is unique per package version, we can use a map
-        const existingIDs = new Set(allResults.map((r) => r.ID));
-        for (const p of packages) {
-          if (!existingIDs.has(p.ID)) {
-            allResults.push(p);
-            existingIDs.add(p.ID);
-          }
-        }
+        // log.info("no Version provided, returning", packages);
+        return c.json(packages);
       }
 
-      // Apply pagination via offset
-      const startIndex = offset * pageLimit;
-      const endIndex = startIndex + pageLimit;
-      const pagedResults = allResults.slice(startIndex, endIndex);
+      const versionType = getVersionType(Version);
 
-      // If results exceed what we can return in one page, we set next offset
-      c.header("offset", nextOffset.toString());
-
-      // If no packages found, return empty
-      if (pagedResults.length === 0) {
-        return c.json([]);
+      // different selection strategy
+      if (Name === "*") {
+        packages = await db
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID,
+          })
+          .from(packageMetadataTable)
+          .limit(pageLimit);
+      } else if (versionType == "exact") {
+        packages = await db
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID,
+          })
+          .from(packageMetadataTable)
+          .where(
+            and(
+              eq(packageMetadataTable.Name, Name),
+              eq(packageMetadataTable.Version, Version),
+            ),
+          )
+          .limit(pageLimit);
+      } else if (versionType == "range") {
+        const [start, end] = Version.split("-");
+        packages = await db
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID,
+          })
+          .from(packageMetadataTable)
+          .where(
+            and(
+              eq(packageMetadataTable.Name, Name),
+              and(
+                gte(packageMetadataTable.Version, start),
+                lt(packageMetadataTable.Version, end),
+              ),
+            ),
+          )
+          .limit(pageLimit);
+        packages = packages.filter(
+          (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
+        );
+      } else if (versionType == "caret") {
+        packages = await db
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID,
+          })
+          .from(packageMetadataTable)
+          .where(eq(packageMetadataTable.Name, Name))
+          .limit(pageLimit);
+        packages = packages.filter(
+          (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
+        );
+        console.log("after filter:", packages);
+      } else if (versionType == "tilde") {
+        packages = await db
+          .select({
+            Name: packageMetadataTable.Name,
+            Version: packageMetadataTable.Version,
+            ID: packageMetadataTable.ID,
+          })
+          .from(packageMetadataTable)
+          .where(eq(packageMetadataTable.Name, Name))
+          .limit(pageLimit);
+        packages = packages.filter(
+          (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
+        );
       }
 
-      return c.json(pagedResults);
+      console.log("after filter/query:", packages);
+      // deal with offset
+      if (offset) {
+        const sliceIdx =
+          parseInt(offset) * pageLimit > packages.length
+            ? parseInt(offset)
+            : parseInt(offset) * pageLimit;
+        packages = packages.slice(sliceIdx);
+      }
+
+      //print the packages
+      // console.log("packages:", packages);
+      return c.json(packages);
     },
   );
 

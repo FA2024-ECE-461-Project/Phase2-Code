@@ -472,7 +472,6 @@ export function parseGitHubUrl1(url: string): { owner: string, repo: string }{
     }
   } catch (error) {
     console.error("Error parsing GitHub URL:", error);
-
   }
-
+  return { owner: '', repo: '' };
 }

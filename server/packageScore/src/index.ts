@@ -19,21 +19,21 @@ dotenv.config();
 export interface MetricsResult {
   URL: string;
   NetScore: number;
-  NetScore_Latency: number;
+  NetScoreLatency: number;
   RampUp: number;
-  RampUp_Latency: number;
+  RampUpLatency: number;
   Correctness: number;
-  Correctness_Latency: number;
+  CorrectnessLatency: number;
   BusFactor: number;
-  BusFactor_Latency: number;
+  BusFactorLatency: number;
   ResponsiveMaintainer: number;
-  ResponsiveMaintainer_Latency: number;
+  ResponsiveMaintainerLatency: number;
   License: number;
-  License_Latency: number;
-  PR_Code_Reviews: number;
-  PR_Code_Reviews_Latency: number;
+  LicenseLatency: number;
+  PRCodeReviews: number;
+  PRCodeReviewsLatency: number;
   DependencyMetric: number;
-  DependencyMetric_Latency: number;
+  DependencyMetricLatency: number;
 }
 
 export async function processUrl(url: string, extractedDir: string, owner: string, repo: string): Promise<MetricsResult> {
@@ -49,12 +49,12 @@ export async function processUrl(url: string, extractedDir: string, owner: strin
       PRCodeReviewsResult,
       DependencyResult,
     ] = await Promise.all([
-      getCorrectnessMetric(extractedDir),
+      getCorrectnessMetric(url),
       get_bus_factor(owner, repo),
       get_license_compatibility(extractedDir),
       get_ramp_up_time_metric(extractedDir),
       calculateResponsiveness(extractedDir),
-      calculatePRCodeReviews(extractedDir),
+      calculatePRCodeReviews(url),
       getDependencyPinningFraction(extractedDir),
     ]);
     console.log("tset:", extractedDir);
@@ -87,21 +87,21 @@ export async function processUrl(url: string, extractedDir: string, owner: strin
     return {
       URL: url,
       NetScore: netScore,
-      NetScore_Latency: totalLatency,
+      NetScoreLatency: totalLatency,
       RampUp: rampUpTime.score,
-      RampUp_Latency: rampUpTime.latency,
+      RampUpLatency: rampUpTime.latency,
       Correctness: correctnessResult.score,
-      Correctness_Latency: correctnessResult.latency,
+      CorrectnessLatency: correctnessResult.latency,
       BusFactor: busFactorResult.normalizedScore,
-      BusFactor_Latency: busFactorResult.latency,
+      BusFactorLatency: busFactorResult.latency,
       ResponsiveMaintainer: responsivenessResult.score,
-      ResponsiveMaintainer_Latency: responsivenessResult.latency,
+      ResponsiveMaintainerLatency: responsivenessResult.latency,
       License: licenseCompatibility.score,
-      License_Latency: licenseCompatibility.latency,
-      PR_Code_Reviews: PRCodeReviewsResult.score,
-      PR_Code_Reviews_Latency: PRCodeReviewsResult.latency,
+      LicenseLatency: licenseCompatibility.latency,
+      PRCodeReviews: PRCodeReviewsResult.score,
+      PRCodeReviewsLatency: PRCodeReviewsResult.latency,
       DependencyMetric: DependencyResult.score,
-      DependencyMetric_Latency: DependencyResult.latency,
+      DependencyMetricLatency: DependencyResult.latency,
     };
   } catch (error) {
     logger.error("Error calculating metrics for ${url}:", { error });
@@ -143,21 +143,21 @@ function createEmptyMetricsResult(url: string): MetricsResult {
   return {
     URL: url,
     NetScore: 0,
-    NetScore_Latency: 0,
+    NetScoreLatency: 0,
     RampUp: 0,
-    RampUp_Latency: 0,
+    RampUpLatency: 0,
     Correctness: 0,
-    Correctness_Latency: 0,
+    CorrectnessLatency: 0,
     BusFactor: 0,
-    BusFactor_Latency: 0,
+    BusFactorLatency: 0,
     ResponsiveMaintainer: 0,
-    ResponsiveMaintainer_Latency: 0,
+    ResponsiveMaintainerLatency: 0,
     License: 0,
-    License_Latency: 0,
-    PR_Code_Reviews: 0,
-    PR_Code_Reviews_Latency: 0,
+    LicenseLatency: 0,
+    PRCodeReviews: 0,
+    PRCodeReviewsLatency: 0,
     DependencyMetric: 0,
-    DependencyMetric_Latency: 0,
+    DependencyMetricLatency: 0,
   };
 }
 
@@ -171,46 +171,46 @@ export async function processSingleUrl(url: string, extractedDir: string): Promi
   }
 
   try {
-    const result = await processUrl(url, extractedDir);
+    const result = await processUrl(url, extractedDir, owner, repo);
     const formattedResult: MetricsResult = {
       URL: result.URL,
       NetScore: parseFloat(result.NetScore.toFixed(3)),
-      NetScore_Latency: parseFloat((result.NetScore_Latency / 1000).toFixed(3)),
+      NetScoreLatency: parseFloat((result.NetScoreLatency / 1000).toFixed(3)),
       RampUp: parseFloat(result.RampUp.toFixed(3)),
-      RampUp_Latency: parseFloat((result.RampUp_Latency / 1000).toFixed(3)),
+      RampUpLatency: parseFloat((result.RampUpLatency / 1000).toFixed(3)),
       Correctness: parseFloat(result.Correctness.toFixed(3)),
-      Correctness_Latency: parseFloat((result.Correctness_Latency / 1000).toFixed(3)),
+      CorrectnessLatency: parseFloat((result.CorrectnessLatency / 1000).toFixed(3)),
       BusFactor: parseFloat(result.BusFactor.toFixed(3)),
-      BusFactor_Latency: parseFloat((result.BusFactor_Latency / 1000).toFixed(3)),
+      BusFactorLatency: parseFloat((result.BusFactorLatency / 1000).toFixed(3)),
       ResponsiveMaintainer: parseFloat(result.ResponsiveMaintainer.toFixed(3)),
-      ResponsiveMaintainer_Latency: parseFloat((result.ResponsiveMaintainer_Latency / 1000).toFixed(3)),
+      ResponsiveMaintainerLatency: parseFloat((result.ResponsiveMaintainerLatency / 1000).toFixed(3)),
       License: parseFloat(result.License.toFixed(3)),
-      License_Latency: parseFloat((result.License_Latency / 1000).toFixed(3)),
-      PR_Code_Reviews: parseFloat(result.PR_Code_Reviews.toFixed(3)),
-      PR_Code_Reviews_Latency: parseFloat((result.PR_Code_Reviews_Latency / 1000).toFixed(3)),
+      LicenseLatency: parseFloat((result.LicenseLatency / 1000).toFixed(3)),
+      PRCodeReviews: parseFloat(result.PRCodeReviews.toFixed(3)),
+      PRCodeReviewsLatency: parseFloat((result.PRCodeReviewsLatency / 1000).toFixed(3)),
       DependencyMetric: parseFloat(result.DependencyMetric.toFixed(3)),
-      DependencyMetric_Latency: parseFloat((result.DependencyMetric_Latency / 1000).toFixed(3)),
+      DependencyMetricLatency: parseFloat((result.DependencyMetricLatency / 1000).toFixed(3)),
     };
     return formattedResult;
   } catch (error) {
     logger.error("Error processing URL ${url}:", { error });
     const emptyResult: MetricsResult = createEmptyMetricsResult(url);
     emptyResult.NetScore = -1;
-    emptyResult.NetScore_Latency = -1;
+    emptyResult.NetScoreLatency = -1;
     emptyResult.RampUp = -1;
-    emptyResult.RampUp_Latency = -1;
+    emptyResult.RampUpLatency = -1;
     emptyResult.Correctness = -1;
-    emptyResult.Correctness_Latency = -1;
+    emptyResult.CorrectnessLatency = -1;
     emptyResult.BusFactor = -1;
-    emptyResult.BusFactor_Latency = -1;
+    emptyResult.BusFactorLatency = -1;
     emptyResult.ResponsiveMaintainer = -1;
-    emptyResult.ResponsiveMaintainer_Latency = -1;
+    emptyResult.ResponsiveMaintainerLatency = -1;
     emptyResult.License = -1;
-    emptyResult.License_Latency = -1;
-    emptyResult.PR_Code_Reviews = -1;
-    emptyResult.PR_Code_Reviews_Latency = -1;
+    emptyResult.LicenseLatency = -1;
+    emptyResult.PRCodeReviews = -1;
+    emptyResult.PRCodeReviewsLatency = -1;
     emptyResult.DependencyMetric = -1;
-    emptyResult.DependencyMetric_Latency = -1;
+    emptyResult.DependencyMetricLatency = -1;
     return emptyResult;
   }
 }

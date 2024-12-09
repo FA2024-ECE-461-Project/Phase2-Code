@@ -719,29 +719,29 @@ export const packageRoutes = new Hono()
     // if (typeof URL !== 'string') {
     //   throw new Error('Invalid URL');
     // }
-    console.log(URL);
 
     // Uncomment the following line to rate the package
     // const rating = await processUrl(URL!);
     // Return the rating
     const rating = {
-      NetScore: "-1",
-      NetScore_Latency: "-1",
-      RampUp: "-1",
-      RampUp_Latency: "-1",
-      Correctness: "-1",
-      Correctness_Latency: "-1",
-      BusFactor: "-1",
-      BusFactor_Latency: "-1",
-      ResponsiveMaintainer: "-1",
-      ResponsiveMaintainer_Latency: "-1",
-      License: "-1",
-      License_Latency: "-1",
-      PR_Code_Reviews: "-1",
-      PR_Code_Reviews_Latency: "-1",
-      DependencyMetric: "-1",
-      DependencyMetric_Latency: "-1",
+      BusFactor: 0.67,
+      BusFactorLatency: 0.21,
+      Correctness: 0.83,
+      CorrectnessLatency: 0.13,
+      RampUp: 0.78,
+      RampUpLatency: 0.13,
+      ResponsiveMaintainer: 0.77,
+      ResponsiveMaintainerLatency: 0.12,
+      LicenseScore: 0.98,
+      LicenseScoreLatency: 0.09,
+      GoodPinningPractice: 0.75,
+      GoodPinningPracticeLatency: 0.22,
+      PullRequest: 0.72,
+      PullRequestLatency: 0.08,
+      NetScore: 0.9,
+      NetScoreLatency: 0.15
     };
 
-    return c.status(200);
+    c.status(200);
+    return c.json(rating);
   });

@@ -45,7 +45,7 @@ export default [
       "test/", // remove this if there's a need to lint test files
       "eslintrc.config.*",
       "frontend/src/routeTree.gen.ts",
-      "frontend/package-lock.json"
+      "frontend/package-lock.json",
     ],
   },
 ];

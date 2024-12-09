@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import { Button } from '../components/ui/button'
-import { useForm } from '@tanstack/react-form'
-import { api } from '../lib/api'
-import { useState } from 'react'
+import { createFileRoute } from "@tanstack/react-router";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Button } from "../components/ui/button";
+import { useForm } from "@tanstack/react-form";
+import { api } from "../lib/api";
+import { useState } from "react";
 // import * as React from "react"
 import {
   Card,
@@ -12,12 +12,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../components/ui/card'
-import { toast, Toaster } from 'sonner'
+} from "../components/ui/card";
+import { toast, Toaster } from "sonner";
 
-export const Route = createFileRoute('/search')({
+export const Route = createFileRoute("/search")({
   component: searchPackage,
-})
+});
 
 interface SearchPackageResponse {
   Name: string;
@@ -31,36 +31,36 @@ function searchPackage() {
   const form = useForm({
     defaultValues: {
       Name: "",
-      Version: ""
+      Version: "",
     },
     onSubmit: async ({ value }) => {
-      const { Name, Version } = value
+      const { Name, Version } = value;
 
       // Check if the ID is empty
       if (!Name) {
-        toast.error('Name is required.')
-        return
+        toast.error("Name is required.");
+        return;
       }
 
       // Create payload object
-      const payload = { Name, Version }
+      const payload = { Name, Version };
 
       // Send POST request to backend
       const res = await api.packages.$post({
         json: payload,
-      })
+      });
 
       if (res.status === 200) {
         const data: SearchPackageResponse[] = await res.json(); // Parse the response body
         setResult(data); // Set the returned package data
-        toast.success('Package Found!');
+        toast.success("Package Found!");
       } else if (res.status === 404) {
-        toast.error('Package not found.');
+        toast.error("Package not found.");
       } else {
-        toast.error('An unexpected error occurred. (i dont know why lol)');
+        toast.error("An unexpected error occurred. (i dont know why lol)");
       }
     },
-  })
+  });
 
   return (
     <div className="flex flex-col items-center justify-center p-4">
@@ -72,9 +72,9 @@ function searchPackage() {
         <CardContent>
           <form
             onSubmit={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              void form.handleSubmit()
+              e.preventDefault();
+              e.stopPropagation();
+              void form.handleSubmit();
             }}
             className="max-w-xl w-full"
           >
@@ -114,7 +114,7 @@ function searchPackage() {
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
                 <Button type="submit" disabled={!canSubmit} className="mt-4">
-                  {isSubmitting ? '...' : 'Search'}
+                  {isSubmitting ? "..." : "Search"}
                 </Button>
               )}
             />
@@ -137,5 +137,5 @@ function searchPackage() {
         )}
       </div>
     </div>
-  )
+  );
 }

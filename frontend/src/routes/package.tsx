@@ -61,9 +61,7 @@ function Index() {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={2}>Total Packages</TableCell>
-            <TableCell className="text-right">
-              {data.data.length}
-            </TableCell>
+            <TableCell className="text-right">{data.data.length}</TableCell>
           </TableRow>
         </TableFooter>
       </Table>

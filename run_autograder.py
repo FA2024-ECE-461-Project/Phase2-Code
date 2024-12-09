@@ -29,7 +29,7 @@ def main():
         "Jimmy Ho", "Gaurav Vermani", "Ryan Lin", "Nick Ko"
     ],
     "gh_token": os.getenv("GITHUB_TOKEN"),
-    "endpoint": f"{SITE_URL}api",
+    "endpoint": f"http://localhost:3000/api",
     "fe_endpoint": SITE_URL
   }
 
@@ -85,7 +85,7 @@ def main():
   with open("autograder_run_log.txt", "wb") as file:
     file.write(response.content)
 
-  print("end download autograder_run_log.txt")
+  print("end download autgrader_run_log.txt")
 
 
 if __name__ == "__main__":

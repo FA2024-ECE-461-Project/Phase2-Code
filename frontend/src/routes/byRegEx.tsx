@@ -16,9 +16,9 @@ import { toast, Toaster } from "sonner";
 // import { Regex } from "lucide-react";
 import { useState } from "react";
 
-export const Route = createFileRoute('/byRegEx')({
+export const Route = createFileRoute("/byRegEx")({
   component: PackageSearchRegEx,
-})
+});
 
 interface PackageSearchRegExList {
   Name: string;
@@ -33,22 +33,20 @@ function PackageSearchRegEx() {
       RegEx: "",
     },
     onSubmit: async ({ value }) => {
-
       // Send POST request to backend
       const res = await api.package.byRegEx.$post({
-        json: value
+        json: value,
       });
 
       if (res.status === 200) {
-        const data: PackageSearchRegExList[] = await res.json();        
+        const data: PackageSearchRegExList[] = await res.json();
         setResult(data);
         toast.success("Packages found!");
       } else if (res.status === 400) {
         toast.error("Invalid or Empty RegEx");
-      } else if (res.status === 404){
+      } else if (res.status === 404) {
         toast.error("No package found under this RegEx.");
-      }
-      else {
+      } else {
         toast.error("An unexpected error occurred.");
       }
     },
@@ -59,14 +57,17 @@ function PackageSearchRegEx() {
       <Card className="w-[500px]">
         <CardHeader>
           <CardTitle>Search by RegEx</CardTitle>
-          <CardDescription>Search for a package using regular expression over package names and READMEs</CardDescription>
+          <CardDescription>
+            Search for a package using regular expression over package names and
+            READMEs
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form
             onSubmit={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              void form.handleSubmit()
+              e.preventDefault();
+              e.stopPropagation();
+              void form.handleSubmit();
             }}
             className="max-w-xl w-full"
           >
@@ -90,7 +91,7 @@ function PackageSearchRegEx() {
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
                 <Button type="submit" disabled={!canSubmit} className="mt-4">
-                  {isSubmitting ? '...' : 'Update'}
+                  {isSubmitting ? "..." : "Update"}
                 </Button>
               )}
             />
@@ -114,5 +115,5 @@ function PackageSearchRegEx() {
         )}
       </div>
     </div>
-  )
+  );
 }

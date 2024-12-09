@@ -7,7 +7,6 @@ import { db } from "../db";
 import * as semver from "semver";
 import { eq, and, gte, lt, sql } from "drizzle-orm";
 
-import * as logger from ".logger";
 import { log } from "../logger";
 
 // regex for version checking
@@ -19,41 +18,43 @@ const versionRegex = new RegExp(
   `(${exactRegex.source})|(${rangeRegex.source})|(${caretRegex.source})|(${tildeRegex.source})`,
 );
 
-// schema for the post request body
-const postPackageMetadataRequestSchema = z.object({
-  Name: z.string().refine((name) => name.length >= 3 || name === "*", {
-    message: 'Name must be "*" if it\'s shorter than 3 characters',
-  }),
+// Define the schema for a single object in the list
+const packageMetadataSchema = z.object({
+  Name: z.string().min(1, "Name must be at least 1 character long"),
   Version: z
     .string()
     .optional()
     .refine(
       (version) => {
         if (version) {
-          return versionRegex.test(version);
+          return versionRegex.test(version); // Use your existing versionRegex for validation
         }
-        return true;    // allow Version field to be empty
+        return true; // allow Version field to be empty
       },
       {
         message:
-          "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z",
-      },
+          "Version must be in the format Exact (1.2.3), Bounded range (1.2.3-2.1.0), Carat (^1.2.3), or Tilde (~1.2.0)",
+      }
     ),
 });
 
-type PostPackageMetadataRequest = z.infer<typeof postPackageMetadataRequestSchema>;
+// Define the schema for the entire list
+const postPackageMetadataRequestSchema = z.array(packageMetadataSchema);
+
+type PostPackageMetadataRequest = z.infer<
+  typeof postPackageMetadataRequestSchema
+>;
 type ResponseSchema = {
   Name: string;
   Version: string;
   ID: string;
-}
+};
 export const metadataRoutes = new Hono()
   // get packages
   // Get the pacakages from the database in the packages table with pagination of 10
   .get("/", async (c) => {
     const packages = await db.select().from(packageMetadataTable).limit(10);
     console.log("packages:", packages);
-    log.info("packages:", packages);
     //omit the ID field
     return c.json(packages);
   })
@@ -74,23 +75,32 @@ export const metadataRoutes = new Hono()
     zValidator("json", postPackageMetadataRequestSchema),
     async (c) => {
       // assume we get {name: "package-name", version: "x.y.z"} as request body
-      const { Name, Version } = c.req.valid("json");
-      const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
-      const pageLimit = 10; // change this line when there is a spec on page limit
+      const packagesMetadata = c.req.valid("json") as PostPackageMetadataRequest;
+      const results: ResponseSchema[] = [];
+
+      // get the fisrt package in the list
+      const firstPackage = packagesMetadata[0];
+      const Name = firstPackage.Name;
+      const Version = firstPackage.Version;
       
-      log.info("receive", Name, Version, offset);
+      const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
+
+      log.info("request has", Name, Version, offset);
+
+      const pageLimit = 10; // change this line when there is a spec on page limit
+
       // set nextOffset
       const nextOffset = offset ? parseInt(offset) + 1 : 1;
       c.header("nextOffset", nextOffset.toString());
       let packages: ResponseSchema[] = [];
 
       if (!Version) {
-        if(Name === "*") {
+        if (Name === "*") {
           packages = await db
             .select({
               Name: packageMetadataTable.Name,
               Version: packageMetadataTable.Version,
-              ID: packageMetadataTable.ID
+              ID: packageMetadataTable.ID,
             })
             .from(packageMetadataTable)
             .limit(pageLimit);
@@ -99,17 +109,21 @@ export const metadataRoutes = new Hono()
             .select({
               Name: packageMetadataTable.Name,
               Version: packageMetadataTable.Version,
-              ID: packageMetadataTable.ID
+              ID: packageMetadataTable.ID,
             })
             .from(packageMetadataTable)
             .where(eq(packageMetadataTable.Name, Name))
             .limit(pageLimit);
         }
         if (offset) {
-          const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
+          const sliceIdx =
+            parseInt(offset) * pageLimit > packages.length
+              ? parseInt(offset)
+              : parseInt(offset) * pageLimit;
           packages = packages.slice(sliceIdx);
         }
-        log.info("no Version, returning", packages);
+
+        // log.info("no Version provided, returning", packages);
         return c.json(packages);
       }
 
@@ -121,7 +135,7 @@ export const metadataRoutes = new Hono()
           .select({
             Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
-            ID: packageMetadataTable.ID
+            ID: packageMetadataTable.ID,
           })
           .from(packageMetadataTable)
           .limit(pageLimit);
@@ -130,7 +144,7 @@ export const metadataRoutes = new Hono()
           .select({
             Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
-            ID: packageMetadataTable.ID
+            ID: packageMetadataTable.ID,
           })
           .from(packageMetadataTable)
           .where(
@@ -146,7 +160,7 @@ export const metadataRoutes = new Hono()
           .select({
             Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
-            ID: packageMetadataTable.ID
+            ID: packageMetadataTable.ID,
           })
           .from(packageMetadataTable)
           .where(
@@ -156,47 +170,53 @@ export const metadataRoutes = new Hono()
                 gte(packageMetadataTable.Version, start),
                 lt(packageMetadataTable.Version, end),
               ),
-            )
+            ),
           )
           .limit(pageLimit);
-        packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));
+        packages = packages.filter(
+          (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
+        );
       } else if (versionType == "caret") {
         packages = await db
           .select({
             Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
-            ID: packageMetadataTable.ID
+            ID: packageMetadataTable.ID,
           })
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
-        packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));        
+        packages = packages.filter(
+          (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
+        );
         console.log("after filter:", packages);
-
       } else if (versionType == "tilde") {
         packages = await db
           .select({
             Name: packageMetadataTable.Name,
             Version: packageMetadataTable.Version,
-            ID: packageMetadataTable.ID
+            ID: packageMetadataTable.ID,
           })
           .from(packageMetadataTable)
           .where(eq(packageMetadataTable.Name, Name))
           .limit(pageLimit);
-        packages = packages.filter((pkg) => pkg.Version && semver.satisfies(pkg.Version, Version));
+        packages = packages.filter(
+          (pkg) => pkg.Version && semver.satisfies(pkg.Version, Version),
+        );
       }
-      
+
       console.log("after filter/query:", packages);
       // deal with offset
       if (offset) {
-        const sliceIdx = parseInt(offset) * pageLimit > packages.length ? parseInt(offset) : parseInt(offset) * pageLimit;
+        const sliceIdx =
+          parseInt(offset) * pageLimit > packages.length
+            ? parseInt(offset)
+            : parseInt(offset) * pageLimit;
         packages = packages.slice(sliceIdx);
       }
 
       //print the packages
-      log.info("returning", packages);
-      console.log("packages:", packages);
-      // return packages
+      // console.log("packages:", packages);
       return c.json(packages);
     },
   );

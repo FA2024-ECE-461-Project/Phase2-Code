@@ -13,6 +13,9 @@ import { get_ramp_up_time_metric } from "./metrics/ramp-up-time";
 import { calculateResponsiveness } from "./metrics/responsiveness";
 import { calculatePRCodeReviews } from "./metrics/PRCodeReviews";
 import { getDependencyPinningFraction } from "./metrics/dependency"; // Adjust the path accordingly
+import logger from "./logger";
+import { promisify } from "util";
+import * as dotenv from "dotenv";
 
 dotenv.config();
 

@@ -1,5 +1,6 @@
 // Description: This file defines the routes for uploading, downloading, and deleting packages
 import { Hono } from "hono";
+import RE2 from "re2";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { exec, execSync } from "child_process";
@@ -310,9 +311,9 @@ export const packageRoutes = new Hono()
 
     // Validate the regex pattern
     try {
-      new RegExp(regex);
+      new RE2(regex);
     } catch (e) {
-      return c.json({ error: "Invalid RegEx pattern" }, 400);
+      return c.json({ error: "Invalid or malicious RegEx pattern" }, 400);
     }
 
     // Fetch packages that match the regex

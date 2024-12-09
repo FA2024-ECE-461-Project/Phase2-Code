@@ -29,6 +29,8 @@ import {
   npmUrlToGitHubUrl,
   getOwnerRepoAndDefaultBranchFromGithubUrl,
   removeDownloadedFile,
+  getFileSizeInMB,
+  getDependencySizeInMB
 } from "../packageUtils";
 import { processUrl, processSingleUrl } from "../packageScore/src/index";
 import { readFileSync } from "fs";
@@ -393,6 +395,66 @@ export const packageRoutes = new Hono()
     }
 
     return c.json(finalResults);
+  })
+
+  // get the cost of a package
+  .get("/:id/cost",  async (c) => {
+    const id = c.req.param("id");
+    const dependency = c.req.query("dependency");
+
+    if (!id) {
+      return c.json({ error: "Package ID is required" }, 400);
+    }
+
+    // Fetch the package from the database
+    const packageResult = await db
+      .select()
+      .from(packagesTable)
+      .where(eq(packagesTable.ID, id))
+      .then((res) => res[0]);
+
+    if (!packageResult) {
+      return c.json({ error: "Package does not exist" }, 404);
+    }
+
+    if(!packageResult.S3) {
+      return c.json({ error: "Package does not exist" }, 404);
+    }
+
+    const path = await downloadZipFromS3(packageResult.S3, "./downloads");
+
+    if (dependency === "false" ) { 
+      // Calculate the cost of the package
+      const cost = getFileSizeInMB(path);
+      if (cost === -1) {
+        return c.json({ error: "Failed to calculate the cost of the package" }, 500);
+      }
+      removeDownloadedFile(path);
+      return c.json({ [id]: { totalcost: cost} });
+    }
+    else if (dependency === "true") {
+      // Calculate the cost of the package
+      const standalone = getFileSizeInMB(path);
+      if (standalone === -1) {
+        return c.json({ error: "Failed to calculate the cost of the package" }, 500);
+      }
+      // Calculate the cost of the package with dependencies
+      let total = await getDependencySizeInMB(path);
+      if (total === -1) {
+        return c.json({ error: "Failed to calculate the cost of the package" }, 500);
+      }
+      total = total + standalone;
+      removeDownloadedFile(path);
+      return c.json({ [id]: { standaloneCost: standalone, totalcost: total} });
+    }
+    else {
+      // Calculate the cost of the package
+      const cost = getFileSizeInMB(path);
+      if (cost === -1) {
+        return c.json({ error: "Failed to calculate the cost of the package" }, 500);
+      }
+      return c.json({ [id]: { totalcost: cost} });
+    }
   })
 
   // download package endpoint

@@ -119,11 +119,8 @@ export async function uploadToS3viaBuffer(
   }
 }
 
-export function extractMetadataFromZip(buffer: Buffer): {
-  Name: string;
-  Version: string;
-  URL: string;
-} {
+
+export function extractMetadataFromZip(buffer: Buffer): { Name: string; Version: string, Url: string } {
   const zip = new AdmZip(buffer);
   const zipEntries = zip.getEntries();
 
@@ -144,22 +141,24 @@ export function extractMetadataFromZip(buffer: Buffer): {
 
   const packageJsonStr = packageJsonEntry.getData().toString("utf-8");
 
-  let packageJson: {
-    name?: string;
-    version?: string;
-    repository?: { url?: string };
-  };
+  let packageJson: { name?: string; version?: string; repository?: { url?: string } };
   try {
     packageJson = JSON.parse(packageJsonStr);
   } catch (error) {
     throw new Error("Invalid package.json format");
   }
 
-  const Name = packageJson.name || "Default-Name";
-  const Version = packageJson.version || "1.0.0";
-  const URL = packageJson.repository?.url || "";
+  // Extract the repository URL from package.json if it exists
+  console.log('Package JSON Name:', packageJson.name);
+  console.log('Package JSON Version:', packageJson.version);
+  console.log('Package JSON URL:', packageJson.repository?.url);
+  const url = packageJson.repository?.url || '';
 
-  return { Name, Version, URL };
+  const Name = packageJson.name || 'Default-Name';
+  const Version = packageJson.version || '1.0.0';
+  const Url = url || '';
+
+  return { Name, Version, Url };
 }
 
 export function removeDotGitFolderFromZip(buffer: Buffer): string {
@@ -417,4 +416,155 @@ export function isMoreRecentVersion(
 
   // If all parts are equal
   return false;
+}
+
+// Function to get the size of a zip file in MB
+export function getFileSizeInMB(filePath: string): number {
+  try {
+      // Check if the file exists
+      if (!fs.existsSync(filePath)) {
+          console.error('File does not exist:', filePath);
+          return -1;
+      }
+
+      // Get the file stats
+      const stats = fs.statSync(filePath);
+
+      // Convert size to MB (1 MB = 1024 * 1024 bytes)
+      const sizeInMB = stats.size / (1024 * 1024);
+
+      return sizeInMB;
+  } catch (error) {
+      console.error('Error getting file size:');
+      return 0;
+  }
+}
+
+async function downloadFile(url: string, outputPath: string, headers = {}) {
+  try {
+      const response = await axios({
+          url,
+          method: 'GET',
+          responseType: 'stream', // Receive data as a stream
+          headers, // Add custom headers if provided
+      });
+
+      // Create a writable stream to save the file
+      const writer = fs.createWriteStream(outputPath);
+
+      // Pipe the response data to the file
+      response.data.pipe(writer);
+
+      // Return a Promise that resolves when the file is completely written
+      return new Promise((resolve, reject) => {
+          writer.on('finish', resolve);
+          writer.on('error', reject);
+      });
+  } catch (error) {
+      console.error('Error downloading file');
+      throw error; // Re-throw the error for higher-level handling
+  }
+}
+
+async function analyzeDependency(packageName: string, version: string) {
+  try {
+      console.log(`Analyzing ${packageName}@${version}...`);
+
+      // Construct the npm tarball URL
+      const tarballUrl = `https://registry.npmjs.org/${packageName}/-/${packageName}-${version}.tgz`;
+
+      // Download the tarball
+      const outputPath = path.join(__dirname, `${packageName}-${version}.tgz`);
+      await downloadFile(tarballUrl, outputPath);
+
+      // Zip the tarball file
+      const zip = new AdmZip();
+      zip.addLocalFile(outputPath);
+      const zipPath = path.join(__dirname, `${packageName}-${version}.zip`);
+      zip.writeZip(zipPath);
+
+      // Calculate file size
+      const fileSizeMB = getFileSizeInMB(zipPath);
+      console.log(`${packageName}@${version} size: ${fileSizeMB.toFixed(2)} MB`);
+
+      // Clean up the downloaded file
+      fs.unlinkSync(zipPath);
+      fs.unlinkSync(outputPath);
+
+      return fileSizeMB;
+  } catch (error) {
+      console.error(`Error analyzing ${packageName}@${version}`);
+      return 0;
+  }
+}
+
+function extractZip(zipFilePath: string): string {
+  const tempDir = path.join(__dirname, 'temp_extracted'); // Temporary directory for extracted files
+  if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir); // Create the directory if it doesn't exist
+  }
+
+  const zip = new AdmZip(zipFilePath); // Initialize the ZIP file
+  zip.extractAllTo(tempDir, true); // Extract all contents to the temporary directory
+
+  return tempDir; // Return the path of the extracted directory
+}
+
+function findPackageJson(dir: string): string | null {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const fullPath = path.join(dir, file);
+    if (fs.statSync(fullPath).isDirectory()) {
+      const result = findPackageJson(fullPath);
+      if (result) {
+        return result;
+      }
+    } else if (file === 'package.json') {
+      return fullPath;
+    }
+  }
+  return null;
+}
+
+export async function getDependencySizeInMB(zipFilePath: string): Promise<number> {
+  if (!fs.existsSync(zipFilePath)) {
+      console.log('ZIP file not found at', zipFilePath);
+      return -1;
+  }
+
+  // Step 1: Extract the ZIP file
+  const extractedDir = extractZip(zipFilePath);
+  console.log('Extracted to:', extractedDir);
+
+  // Step 2: Locate package.json
+  const packageJsonPath = findPackageJson(extractedDir);
+  console.log('packageJsonPath:', packageJsonPath);
+  if (!packageJsonPath) {
+      console.error('package.json not found');
+      return -1;
+  }
+
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  const dependencies = packageJson.dependencies || {};
+
+  let totalSizeMB = 0;
+
+  // Step 3: Analyze each dependency
+  if (dependencies.size == 0 || typeof dependencies !== 'object') {
+      console.log('No dependencies found');
+      return 0;
+  }
+
+  for (const [packageName, version] of Object.entries(dependencies)) {
+      const normalizedVersion = (version as string).replace(/[^0-9.]/g, ''); // Remove non-version characters
+      const sizeMB = await analyzeDependency(packageName, normalizedVersion);
+      totalSizeMB += sizeMB;
+  }
+
+  console.log(`Total size of dependencies: ${totalSizeMB.toFixed(2)} MB`);
+
+  // Clean up extracted files
+  fs.rmSync(extractedDir, { recursive: true, force: true });
+
+  return totalSizeMB;
 }

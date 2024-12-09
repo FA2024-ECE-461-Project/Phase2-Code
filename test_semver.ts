@@ -1,32 +1,50 @@
-import { log } from "./server/logger";
+import { z } from "zod";
 
-function isMoreRecentVersion(newVersion: string, latestVersion: string): boolean {
-    log.info(`Comparing versions: ${newVersion} and ${latestVersion}`);
-    console.log(process.env.SERVER_LOG_FILE);
-    const newParts = newVersion.split(".").map(Number);
-    const latestParts = latestVersion.split(".").map(Number);
-  
-    for (let i = 0; i < Math.max(newParts.length, latestParts.length); i++) {
-      const newPart = newParts[i] || 0; // Default to 0 if undefined
-      const latestPart = latestParts[i] || 0;
-  
-      if (newPart > latestPart) {
-        return true;
-      } else if (newPart < latestPart) {
-        return false;
+// Define the version regex for validation
+const versionRegex = /^(?:\d+\.\d+\.\d+|\^?\d+\.\d+\.\d+|\~?\d+\.\d+\.\d+|\d+\.\d+\.\d+-\d+\.\d+\.\d+)$/;
+
+// Define the schema for a single object in the list
+const packageMetadataSchema = z.object({
+  Name: z.string().min(1, "Name must be at least 1 character long"),
+  Version: z
+    .string()
+    .optional()
+    .refine(
+      (version) => {
+        if (version) {
+          return versionRegex.test(version); // Use your existing versionRegex for validation
+        }
+        return true; // allow Version field to be empty
+      },
+      {
+        message:
+          "Version must be in the format Exact (1.2.3), Bounded range (1.2.3-2.1.0), Carat (^1.2.3), or Tilde (~1.2.0)",
       }
-    }
-  
-    // If all parts are equal
-    return false;
-  }
+    ),
+});
 
+// Define the schema for the entire list
+const packageMetadataListSchema = z.array(packageMetadataSchema);
 
-const latestVersion = "1.2.3";
-const newVersion1 = "1.3.0"; // Should return true (more recent)
-const newVersion2 = "2.2.1"; // Should return false (older)
-const newVersion3 = "1.2.3"; // Should return false (same)
+// Example request body for validation
+const requestBody = [
+  {
+    Version: "1.2.3",
+    Name: "package1",
+  },
+  {
+    Version: "^1.2.3",
+    Name: "package2",
+  },
+  {
+    Version: "~1.2.0",
+    Name: "package3",
+  },
+];
 
-console.log(isMoreRecentVersion(newVersion1, latestVersion)); // true
-console.log(isMoreRecentVersion(newVersion2, latestVersion)); // false
-console.log(isMoreRecentVersion(newVersion3, latestVersion)); // false
+try {
+  const validatedData = packageMetadataListSchema.parse(requestBody);
+  console.log("Validated data:", validatedData);
+} catch (e) {
+  console.error("Validation errors:", e.errors);
+}

@@ -24,7 +24,7 @@ import {
   omitId,
   isMoreRecentVersion,
   extractMetadataFromZip,
-  extractZip,
+  extractZip1,
   removeDotGitFolderFromZip,
   uploadToS3viaBuffer,
   getPackageJsonUrl,
@@ -35,8 +35,10 @@ import {
   FailedDependencyError,
   parseGitHubUrl1,
   InvalidInputError,
+  getFileSizeInMB,
+  getDependencySizeInMB,
 } from "../packageUtils";
-import { processUrl, processSingleUrl, MetricsResult } from "../packageScore/src/index";
+import { processUrl, MetricsResult } from "../packageScore/src/index";
 import { readFileSync } from "fs";
 import {
   encodeBase64,
@@ -106,220 +108,220 @@ export const packageRoutes = new Hono()
     const tempDir = path.join(process.cwd(), "temp_upload", uuidv4());
     fs.mkdirSync(tempDir, { recursive: true });
 
-    try {
-      if (newPackage.URL) {
-        // Handle URL-based package upload
-        const githubUrl = await npmUrlToGitHubUrl(newPackage.URL!);
-        if (!githubUrl) {
-          c.status(400);
-          return c.json({ error: "Invalid URL" });
-        }
+   
+    if (newPackage.URL) {
+      // Handle URL-based package upload
+      const githubUrl = await npmUrlToGitHubUrl(newPackage.URL!);
+      if (!githubUrl) {
+        c.status(400);
+        return c.json({ error: "Invalid URL" });
+      }
 
-        const packageDetails = await getOwnerRepoAndDefaultBranchFromGithubUrl(githubUrl!);
-        if (!packageDetails) {
-          c.status(400);
-          return c.json({ error: "Invalid URL" });
-        }
+      const packageDetails = await getOwnerRepoAndDefaultBranchFromGithubUrl(githubUrl!);
+      if (!packageDetails) {
+        c.status(400);
+        return c.json({ error: "Invalid URL" });
+      }
 
-        const { owner, repo, defaultBranch } = packageDetails;
-        const packageDataInfo = await getPackageNameVersion(owner, repo);
+      const { owner, repo, defaultBranch } = packageDetails;
+      const packageDataInfo = await getPackageNameVersion(owner, repo);
 
-        if (!packageDataInfo) {
-          c.status(400);
-          return c.json({ error: "Invalid URL" });
-        }
+      if (!packageDataInfo) {
+        c.status(400);
+        return c.json({ error: "Invalid URL" });
+      }
 
-        // Set default values if necessary
-        const Version = packageDataInfo.Version || "1.0.0";
-        const Name = packageDataInfo.Name || newPackage.Name || "Default-Name";
+      // Set default values if necessary
+      const Version = packageDataInfo.Version || "1.0.0";
+      const Name = packageDataInfo.Name || newPackage.Name || "Default-Name";
 
-        // Download the ZIP file
-        const downloadedZipPath = await downloadGitHubZip(owner, repo, defaultBranch, tempDir, `${Name}-${Version}.zip`);
-        if (!downloadedZipPath) {
-          throw new FailedDependencyError("Failed to download the package from the URL.");
-        }
+      // Download the ZIP file
+      const downloadedZipPath = await downloadGitHubZip(owner, repo, defaultBranch, tempDir, `${Name}-${Version}.zip`);
+      if (!downloadedZipPath) {
+        throw new FailedDependencyError("Failed to download the package from the URL.");
+      }
 
-        // Read the ZIP file into a buffer
-        zipBuffer = readFileSync(downloadedZipPath);
+      // Read the ZIP file into a buffer
+      zipBuffer = readFileSync(downloadedZipPath);
 
-        // Extract ZIP to temp directory
-        extractedDir = path.join(tempDir, `${Name}-${Version}`);
-        extractZip(downloadedZipPath, extractedDir);
+      // Extract ZIP to temp directory
+      extractedDir = path.join(tempDir, `${Name}-${Version}`);
+      extractZip1(downloadedZipPath, extractedDir);
 
-        // Extract metadata
+      // Extract metadata
+      metadata = extractMetadataFromZip(zipBuffer);
+    } else if (newPackage.Content) {
+      // Handle Content-based package upload
+      try {
+        zipBuffer = Buffer.from(newPackage.Content, "base64");
+      } catch (error) {
+        return c.json({ error: "Invalid base64 content" }, 400);
+      }
+
+      // Extract metadata from the zip file
+      try {
         metadata = extractMetadataFromZip(zipBuffer);
-      } else if (newPackage.Content) {
-        // Handle Content-based package upload
-        try {
-          zipBuffer = Buffer.from(newPackage.Content, "base64");
-        } catch (error) {
-          return c.json({ error: "Invalid base64 content" }, 400);
-        }
-
-        // Extract metadata from the zip file
-        try {
-          metadata = extractMetadataFromZip(zipBuffer);
-        } catch (error) {
-          return c.json({ error: (error as Error).message }, 400);
-        }
-
-        // Extract ZIP to temp directory
-        extractedDir = path.join(tempDir, `${metadata.Name}-${metadata.Version}`);
-        extractZipBuffer(zipBuffer, extractedDir); // New helper function
+      } catch (error) {
+        return c.json({ error: (error as Error).message }, 400);
       }
 
-      // At this point, the ZIP is extracted to `extractedDir`
-      if (!metadata || !extractedDir) {
-        throw new Error("Failed to extract metadata from the package");
-      }
-      // Rate the package
-      const { owner, repo } = parseGitHubUrl1(metadata.URL);
-      const metrics = await processUrl(metadata.URL, extractedDir, owner, repo);
+      // Extract ZIP to temp directory
+      extractedDir = path.join(tempDir, `${metadata.Name}-${metadata.Version}`);
+      extractZipBuffer(zipBuffer, extractedDir); // New helper function
+    }
 
-      // Define your score threshold
-      const SCORE_THRESHOLD = 0.5; // Adjust based on your criteria
-      console.log("NetScore: ", metrics);
-      if (metrics.NetScore < SCORE_THRESHOLD) {
-        // Rating failed, return 424
-        c.status(424);
-        return c.json({
-          error: `Package metrics failed. NetScore: ${metrics.NetScore}. Package not uploaded.`,
-        });
-      }
+    // At this point, the ZIP is extracted to `extractedDir`
+    if (!metadata || !extractedDir) {
+      throw new Error("Failed to extract metadata from the package");
+    }
+    // Rate the package
+    const { owner, repo } = parseGitHubUrl1(metadata.Url);
+    const metrics = await processUrl(metadata.Url, extractedDir, owner, repo);
 
-      // If rating passes, proceed to upload
-      s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
+    // Define your score threshold
+    const SCORE_THRESHOLD = 0.5; // Adjust based on your criteria
+    console.log("NetScore: ", metrics);
+    if (metrics.NetScore < SCORE_THRESHOLD) {
+      // Rating failed, return 424
+      c.status(424);
+      return c.json({
+        error: `Package metrics failed. NetScore: ${metrics.NetScore}. Package not uploaded.`,
+      });
+    }
+
+    // If rating passes, proceed to upload
+    s3Key = `packages/${metadata.Name}-${metadata.Version}.zip`;
 
 
-      if (zipBuffer && s3Key) {
-        const uploadResult = await uploadToS3viaBuffer(
-          zipBuffer,
-          s3Key,
-          "application/zip",
+    if (zipBuffer && s3Key) {
+      const uploadResult = await uploadToS3viaBuffer(
+        zipBuffer,
+        s3Key,
+        "application/zip",
+      );
+
+      if (!uploadResult.success || !uploadResult.url) {
+        return c.json(
+          {
+            error: "Failed to upload package to S3",
+            details: uploadResult.error,
+          },
+          500,
         );
-
-        if (!uploadResult.success || !uploadResult.url) {
-          return c.json(
-            {
-              error: "Failed to upload package to S3",
-              details: uploadResult.error,
-            },
-            500,
-          );
-        }
-
-        s3Url = uploadResult.url;
       }
 
-      // Clean up extracted files and temporary ZIP
-      if (extractedDir) {
-        fs.rmdirSync(extractedDir, { recursive: true });
-      }
+      s3Url = uploadResult.url;
+    }
 
-      // Create package id with a UUID
-      const packageId = uuidv4();
+    // Clean up extracted files and temporary ZIP
+    if (extractedDir) {
+      fs.rmdirSync(extractedDir, { recursive: true });
+    }
 
-      // Prepare the data to be inserted into the database
-      const data = {
-        ID: packageId,
-        S3: s3Key!,
-        URL: newPackage.URL || metadata?.URL || "",
-        JSProgram: newPackage.JSProgram || null,
-        debloat: newPackage.debloat || false,
-      };
+    // Create package id with a UUID
+    const packageId = uuidv4();
 
-      // Prepare the metadata to be inserted into the database
-      const metaData = {
-        ID: packageId,
-        Name: metadata?.Name!, // Use the name from metadata
-        Version: metadata?.Version!, // Use the version from metadata
-      };
+    // Prepare the data to be inserted into the database
+    const data = {
+      ID: packageId,
+      S3: s3Key!,
+      URL: newPackage.URL || metadata?.Url || "",
+      JSProgram: newPackage.JSProgram || null,
+      debloat: newPackage.debloat || false,
+    };
 
-      // Prepare packagesTable data to be inserted into database
-      const packagesTableData = {
-        ID: packageId,
-        Name: metaData?.Name!,
-        Version: metaData?.Version!,
-        S3: s3Key!,
-      };
+    // Prepare the metadata to be inserted into the database
+    const metaData = {
+      ID: packageId,
+      Name: metadata?.Name!, // Use the name from metadata
+      Version: metadata?.Version!, // Use the version from metadata
+    };
 
-      // Check if a package with the same name and version already exists
-      const existingSameNamePackage = await db
-        .select()
-        .from(packageMetadataTable)
-        .where(
-          and(
-            eq(packageMetadataTable.Name, metaData.Name),
-            eq(packageMetadataTable.Version, metaData.Version),
-          ),
-        )
-        .then((res) => res[0]);
+    // Prepare packagesTable data to be inserted into database
+    const packagesTableData = {
+      ID: packageId,
+      Name: metaData?.Name!,
+      Version: metaData?.Version!,
+      S3: s3Key!,
+    };
 
-      if (existingSameNamePackage) {
-        // Package already exists, return 409 Conflict
-        c.status(409);
-        return c.json({ error: "Package already exists" });
-      }
+    // Check if a package with the same name and version already exists
+    const existingSameNamePackage = await db
+      .select()
+      .from(packageMetadataTable)
+      .where(
+        and(
+          eq(packageMetadataTable.Name, metaData.Name),
+          eq(packageMetadataTable.Version, metaData.Version),
+        ),
+      )
+      .then((res) => res[0]);
 
-      // Prepare rating data for insertion
-      const ratingData = {
-        ID: packageId,
-        URL: newPackage.URL || metadata?.URL || "",
-        NetScore: metrics.NetScore.toString(),
-        NetScoreLatency: metrics.NetScoreLatency.toString(),
-        RampUp: metrics.RampUp.toString(),
-        RampUpLatency: metrics.RampUpLatency.toString(),
-        Correctness: metrics.Correctness.toString(),
-        CorrectnessLatency: metrics.CorrectnessLatency.toString(),
-        BusFactor: metrics.BusFactor.toString(),
-        BusFactorLatency: metrics.BusFactorLatency.toString(),
-        ResponsiveMaintainer: metrics.ResponsiveMaintainer.toString(),
-        ResponsiveMaintainerLatency: metrics.ResponsiveMaintainerLatency.toString(),
-        License: metrics.License.toString(),
-        LicenseLatency: metrics.LicenseLatency.toString(),
-        PR_CodeReviews: metrics.PRCodeReviews.toString(),
-        PR_CodeReviews_Latency: metrics.PRCodeReviewsLatency.toString(),
-        DependencyMetric: metrics.DependencyMetric.toString(),
-        DependencyMetricLatency: metrics.DependencyMetricLatency.toString(),
-      };
+    if (existingSameNamePackage) {
+      // Package already exists, return 409 Conflict
+      c.status(409);
+      return c.json({ error: "Package already exists" });
+    }
 
-      // Insert the rating to database
-      await db
-        .insert(packageRatingTable)
-        .values(ratingData)
-        .returning()
-        .then((res) => res[0]);
+    // Prepare rating data for insertion
+    const ratingData = {
+      ID: packageId,
+      URL: newPackage.URL || metadata?.Url || "",
+      NetScore: metrics.NetScore.toString(),
+      NetScoreLatency: metrics.NetScoreLatency.toString(),
+      RampUp: metrics.RampUp.toString(),
+      RampUpLatency: metrics.RampUpLatency.toString(),
+      Correctness: metrics.Correctness.toString(),
+      CorrectnessLatency: metrics.CorrectnessLatency.toString(),
+      BusFactor: metrics.BusFactor.toString(),
+      BusFactorLatency: metrics.BusFactorLatency.toString(),
+      ResponsiveMaintainer: metrics.ResponsiveMaintainer.toString(),
+      ResponsiveMaintainerLatency: metrics.ResponsiveMaintainerLatency.toString(),
+      License: metrics.License.toString(),
+      LicenseLatency: metrics.LicenseLatency.toString(),
+      PR_CodeReviews: metrics.PRCodeReviews.toString(),
+      PR_CodeReviews_Latency: metrics.PRCodeReviewsLatency.toString(),
+      DependencyMetric: metrics.DependencyMetric.toString(),
+      DependencyMetricLatency: metrics.DependencyMetricLatency.toString(),
+    };
 
-      // Insert the new package into the database
-      // Insert ID into the packages table
-      await db
-        .insert(packagesTable)
-        .values(packagesTableData)
-        .returning()
-        .then((res) => res[0]);
+    // Insert the rating to database
+    await db
+      .insert(packageRatingTable)
+      .values(ratingData)
+      .returning()
+      .then((res) => res[0]);
 
-      // Insert into the packageMetadata table
-      const metaDataResult = await db
-        .insert(packageMetadataTable)
-        .values(metaData)
-        .returning()
-        .then((res) => res[0]);
+    // Insert the new package into the database
+    // Insert ID into the packages table
+    await db
+      .insert(packagesTable)
+      .values(packagesTableData)
+      .returning()
+      .then((res) => res[0]);
 
-      // Insert into the packageData table
-      const dataResult = await db
-        .insert(packageDataTable)
-        .values(data)
-        .returning()
-        .then((res) => res[0]);
+    // Insert into the packageMetadata table
+    const metaDataResult = await db
+      .insert(packageMetadataTable)
+      .values(metaData)
+      .returning()
+      .then((res) => res[0]);
 
-    // Return the new package with a status code of 201
-    // Omit 'id' field from dataResult
-    const dataWithoutId = omitId(dataResult);
-    c.status(201);
-    return c.json({
-      metadata: metaDataResult,
-      data: dataWithoutId,
-    });
+    // Insert into the packageData table
+    const dataResult = await db
+      .insert(packageDataTable)
+      .values(data)
+      .returning()
+      .then((res) => res[0]);
+
+  // Return the new package with a status code of 201
+  // Omit 'id' field from dataResult
+  const dataWithoutId = omitId(dataResult);
+  c.status(201);
+  return c.json({
+    metadata: metaDataResult,
+    data: dataWithoutId,
+  })
   })
 
   .post("/byRegEx", zValidator("json", PackageRegEx), async (c) => {
@@ -775,7 +777,7 @@ export const packageRoutes = new Hono()
     c.status(200);
     return c.json(rating);
   });
-  })
+
 
   // ... [Rest of the routes remain unchanged]
 

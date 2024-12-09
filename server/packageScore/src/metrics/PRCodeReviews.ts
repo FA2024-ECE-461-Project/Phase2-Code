@@ -39,7 +39,7 @@ export async function calculatePRCodeReviews(
       url,
       error: (error as Error).message,
     });
-    console.error(`Error during PR code reviews calculation: ${error.message}`); // Error log
+    // console.error(`Error during PR code reviews calculation: ${error.message}`); // Error log
     return { score: 0, latency: Date.now() - startTime };
   }
 }

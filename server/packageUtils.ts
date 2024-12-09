@@ -575,7 +575,7 @@ export async function getDependencySizeInMB(zipFilePath: string): Promise<number
 }
 
 
-export function extractZip(zipPath: string, extractToDir: string): void {
+export function extractZip1(zipPath: string, extractToDir: string): void {
   try {
     // Initialize AdmZip with the ZIP file
     const zip = new AdmZip(zipPath);

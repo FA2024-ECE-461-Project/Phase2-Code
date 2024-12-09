@@ -4,8 +4,6 @@
 
 import fs from "fs";
 import path from "path";
-import dotenv from "dotenv";
-import logger from "./logger";
 import { get_bus_factor } from "./metrics/bus-factor";
 import { getCorrectnessMetric } from "./metrics/correctness";
 import { get_license_compatibility } from "./metrics/license-compatibility";
@@ -164,56 +162,56 @@ function createEmptyMetricsResult(url: string): MetricsResult {
   };
 }
 
-export async function processSingleUrl(url: string, extractedDir: string): Promise<MetricsResult> {
-  if (!process.env.LOG_FILE) {
-    throw new Error("LOG_FILE environment variable is not set");
-  }
+// export async function processSingleUrl(url: string, extractedDir: string): Promise<MetricsResult> {
+//   if (!process.env.LOG_FILE) {
+//     throw new Error("LOG_FILE environment variable is not set");
+//   }
 
-  if (!process.env.GITHUB_TOKEN) {
-    throw new Error("GITHUB_TOKEN environment variable is not set");
-  }
+//   if (!process.env.GITHUB_TOKEN) {
+//     throw new Error("GITHUB_TOKEN environment variable is not set");
+//   }
 
-  try {
-    const result = await processUrl(url, extractedDir, owner, repo);
-    const formattedResult: MetricsResult = {
-      URL: result.URL,
-      NetScore: parseFloat(result.NetScore.toFixed(3)),
-      NetScoreLatency: parseFloat((result.NetScoreLatency / 1000).toFixed(3)),
-      RampUp: parseFloat(result.RampUp.toFixed(3)),
-      RampUpLatency: parseFloat((result.RampUpLatency / 1000).toFixed(3)),
-      Correctness: parseFloat(result.Correctness.toFixed(3)),
-      CorrectnessLatency: parseFloat((result.CorrectnessLatency / 1000).toFixed(3)),
-      BusFactor: parseFloat(result.BusFactor.toFixed(3)),
-      BusFactorLatency: parseFloat((result.BusFactorLatency / 1000).toFixed(3)),
-      ResponsiveMaintainer: parseFloat(result.ResponsiveMaintainer.toFixed(3)),
-      ResponsiveMaintainerLatency: parseFloat((result.ResponsiveMaintainerLatency / 1000).toFixed(3)),
-      License: parseFloat(result.License.toFixed(3)),
-      LicenseLatency: parseFloat((result.LicenseLatency / 1000).toFixed(3)),
-      PRCodeReviews: parseFloat(result.PRCodeReviews.toFixed(3)),
-      PRCodeReviewsLatency: parseFloat((result.PRCodeReviewsLatency / 1000).toFixed(3)),
-      DependencyMetric: parseFloat(result.DependencyMetric.toFixed(3)),
-      DependencyMetricLatency: parseFloat((result.DependencyMetricLatency / 1000).toFixed(3)),
-    };
-    return formattedResult;
-  } catch (error) {
-    logger.error("Error processing URL ${url}:", { error });
-    const emptyResult: MetricsResult = createEmptyMetricsResult(url);
-    emptyResult.NetScore = -1;
-    emptyResult.NetScoreLatency = -1;
-    emptyResult.RampUp = -1;
-    emptyResult.RampUpLatency = -1;
-    emptyResult.Correctness = -1;
-    emptyResult.CorrectnessLatency = -1;
-    emptyResult.BusFactor = -1;
-    emptyResult.BusFactorLatency = -1;
-    emptyResult.ResponsiveMaintainer = -1;
-    emptyResult.ResponsiveMaintainerLatency = -1;
-    emptyResult.License = -1;
-    emptyResult.LicenseLatency = -1;
-    emptyResult.PRCodeReviews = -1;
-    emptyResult.PRCodeReviewsLatency = -1;
-    emptyResult.DependencyMetric = -1;
-    emptyResult.DependencyMetricLatency = -1;
-    return emptyResult;
-  }
-}
+//   try {
+//     const result = await processUrl(url, extractedDir, owner, repo);
+//     const formattedResult: MetricsResult = {
+//       URL: result.URL,
+//       NetScore: parseFloat(result.NetScore.toFixed(3)),
+//       NetScoreLatency: parseFloat((result.NetScoreLatency / 1000).toFixed(3)),
+//       RampUp: parseFloat(result.RampUp.toFixed(3)),
+//       RampUpLatency: parseFloat((result.RampUpLatency / 1000).toFixed(3)),
+//       Correctness: parseFloat(result.Correctness.toFixed(3)),
+//       CorrectnessLatency: parseFloat((result.CorrectnessLatency / 1000).toFixed(3)),
+//       BusFactor: parseFloat(result.BusFactor.toFixed(3)),
+//       BusFactorLatency: parseFloat((result.BusFactorLatency / 1000).toFixed(3)),
+//       ResponsiveMaintainer: parseFloat(result.ResponsiveMaintainer.toFixed(3)),
+//       ResponsiveMaintainerLatency: parseFloat((result.ResponsiveMaintainerLatency / 1000).toFixed(3)),
+//       License: parseFloat(result.License.toFixed(3)),
+//       LicenseLatency: parseFloat((result.LicenseLatency / 1000).toFixed(3)),
+//       PRCodeReviews: parseFloat(result.PRCodeReviews.toFixed(3)),
+//       PRCodeReviewsLatency: parseFloat((result.PRCodeReviewsLatency / 1000).toFixed(3)),
+//       DependencyMetric: parseFloat(result.DependencyMetric.toFixed(3)),
+//       DependencyMetricLatency: parseFloat((result.DependencyMetricLatency / 1000).toFixed(3)),
+//     };
+//     return formattedResult;
+//   } catch (error) {
+//     logger.error("Error processing URL ${url}:", { error });
+//     const emptyResult: MetricsResult = createEmptyMetricsResult(url);
+//     emptyResult.NetScore = -1;
+//     emptyResult.NetScoreLatency = -1;
+//     emptyResult.RampUp = -1;
+//     emptyResult.RampUpLatency = -1;
+//     emptyResult.Correctness = -1;
+//     emptyResult.CorrectnessLatency = -1;
+//     emptyResult.BusFactor = -1;
+//     emptyResult.BusFactorLatency = -1;
+//     emptyResult.ResponsiveMaintainer = -1;
+//     emptyResult.ResponsiveMaintainerLatency = -1;
+//     emptyResult.License = -1;
+//     emptyResult.LicenseLatency = -1;
+//     emptyResult.PRCodeReviews = -1;
+//     emptyResult.PRCodeReviewsLatency = -1;
+//     emptyResult.DependencyMetric = -1;
+//     emptyResult.DependencyMetricLatency = -1;
+//     return emptyResult;
+//   }
+// }

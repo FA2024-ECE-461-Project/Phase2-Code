@@ -556,39 +556,39 @@ export const packageRoutes = new Hono()
     const IDFromParam = c.req.param("ID"); // This might be an older version's ID
     const body = c.req.valid("json");
     
-    log.info("[post/:ID] Incoming Package ID: ", IDFromParam);
-    log.info("[post/:ID] Incoming Request Body: ", body);
+    // log.info("[post/:ID] Incoming Package ID: ", IDFromParam);
+    // log.info("[post/:ID] Incoming Request Body: ", body);
   
-    const { metadata, data } = body;
-    const databody: {
-      S3?: string | undefined;
-      URL?: string | undefined;
-      JSProgram?: string | undefined;
-      debloat?: boolean | undefined;
-    } = {};
+    // const { metadata, data } = body;
+    // const databody: {
+    //   S3?: string | undefined;
+    //   URL?: string | undefined;
+    //   JSProgram?: string | undefined;
+    //   debloat?: boolean | undefined;
+    // } = {};
   
-    if (!metadata.ID) {
-      console.log("Invalid input: Must provide metadata ID to create a new version.");
-      c.status(400);
-      return c.json({
-        error: "Invalid input: Must provide metadata ID.",
-      });
-    }
+    // if (!metadata.ID) {
+    //   console.log("Invalid input: Must provide metadata ID to create a new version.");
+    //   c.status(400);
+    //   return c.json({
+    //     error: "Invalid input: Must provide metadata ID.",
+    //   });
+    // }
   
-    // 1. Fetch the latest version of this package line using the provided metadata.ID
-    const latestPackage = await db
-      .select()
-      .from(packagesTable)
-      .where(eq(packagesTable.ID, metadata.ID))
-      .orderBy(desc(packagesTable.Version))
-      .limit(1)
-      .then((res) => res[0]);
+    // // 1. Fetch the latest version of this package line using the provided metadata.ID
+    // const latestPackage = await db
+    //   .select()
+    //   .from(packagesTable)
+    //   .where(eq(packagesTable.ID, metadata.ID))
+    //   .orderBy(desc(packagesTable.Version))
+    //   .limit(1)
+    //   .then((res) => res[0]);
   
-    if (!latestPackage) {
-      console.log("Base package not found for ID:", metadata.ID);
-      c.status(404);
-      return c.json({ error: "Package not found" });
-    }
+    // if (!latestPackage) {
+    //   console.log("Base package not found for ID:", metadata.ID);
+    //   c.status(404);
+    //   return c.json({ error: "Package not found" });
+    // }
   
     // // 2. Check if the new version is more recent than the latest known version
     // const isMoreRecent = isMoreRecentVersion(metadata.Version, latestPackage.Version);

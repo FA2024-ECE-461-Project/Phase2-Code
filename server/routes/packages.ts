@@ -18,27 +18,28 @@ const versionRegex = new RegExp(
   `(${exactRegex.source})|(${rangeRegex.source})|(${caretRegex.source})|(${tildeRegex.source})`,
 );
 
-// schema for the post request body
-const postPackageMetadataRequestSchema = z.object({
-  Name: z.string().refine((name) => name.length >= 3 || name === "*", {
-    message: 'Name must be "*" if it\'s shorter than 3 characters',
-  }),
+// Define the schema for a single object in the list
+const packageMetadataSchema = z.object({
+  Name: z.string().min(1, "Name must be at least 1 character long"),
   Version: z
     .string()
     .optional()
     .refine(
       (version) => {
         if (version) {
-          return versionRegex.test(version);
+          return versionRegex.test(version); // Use your existing versionRegex for validation
         }
         return true; // allow Version field to be empty
       },
       {
         message:
-          "Version must be in the format x.y.z, x.y.z-x.y.z, ^x.y.z, or ~x.y.z",
-      },
+          "Version must be in the format Exact (1.2.3), Bounded range (1.2.3-2.1.0), Carat (^1.2.3), or Tilde (~1.2.0)",
+      }
     ),
 });
+
+// Define the schema for the entire list
+const postPackageMetadataRequestSchema = z.array(packageMetadataSchema);
 
 type PostPackageMetadataRequest = z.infer<
   typeof postPackageMetadataRequestSchema
@@ -74,7 +75,14 @@ export const metadataRoutes = new Hono()
     zValidator("json", postPackageMetadataRequestSchema),
     async (c) => {
       // assume we get {name: "package-name", version: "x.y.z"} as request body
-      const { Name, Version } = c.req.valid("json");
+      const packagesMetadata = c.req.valid("json") as PostPackageMetadataRequest;
+      const results: ResponseSchema[] = [];
+
+      // get the fisrt package in the list
+      const firstPackage = packagesMetadata[0];
+      const Name = firstPackage.Name;
+      const Version = firstPackage.Version;
+      
       const offset: string | undefined = c.req.query("offset"); // offset is undefined when no parameter is given
 
       log.info("request has", Name, Version, offset);
